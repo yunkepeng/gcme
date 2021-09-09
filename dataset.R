@@ -37,6 +37,7 @@ for (i in 1:nrow(coord)){
     coord$Longitude[i] <- as.numeric(coord$Longitude[i])
   }
 }
+
 coord <- coord[,c("Site.Name","System.Type","Latitude","Longitude","Elevation","AM","EcM","ErM")]
 names(coord) <- c("exp_nam","pft","lat","lon","z","AM","EcM","ErM")
 coord$rep <- duplicated(coord$exp_nam)

@@ -10,20 +10,20 @@ devtools::load_all("~/yunkepeng/gcme/pmodel/ingestr/")
 devtools::load_all("~/yunkepeng/gcme/pmodel/rsofun/")
 
 df_watch <- ingest(
-  siteinfo  = specific,
+  siteinfo  = siteinfo2,
   source    = "watch_wfdei",
   getvars   = c("temp", "prec", "ppfd", "vpd", "patm"), 
   dir       = "/Volumes/My Passport/data/watch_wfdei/",
   settings  = list(correct_bias = "worldclim", dir_bias = "/Volumes/My Passport/data/worldclim/"))
 
 df_cru <- ingest(
-  siteinfo  = specific,
+  siteinfo  = siteinfo2,
   source    = "cru",
   getvars   = "ccov",
   dir       = "/Volumes/My Passport/data/cru/ts_4.01/")
 
 df_co2 <- ingest(
-  siteinfo  = specific,
+  siteinfo  = siteinfo2,
   source  = "co2_mlo",
   verbose = FALSE)
 
@@ -36,7 +36,11 @@ co2 <- df_co2_final2$co2
 ddf_meteo <- as_tibble(cbind(as.data.frame(df_watch$data),as.data.frame(df_cru$data)[,c("ccov_int","ccov")],co2))
 
 ddf_meteo$fapar <- 1
-names(ddf_meteo)
+ddf_meteo$tmax <- ddf_meteo$temp
+ddf_meteo$tmin <- ddf_meteo$temp
+head(ddf_meteo)
+dim(ddf_meteo)
+#then output ddf_meteo as csv
 
 
 #now, we can work on predicting gpp
