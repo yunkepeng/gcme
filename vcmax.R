@@ -116,6 +116,7 @@ dim(df_leafsites)
 
 #some years were missing, interpolating them primarily basing on max measurement year from the same plot and same variable
 # secondarily basing on max measurement year from the same plot
+NA_years <- as.data.frame(subset(df_leafsites,is.na(Sampling_Year)==TRUE)%>% group_by(exp_nam,Data_type)%>% summarise(number = n()))
 
 for (i in 1:nrow(NA_years)){
   exp_name <- NA_years[i,1]
@@ -127,18 +128,18 @@ for (i in 1:nrow(NA_years)){
   }
 }
 
-NA_years <- as.data.frame(subset(df_leafsites,is.na(Sampling_Year)==TRUE)%>% group_by(exp_nam,Data_type)%>% summarise(number = n()))
 #only a few missing - no worries!
 
 #now, start working with vcmax data
 
 vcmax_all <- subset(df_leafsites,Data_type=="maximal_Rubisco_activity_(Vcmax)"|Data_type=="Vcmax"|
                       Data_type=="Vcmax,_maximum_carboxylation_rate_of_Rubisco")
-#vcmax25_all <- subset(df_leafsites,Data_type=="Vcmax25")
+vcmax25_all <- subset(df_leafsites,Data_type=="Vcmax25") # all unit is ok
 
 Jmax_all <- subset(df_leafsites,Data_type=="Jmax_"|Data_type=="Jmax"|
                       Data_type=="Jmax,_maximum_rate_of_electron_transport_for_regeneration_of_RuBP")
-#Jmax25_all <- subset(df_leafsites,Data_type=="Jmax25")
+
+Jmax25_all <- subset(df_leafsites,Data_type=="Jmax25" & Unit!="g/m2y") # remove one 'outlier' unit
 
 Asat_all <- df_leafsites[grep("Asat", df_leafsites$Data_type),]
 
@@ -164,18 +165,328 @@ summary(subset(vcmax_all,is.na(Unit)==TRUE)$ambient)
 
 #I think all vcmax is umol/m2/s, in no doubt! So does Jmax
 vcmax_all_final <- vcmax_all
+vcmax25_all_final <- vcmax25_all
 
-Jmax_all%>% group_by(Unit)  %>% summarise(mean = mean(ambient,na.rm=TRUE))
 Jmax_all_final <- Jmax_all
+Jmax25_all_final <- Jmax25_all
 
 #one point shows start and sampling year was 1998 and 1997 separately, wrong. Convert to same year
-Asat_all_final$Sampling_Year[Asat_all_final$Sampling_Year<Asat_all_final$Start_Year] <- Asat_all_final$Start_Year[Asat_all_final$Sampling_Year<Asat_all_final$Start_Year]
-Amax_all_final$Sampling_Year[Amax_all_final$Sampling_Year<Amax_all_final$Start_Year] <- Amax_all_final$Start_Year[Amax_all_final$Sampling_Year<Amax_all_final$Start_Year]
+Asat_all_final$Sampling_Year[Asat_all_final$Sampling_Year<Asat_all_final$Start_Year] <- 1998
+Amax_all_final$Sampling_Year[Amax_all_final$Sampling_Year<Amax_all_final$Start_Year] <- 1998
 
 Asat_all_final$Year <- Asat_all_final$Sampling_Year-Asat_all_final$Start_Year
+summary(Asat_all_final$Year)
 Amax_all_final$Year <- Amax_all_final$Sampling_Year-Amax_all_final$Start_Year
+summary(Amax_all_final$Year)
 
+vcmax_all_final$Start_Year[is.na(vcmax_all_final$Start_Year)==TRUE] <- 1995 # one place was missing - interpolate as equal to sampling_year
 vcmax_all_final$Year <- vcmax_all_final$Sampling_Year-vcmax_all_final$Start_Year
-Jmax_all_final$Year <- Jmax_all_final$Sampling_Year-Jmax_all_final$Start_Year
+summary(vcmax_all_final$Year)
 
-#now, all done! start to do one-point method!
+Jmax_all_final$Year <- Jmax_all_final$Sampling_Year-Jmax_all_final$Start_Year
+summary(Jmax_all_final$Year)
+
+vcmax25_all_final$Year <- vcmax25_all_final$Sampling_Year-vcmax25_all_final$Start_Year
+summary(vcmax25_all_final$Year)
+
+Jmax25_all_final$Start_Year[is.na(Jmax25_all_final$Start_Year)==TRUE]  <- 1995 # one place was missing - interpolate as equal to sampling_year
+Jmax25_all_final$Year <- Jmax25_all_final$Sampling_Year-Jmax25_all_final$Start_Year
+summary(Jmax25_all_final$Year)
+
+
+#now, all done! start to do one-point method - see gwr_for_climates_Asat.R
+csvfile <- paste("/Users/yunpeng/data/gcme/yunke_coord/Asat_all_df.csv")
+write.csv(Asat_all_final, csvfile, row.names = TRUE)
+
+csvfile <- paste("/Users/yunpeng/data/gcme/yunke_coord/Amax_all_df.csv")
+write.csv(Amax_all_final, csvfile, row.names = TRUE)
+
+csvfile <- paste("/Users/yunpeng/data/gcme/yunke_coord/vcmax_all_df.csv")
+write.csv(vcmax_all_final, csvfile, row.names = TRUE)
+
+csvfile <- paste("/Users/yunpeng/data/gcme/yunke_coord/jmax_all_df.csv")
+write.csv(Jmax_all_final, csvfile, row.names = TRUE)
+
+csvfile <- paste("/Users/yunpeng/data/gcme/yunke_coord/vcmax25_all_df.csv")
+write.csv(vcmax25_all_final, csvfile, row.names = TRUE)
+
+csvfile <- paste("/Users/yunpeng/data/gcme/yunke_coord/jmax25_all_df.csv")
+write.csv(Jmax25_all_final, csvfile, row.names = TRUE)
+
+#now, after gwr_for_climates_Asat.R by collecting all climate data for vcmax, jmax, Asat, Amax...
+#basing on proposal by below priority
+#1. vcmax25
+#2. vcmax and then converting to vcmax25 by Tg
+#3. Asat and then converting to vcmax by one-point method, and convert to vcmax25 by Tg
+#so does jmax..
+
+#1.vcmax25
+summary(vcmax25_all_final)
+vcmax25_all_final%>% group_by(exp_nam,treatment)  %>% summarise(number = n())
+#Brandbjerg, c, d, w --> 7 types
+
+#2.vcmax
+summary(vcmax_all_final)
+vcmax_all_final%>% group_by(exp_nam,treatment)  %>% summarise(number = n())
+#Brandbjerg, c, d, w --> 7 types but more samples --> so still use vcmax rather than vcmax25 in Brandbjerg
+#now, include Tg
+tmn_df <- read.csv("/Users/yunpeng/data/gcme/yunke_coord/climates/vcmax_tmn.csv")
+tmx_df <- read.csv("/Users/yunpeng/data/gcme/yunke_coord/climates/vcmax_tmx.csv")
+lat <- tmn_df$lat
+tmx <- tmx_df[,c(8:ncol(tmx_df))]
+tmn <- tmn_df[,c(8:ncol(tmn_df))]
+s1 <- (-23.1+ -17.3)/2
+s2 <- (-17.3 + -8)/2
+s3 <- (-8 + 4.1)/2
+s4 <- (4.1 + 14.8)/2
+s5 <- (14.8 + 21.9)/2
+s6 <- (21.9 + 23.2)/2
+s7 <- (23.2 + 18.3)/2
+s8 <- (18.3 + 8.6)/2
+s9 <-  (8.6 + -2.8)/2
+s10 <- (-2.8 + -14.1)/2
+s11 <- (-14.1 + -21.6)/2
+s12 <- (-21.6 + -23.1)/2
+
+s <- c(s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,s12)
+xx <- data.frame(matrix(nrow=nrow(tmx), ncol=ncol(tmx)))
+output_Tg <- data.frame(matrix(nrow=nrow(tmx), ncol=ncol(tmx)))
+#xx = acos(h), h = hour angle of the sun
+for (a in 1:12){ 
+  month_no <- seq(from = 1, to = ncol(tmx), by = 12)+a-1
+  xx[1:nrow(tmx),month_no] <- -tan(pi*lat/180)*tan(s[a]*pi/180)
+}
+
+#check each part of Tg formula
+part1 <- (0.5+((1-xx^2)^(0.5))/(2*acos(xx)))[,1:12]
+part2 <- (0.5-((1-xx^2)^(0.5))/(2*acos(xx)))[,1:12]
+summary(part1)
+summary(part2)
+
+#the percentage of tmx was dominated overall
+Tg_site <- tmx*(0.5+((1-xx^2)^(0.5))/(2*acos(xx)))+ tmn*(0.5-((1-xx^2)^(0.5))/(2*acos(xx)))
+Tg_site[Tg_site =="NaN"] <- NA
+Tg_site[Tg_site < 0] <- NA
+
+tmn_df$Tg <- rowMeans(Tg_site,na.rm=TRUE)
+vcmax_Tg <- tmn_df[,c("lon","lat","z","year_start","year_end","Tg")]
+
+#keep the design same as forcing
+vcmax_all_final$year_start <- vcmax_all_final$Start_Year
+vcmax_all_final$year_end <- vcmax_all_final$Sampling_Year
+vcmax_all_final$year_start[vcmax_all_final$year_end>2016] <- 2007
+vcmax_all_final$year_end[vcmax_all_final$year_end>2016] <- 2016
+
+vcmax_all_final_Tg <- merge(vcmax_all_final,vcmax_Tg,by=c("lon","lat","z","year_start","year_end"),all.x=TRUE)
+summary(vcmax_all_final_Tg)
+
+#now, calculate response ratio directly
+vcmax_all_final_Tg$vcmax25_a <- vcmax_all_final_Tg$ambient*exp((65330/8.314)*((1/(vcmax_all_final_Tg$Tg+273.15))-(1/298.15)))
+vcmax_all_final_Tg$vcmax25_e <- vcmax_all_final_Tg$elevated*exp((65330/8.314)*((1/(vcmax_all_final_Tg$Tg+273.15))-(1/298.15)))
+vcmax_all_final_Tg$response_ratio <- log(vcmax_all_final_Tg$vcmax25_e/vcmax_all_final_Tg$vcmax25_a)
+
+vcmax_all_final_Tg$vcmax_a <- vcmax_all_final_Tg$ambient
+vcmax_all_final_Tg$vcmax_e <- vcmax_all_final_Tg$elevated
+
+hist(vcmax_all_final_Tg$response_ratio)
+
+#now, decide which rest of Asat will be used then!
+vcmax_expnam <- vcmax_all_final_Tg%>% group_by(exp_nam,treatment)  %>% summarise(number = n())
+names(vcmax_expnam) <- c("exp_nam","treatment","number_vcmax")
+Asat_expnam <- Asat_all_final%>% group_by(exp_nam,treatment)  %>% summarise(number = n())
+names(Asat_expnam) <- c("exp_nam","treatment","number_Asat")
+
+Asat_need <- merge(Asat_expnam,vcmax_expnam,by=c("exp_nam","treatment"),all.x=TRUE)
+Asat_new <- subset(Asat_need,is.na(number_vcmax)==TRUE) #this plot are what vcmax didn't have - can be included anyways
+Asat_new_but_remove_vcmax <- subset(Asat_need,number_Asat-number_vcmax > 5) #this plot are what vcmax have but less than Asat - can be included but need to remove relevant one in vcmax so that it does not repeat!
+Asat_no_include <- subset(Asat_need,number_Asat-number_vcmax <= 5) #this plot are what vcmax have but more than Asat - we don't need such plot!
+# we set 5 here just make within plot data is complete either in Asat_no_include or Asat_new_but_remove_vcmax - otherwise if jut > or < than it will be mixed!
+#we can also set 10 if you want - just introducing more vcmax and less Asat - although numbers could be slightly less!
+
+#remove below plots in vcmax_all_final_Tg, before updating them
+Asat_new_but_remove_vcmax%>% group_by(exp_nam)  %>% summarise(number = number_vcmax)
+
+dim(subset(vcmax_all_final_Tg,exp_nam=="BioCON"))
+dim(subset(vcmax_all_final_Tg,exp_nam=="Brandbjerg"))
+dim(subset(vcmax_all_final_Tg,exp_nam=="DUKE"))
+dim(subset(vcmax_all_final_Tg,exp_nam=="FACTS_II_FACE3_pt"))
+dim(subset(vcmax_all_final_Tg,exp_nam=="FACTS_II_FACE4_bp"))# all consistent with below summary - safely remove them before adding new Asat
+
+vcmax_all_final_Tg_removal <- subset(vcmax_all_final_Tg,exp_nam!="BioCON" & exp_nam!="Brandbjerg"& exp_nam!="DUKE"& exp_nam!="FACTS_II_FACE3_pt"& exp_nam!="FACTS_II_FACE4_bp")
+dim(vcmax_all_final_Tg_removal)
+
+#now, start processing Asat - firstly removing points that vcmax already included
+Asat_no_include$removal <- "removal"
+Asat_no_include_info <- Asat_no_include[,c("exp_nam","treatment","removal")]
+
+Asat_all_final_removal <- merge(Asat_all_final,Asat_no_include_info,by=c("exp_nam","treatment"),all.x=TRUE)
+Asat_all_final_removal_yes <- subset(Asat_all_final_removal,is.na(removal)==TRUE)
+
+
+#now, start one-point method
+tmn_df <- read.csv("/Users/yunpeng/data/gcme/yunke_coord/climates/Asat_tmn.csv")
+tmx_df <- read.csv("/Users/yunpeng/data/gcme/yunke_coord/climates/Asat_tmx.csv")
+qair_df <- read.csv("/Users/yunpeng/data/gcme/yunke_coord/climates/Asat_qair.csv")
+
+#co2 
+Ca_df <- tmn_df[,c("lon","lat","z","start_yr","end_yr")]
+Ca <- read.csv("/Users/yunpeng/data/co2/cCO2_rcp85_const850-1765.csv")
+for (i in 1:nrow(Ca_df)){
+  Ca_df$Ca_start[i] <- Ca$co2[Ca_df$start_yr[i]==Ca$year]
+  Ca_df$Ca_end[i] <- Ca$co2[Ca_df$end_yr[i]==Ca$year]
+  Ca_df$Ca_Global[i] <- mean(c(Ca_df$Ca_start[i],Ca_df$Ca_end[i]))
+}
+summary(Ca_df)
+
+
+tmx <- tmx_df[,c(8:ncol(tmx_df))]
+tmn <- tmn_df[,c(8:ncol(tmn_df))]
+qair <- qair_df[,c(8:ncol(qair_df))]
+CaGlobal <- Ca_df$Ca_Global
+lat <- Ca_df$lat # degree
+elev <- Ca_df$z #m
+
+##(1) Tg (growth temperature)
+#1. Tg
+#solar declination from Jan to Dec
+s1 <- (-23.1+ -17.3)/2
+s2 <- (-17.3 + -8)/2
+s3 <- (-8 + 4.1)/2
+s4 <- (4.1 + 14.8)/2
+s5 <- (14.8 + 21.9)/2
+s6 <- (21.9 + 23.2)/2
+s7 <- (23.2 + 18.3)/2
+s8 <- (18.3 + 8.6)/2
+s9 <-  (8.6 + -2.8)/2
+s10 <- (-2.8 + -14.1)/2
+s11 <- (-14.1 + -21.6)/2
+s12 <- (-21.6 + -23.1)/2
+
+s <- c(s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,s12)
+xx <- data.frame(matrix(nrow=nrow(Ca_df), ncol=ncol(tmx)))
+output_Tg <- data.frame(matrix(nrow=nrow(Ca_df), ncol=ncol(tmx)))
+#xx = acos(h), h = hour angle of the sun
+for (a in 1:12){ 
+  month_no <- seq(from = 1, to = ncol(tmx), by = 12)+a-1
+  xx[1:nrow(Ca_df),month_no] <- -tan(pi*lat/180)*tan(s[a]*pi/180)
+}
+
+#check each part of Tg formula
+part1 <- (0.5+((1-xx^2)^(0.5))/(2*acos(xx)))[,1:12]
+part2 <- (0.5-((1-xx^2)^(0.5))/(2*acos(xx)))[,1:12]
+summary(part1)
+summary(part2)
+
+#the percentage of tmx was dominated overall
+Tg_site <- tmx*(0.5+((1-xx^2)^(0.5))/(2*acos(xx)))+ tmn*(0.5-((1-xx^2)^(0.5))/(2*acos(xx)))
+Tg_site[Tg_site =="NaN"] <- NA
+Tg_site[Tg_site < 0] <- NA
+
+Tg_K <- Tg_site +273.15
+
+##(2) Pressure, Ca, vpd
+pressure <- 101325*((1-0.0065*elev/288.15)^(9.80665*0.028963/8.31447/0.0065)) #pressure in Pa -> 1
+Ca <- pressure*CaGlobal/1000000 ##Ca in Pa -> 1
+
+# (2.2) now, adding a new function of vpd
+kR  = 8.31446262  # universal gas constant, J/mol/K (Allen, 1973)
+kMv = 18.02                 # molecular weight of water vapor, g/mol (Tsilingiris, 2008)
+kMa = 28.963                #molecular weight of dry air, g/mol (Tsilingiris, 2008) XXX this was in SPLASH (WITH 1E-3 IN EQUATION) XXX
+wair <- qair / ( 1 - qair )
+rv <- kR / kMv
+rd <- kR / kMa
+patm <- pressure # Pa
+ea <- (patm * wair * rv / (rd + wair * rv))/1000 #ea in Pa
+TT_K <- ((tmx + tmn)/2) + 273.15 + Tg_K - Tg_K # averaged from tmx, tmn, then from growth season only
+vpd <- 0.611*exp(17.27*(TT_K-273.15)/((TT_K-273.15)+237.3)) - ea         #vpd in KPa -> month/daily
+vpd[vpd < 0] <- NA
+
+##(3) Gstar, Kc, Oc, Ko, K, f1
+Gstar <- pressure*4.22*exp((37830/8.31447)*(1/298.15 - 1/(Tg_K)))/101325    #Gstar in Pa -> month/daily
+Kc <- 39.97*exp((79430/8.31447)*(1/298.15 - 1/(Tg_K)))                      #Kc in Pa -> 1
+Oc <-0.21*pressure                                                              #Oc in Pa -> month/daily
+Ko <-27480*exp((36380/8.31447)*(1/298.15 - 1/(Tg_K)))                       #Ko in Pa -> month/daily
+K  <- Kc*(1+(Oc/Ko))                                                        #K in Pa -> month/daily
+f1 <- exp((-580/((-138+Tg_K)^2))*(Tg_K-298.15))                             
+E <-sqrt((146*(K+Gstar))/(1.6*f1))                                         
+
+##(4) X, Ci, m
+X <- (Gstar/Ca)+ (1-(Gstar/Ca))*E/(E+sqrt(vpd*1000))                        #predicted X -> monthly/daily
+Ci <- X*Ca
+
+Ca_df$Tg <- rowMeans(Tg_site,na.rm = TRUE)
+Ca_df$Ci <- rowMeans(Ci,na.rm = TRUE)
+Ca_df$Gstar <- rowMeans(Gstar,na.rm = TRUE)
+Ca_df$K <- rowMeans(K,na.rm = TRUE)
+Ca_df$year_start <- Ca_df$start_yr 
+Ca_df$year_end <- Ca_df$end_yr 
+
+Ca_df <- Ca_df[,c("lon","lat","z","year_start","year_end","Tg","Ci","Gstar","K")]
+#now, merge into df and combine
+Asat_all_final_removal_yes$year_start <- Asat_all_final_removal_yes$Start_Year
+Asat_all_final_removal_yes$year_end <- Asat_all_final_removal_yes$Sampling_Year
+Asat_all_final_removal_yes$year_start[Asat_all_final_removal_yes$year_end>2016] <- 2007
+Asat_all_final_removal_yes$year_end[Asat_all_final_removal_yes$year_end>2016] <- 2016
+summary(Asat_all_final_removal_yes)
+Asat_all_final_removal_yes_onepoint <- merge(Asat_all_final_removal_yes,Ca_df,by=c("lon","lat","z","year_start","year_end"),all.x=TRUE)
+summary(vcmax_all_final_Tg)
+
+Asat_all_final_removal_yes_onepoint$vcmax_a <-Asat_all_final_removal_yes_onepoint$ambient/((Asat_all_final_removal_yes_onepoint$Ci-Asat_all_final_removal_yes_onepoint$Gstar)/(Asat_all_final_removal_yes_onepoint$Ci+Asat_all_final_removal_yes_onepoint$K)-0.015)
+Asat_all_final_removal_yes_onepoint$vcmax25_a <- Asat_all_final_removal_yes_onepoint$vcmax_a*exp((65330/8.314)*((1/(273.15+Asat_all_final_removal_yes_onepoint$Tg))-(1/298.15)))
+
+Asat_all_final_removal_yes_onepoint$vcmax_e <-Asat_all_final_removal_yes_onepoint$elevated/((Asat_all_final_removal_yes_onepoint$Ci-Asat_all_final_removal_yes_onepoint$Gstar)/(Asat_all_final_removal_yes_onepoint$Ci+Asat_all_final_removal_yes_onepoint$K)-0.015)
+Asat_all_final_removal_yes_onepoint$vcmax25_e <- Asat_all_final_removal_yes_onepoint$elevated*exp((65330/8.314)*((1/(273.15+Asat_all_final_removal_yes_onepoint$Tg))-(1/298.15)))
+
+Asat_all_final_removal_yes_onepoint$response_ratio <- log(Asat_all_final_removal_yes_onepoint$vcmax25_e/Asat_all_final_removal_yes_onepoint$vcmax25_a)
+
+#now, final combination
+names(Asat_all_final_removal_yes_onepoint)
+names(vcmax_all_final_Tg)
+
+vcmax25_final <- dplyr::bind_rows(vcmax_all_final_Tg,Asat_all_final_removal_yes_onepoint)
+
+#finally, check unique basing on exp_nam, prev_name,ambient,elevated - removing them
+vcmax25_final2 <- vcmax25_final[!duplicated(vcmax25_final[c("exp_nam","prev_name","ambient","elevated")]),]
+
+#now, firstly look at co2 compulsory effect
+vcmax25_final2%>% group_by(treatment)  %>% summarise(number = n())
+vcmax25_final2$treatment_label[vcmax25_final2$treatment=="c"] <- "co2"
+vcmax25_final2$treatment_label[vcmax25_final2$treatment=="cd"] <- "co2 + drought"
+vcmax25_final2$treatment_label[vcmax25_final2$treatment=="cf"] <- "co2 + fertilization"
+vcmax25_final2$treatment_label[vcmax25_final2$treatment=="ci"] <- "co2 + irrigation"
+vcmax25_final2$treatment_label[vcmax25_final2$treatment=="cw"] <- "co2+ 1-degree warming"
+vcmax25_final2$treatment_label[vcmax25_final2$treatment=="cw3"] <- "co2+ 3-degree warming"
+vcmax25_final2$treatment_label[vcmax25_final2$treatment=="cwd"] <- "co2 + warming + drought"
+vcmax25_final2$treatment_label[vcmax25_final2$treatment=="d"] <- "drought"
+vcmax25_final2$treatment_label[vcmax25_final2$treatment=="f"] <- "fertilization"
+vcmax25_final2$treatment_label[vcmax25_final2$treatment=="i"] <- "irrigation"
+vcmax25_final2$treatment_label[vcmax25_final2$treatment=="w"] <- "1-degree warming"
+vcmax25_final2$treatment_label[vcmax25_final2$treatment=="w2"] <- " 2-degree warming "
+vcmax25_final2$treatment_label[vcmax25_final2$treatment=="wd"] <- "warming + drought"
+
+co2_only <- vcmax25_final2[grep("c", vcmax25_final2$treatment),]
+a1 <- ggplot(co2_only, aes(x=treatment_label, y=response_ratio)) +geom_jitter()+geom_boxplot(alpha=0.5,color="red")+
+  geom_hline( yintercept=0.0, size=0.5 ) +labs(y="Log response ratio", x = " ") +ylim(-3,3) +theme_classic()+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))
+  
+#ggsave(paste("~/data/output_gcme/test.jpg",sep=""),width = 30, height = 15)
+
+ggplot(vcmax25_final2, aes(x=treatment_label, y=response_ratio)) +geom_jitter()+geom_boxplot(alpha=0.5,color="red")+
+  geom_hline( yintercept=0.0, size=0.5 ) +labs(y="Log response ratio of vcmax25", x = " ") +ylim(-3,3) +theme_classic()+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
+ggsave(paste("~/data/output_gcme/test1.jpg",sep=""),width = 30, height = 15)
+
+aa <- subset(vcmax25_final2,treatment=="f")
+
+ggplot(subset(vcmax25_final2,treatment=="f"), aes(x=exp_nam, y=response_ratio)) +geom_jitter()+geom_boxplot(alpha=0.5,color="red")+
+  geom_hline( yintercept=0.0, size=0.5 ) +labs(y="Log response ratio of vcmax25", x = " ") +ylim(-3,3) +theme_classic()+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
+
+#aggregate by site
+vcmax25_final2_expnam <- aggregate(vcmax25_final2,by=list(vcmax25_final2$exp_nam,vcmax25_final2$treatment_label), FUN=mean, na.rm=TRUE)
+vcmax25_final2_expnam
+ggplot(vcmax25_final2_expnam, aes(x=Group.2, y=response_ratio)) +geom_jitter()+geom_boxplot(alpha=0.5,color="red")+
+  geom_hline( yintercept=0.0, size=0.5 ) +labs(y="Log response ratio of vcmax25", x = " ") +ylim(-3,3) +theme_classic()+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
+ggsave(paste("~/data/output_gcme/test2.jpg",sep=""),width = 30, height = 15)
+
