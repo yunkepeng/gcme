@@ -443,6 +443,9 @@ Asat_all_final_removal_yes_onepoint$response_ratio <- log(Asat_all_final_removal
 names(Asat_all_final_removal_yes_onepoint)
 names(vcmax_all_final_Tg)
 
+vcmax_all_final_Tg$method <- "vcmax"
+Asat_all_final_removal_yes_onepoint$method <- "asat"
+
 vcmax25_final <- dplyr::bind_rows(vcmax_all_final_Tg,Asat_all_final_removal_yes_onepoint)
 
 #finally, check unique basing on exp_nam, prev_name,ambient,elevated - removing them
@@ -476,8 +479,6 @@ ggplot(vcmax25_final2, aes(x=treatment_label, y=response_ratio)) +geom_jitter()+
   theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
 ggsave(paste("~/data/output_gcme/test1.jpg",sep=""),width = 30, height = 15)
 
-aa <- subset(vcmax25_final2,treatment=="f")
-
 ggplot(subset(vcmax25_final2,treatment=="f"), aes(x=exp_nam, y=response_ratio)) +geom_jitter()+geom_boxplot(alpha=0.5,color="red")+
   geom_hline( yintercept=0.0, size=0.5 ) +labs(y="Log response ratio of vcmax25", x = " ") +ylim(-3,3) +theme_classic()+
   theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
@@ -490,3 +491,511 @@ ggplot(vcmax25_final2_expnam, aes(x=Group.2, y=response_ratio)) +geom_jitter()+g
   theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
 ggsave(paste("~/data/output_gcme/test2.jpg",sep=""),width = 30, height = 15)
 
+
+
+#now, jmax!!
+#1.jmax25
+summary(Jmax25_all_final)
+Jmax25_all_final%>% group_by(exp_nam,treatment)  %>% summarise(number = n())
+#3 sites, 12 types
+
+#2.jmax
+summary(Jmax_all_final)
+Jmax_all_final%>% group_by(exp_nam,treatment)  %>% summarise(number = n())
+#lots of samples than jmax25 - so use jmax at the end
+#now, include Tg
+tmn_df <- read.csv("/Users/yunpeng/data/gcme/yunke_coord/climates/jmax_tmn.csv")
+tmx_df <- read.csv("/Users/yunpeng/data/gcme/yunke_coord/climates/jmax_tmx.csv")
+lat <- tmn_df$lat
+tmx <- tmx_df[,c(8:ncol(tmx_df))]
+tmn <- tmn_df[,c(8:ncol(tmn_df))]
+s1 <- (-23.1+ -17.3)/2
+s2 <- (-17.3 + -8)/2
+s3 <- (-8 + 4.1)/2
+s4 <- (4.1 + 14.8)/2
+s5 <- (14.8 + 21.9)/2
+s6 <- (21.9 + 23.2)/2
+s7 <- (23.2 + 18.3)/2
+s8 <- (18.3 + 8.6)/2
+s9 <-  (8.6 + -2.8)/2
+s10 <- (-2.8 + -14.1)/2
+s11 <- (-14.1 + -21.6)/2
+s12 <- (-21.6 + -23.1)/2
+
+s <- c(s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,s12)
+xx <- data.frame(matrix(nrow=nrow(tmx), ncol=ncol(tmx)))
+output_Tg <- data.frame(matrix(nrow=nrow(tmx), ncol=ncol(tmx)))
+#xx = acos(h), h = hour angle of the sun
+for (a in 1:12){ 
+  month_no <- seq(from = 1, to = ncol(tmx), by = 12)+a-1
+  xx[1:nrow(tmx),month_no] <- -tan(pi*lat/180)*tan(s[a]*pi/180)
+}
+
+#check each part of Tg formula
+part1 <- (0.5+((1-xx^2)^(0.5))/(2*acos(xx)))[,1:12]
+part2 <- (0.5-((1-xx^2)^(0.5))/(2*acos(xx)))[,1:12]
+summary(part1)
+summary(part2)
+
+#the percentage of tmx was dominated overall
+Tg_site <- tmx*(0.5+((1-xx^2)^(0.5))/(2*acos(xx)))+ tmn*(0.5-((1-xx^2)^(0.5))/(2*acos(xx)))
+Tg_site[Tg_site =="NaN"] <- NA
+Tg_site[Tg_site < 0] <- NA
+
+tmn_df$Tg <- rowMeans(Tg_site,na.rm=TRUE)
+Jmax_Tg <- tmn_df[,c("lon","lat","z","year_start","year_end","Tg")]
+
+#keep the design same as forcing
+Jmax_all_final$year_start <- Jmax_all_final$Start_Year
+Jmax_all_final$year_end <- Jmax_all_final$Sampling_Year
+Jmax_all_final$year_start[Jmax_all_final$year_end>2016] <- 2007
+Jmax_all_final$year_end[Jmax_all_final$year_end>2016] <- 2016
+
+Jmax_all_final_Tg <- merge(Jmax_all_final,Jmax_Tg,by=c("lon","lat","z","year_start","year_end"),all.x=TRUE)
+summary(Jmax_all_final_Tg)
+
+#now, calculate response ratio directly
+Jmax_all_final_Tg$Jmax25_a <- Jmax_all_final_Tg$ambient*exp((43540/8.314)*((1/(Jmax_all_final_Tg$Tg+273.15))-(1/298.15)))
+Jmax_all_final_Tg$Jmax25_e <- Jmax_all_final_Tg$elevated*exp((43540/8.314)*((1/(Jmax_all_final_Tg$Tg+273.15))-(1/298.15)))
+Jmax_all_final_Tg$response_ratio <- log(Jmax_all_final_Tg$Jmax25_e/Jmax_all_final_Tg$Jmax25_a)
+
+Jmax_all_final_Tg$Jmax_a <- Jmax_all_final_Tg$ambient
+Jmax_all_final_Tg$Jmax_e <- Jmax_all_final_Tg$elevated
+
+hist(Jmax_all_final_Tg$response_ratio)
+
+#now, decide which rest of Asat will be used then!
+Jmax_expnam <- Jmax_all_final_Tg%>% group_by(exp_nam,treatment)  %>% summarise(number = n())
+names(Jmax_expnam) <- c("exp_nam","treatment","number_Jmax")
+Amax_expnam <- Amax_all_final%>% group_by(exp_nam,treatment)  %>% summarise(number = n())
+names(Amax_expnam) <- c("exp_nam","treatment","number_Amax")
+
+Amax_need <- merge(Amax_expnam,Jmax_expnam,by=c("exp_nam","treatment"),all.x=TRUE)
+Amax_new <- subset(Amax_need,is.na(number_Jmax)==TRUE) #this plot are what vcmax didn't have - can be included anyways
+Amax_new_but_remove_Jmax <- subset(Amax_need,number_Amax-number_Jmax > 5) #this plot are what vcmax have but less than Asat - can be included but need to remove relevant one in vcmax so that it does not repeat!
+Amax_no_include <- subset(Amax_need,number_Amax-number_Jmax <= 5) #this plot are what vcmax have but more than Asat - we don't need such plot!
+# we set 5 here just make within plot data is complete either in Asat_no_include or Asat_new_but_remove_vcmax - otherwise if jut > or < than it will be mixed!
+#we can also set 10 if you want - just introducing more vcmax and less Asat - although numbers could be slightly less!
+
+#remove below plots in vcmax_all_final_Tg, before updating them
+Amax_new_but_remove_Jmax%>% group_by(exp_nam)  %>% summarise(number = number_Jmax)
+
+dim(subset(Jmax_all_final_Tg,exp_nam=="BioCON"))
+dim(subset(Jmax_all_final_Tg,exp_nam=="Brandbjerg"))
+dim(subset(Jmax_all_final_Tg,exp_nam=="DUKE"))
+dim(subset(Jmax_all_final_Tg,exp_nam=="FACTS_II_FACE3_pt"))
+dim(subset(Jmax_all_final_Tg,exp_nam=="Nevada_Desert_FACE"))# all consistent with below summary - safely remove them before adding new Asat
+
+Jmax_all_final_Tg_removal <- subset(Jmax_all_final_Tg,exp_nam!="BioCON" & exp_nam!="Brandbjerg"& exp_nam!="DUKE"& exp_nam!="FACTS_II_FACE3_pt"& exp_nam!="Nevada_Desert_FACE")
+dim(Jmax_all_final_Tg)-dim(Jmax_all_final_Tg_removal)
+
+#now, start processing Asat - firstly removing points that vcmax already included
+Amax_no_include$removal <- "removal"
+Amax_no_include_info <- Amax_no_include[,c("exp_nam","treatment","removal")]
+
+Amax_all_final_removal <- merge(Amax_all_final,Amax_no_include_info,by=c("exp_nam","treatment"),all.x=TRUE)
+Amax_all_final_removal_yes <- subset(Amax_all_final_removal,is.na(removal)==TRUE)
+dim(Amax_all_final_removal_yes)
+
+
+#now, include Tg
+tmn_df <- read.csv("/Users/yunpeng/data/gcme/yunke_coord/climates/Amax_tmn.csv")
+tmx_df <- read.csv("/Users/yunpeng/data/gcme/yunke_coord/climates/Amax_tmx.csv")
+lat <- tmn_df$lat
+tmx <- tmx_df[,c(8:ncol(tmx_df))]
+tmn <- tmn_df[,c(8:ncol(tmn_df))]
+s1 <- (-23.1+ -17.3)/2
+s2 <- (-17.3 + -8)/2
+s3 <- (-8 + 4.1)/2
+s4 <- (4.1 + 14.8)/2
+s5 <- (14.8 + 21.9)/2
+s6 <- (21.9 + 23.2)/2
+s7 <- (23.2 + 18.3)/2
+s8 <- (18.3 + 8.6)/2
+s9 <-  (8.6 + -2.8)/2
+s10 <- (-2.8 + -14.1)/2
+s11 <- (-14.1 + -21.6)/2
+s12 <- (-21.6 + -23.1)/2
+
+s <- c(s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,s12)
+xx <- data.frame(matrix(nrow=nrow(tmx), ncol=ncol(tmx)))
+output_Tg <- data.frame(matrix(nrow=nrow(tmx), ncol=ncol(tmx)))
+#xx = acos(h), h = hour angle of the sun
+for (a in 1:12){ 
+  month_no <- seq(from = 1, to = ncol(tmx), by = 12)+a-1
+  xx[1:nrow(tmx),month_no] <- -tan(pi*lat/180)*tan(s[a]*pi/180)
+}
+
+#check each part of Tg formula
+part1 <- (0.5+((1-xx^2)^(0.5))/(2*acos(xx)))[,1:12]
+part2 <- (0.5-((1-xx^2)^(0.5))/(2*acos(xx)))[,1:12]
+summary(part1)
+summary(part2)
+
+#the percentage of tmx was dominated overall
+Tg_site <- tmx*(0.5+((1-xx^2)^(0.5))/(2*acos(xx)))+ tmn*(0.5-((1-xx^2)^(0.5))/(2*acos(xx)))
+Tg_site[Tg_site =="NaN"] <- NA
+Tg_site[Tg_site < 0] <- NA
+
+tmn_df$Tg <- rowMeans(Tg_site,na.rm=TRUE)
+Amax_Tg <- tmn_df[,c("lon","lat","z","year_start","year_end","Tg")]
+
+#keep the design same as forcing
+Amax_all_final_removal_yes$year_start <- Amax_all_final_removal_yes$Start_Year
+Amax_all_final_removal_yes$year_end <- Amax_all_final_removal_yes$Sampling_Year
+Amax_all_final_removal_yes$year_start[Amax_all_final_removal_yes$year_end>2016] <- 2007
+Amax_all_final_removal_yes$year_end[Amax_all_final_removal_yes$year_end>2016] <- 2016
+
+Amax_all_final_Tg <- merge(Amax_all_final_removal_yes,Amax_Tg,by=c("lon","lat","z","year_start","year_end"),all.x=TRUE)
+summary(Amax_all_final_Tg)
+
+#now, calculate response ratio directly Amax * 4 = Jmax!!
+Amax_all_final_Tg$Jmax25_a <- Amax_all_final_Tg$ambient*4*exp((43540/8.314)*((1/(Amax_all_final_Tg$Tg+273.15))-(1/298.15)))
+Amax_all_final_Tg$Jmax25_e <- Amax_all_final_Tg$elevated*4*exp((43540/8.314)*((1/(Amax_all_final_Tg$Tg+273.15))-(1/298.15)))
+Amax_all_final_Tg$response_ratio <- log(Amax_all_final_Tg$Jmax25_e/Amax_all_final_Tg$Jmax25_a)
+
+Amax_all_final_Tg$Jmax_a <- Amax_all_final_Tg$ambient*4
+Amax_all_final_Tg$Jmax_e <- Amax_all_final_Tg$elevated*4
+
+names(Jmax_all_final_Tg_removal)
+names(Amax_all_final_Tg)
+Jmax_all_final_Tg_removal$method <- "jmax"
+Amax_all_final_Tg$method <- "amax"
+
+Jmax25_final <- dplyr::bind_rows(Jmax_all_final_Tg_removal,Amax_all_final_Tg)
+summary(Jmax25_final)
+
+
+#finally, check unique basing on exp_nam, prev_name,ambient,elevated - removing them
+Jmax25_final2 <- Jmax25_final[!duplicated(Jmax25_final[c("exp_nam","prev_name","ambient","elevated")]),]
+dim(Jmax25_final2)-dim(Jmax25_final)
+#now, firstly look at co2 compulsory effect
+Jmax25_final2%>% group_by(treatment)  %>% summarise(number = n())
+Jmax25_final2$treatment_label[Jmax25_final2$treatment=="c"] <- "co2"
+Jmax25_final2$treatment_label[Jmax25_final2$treatment=="cd"] <- "co2 + drought"
+Jmax25_final2$treatment_label[Jmax25_final2$treatment=="cf"] <- "co2 + fertilization"
+Jmax25_final2$treatment_label[Jmax25_final2$treatment=="ci"] <- "co2 + irrigation"
+Jmax25_final2$treatment_label[Jmax25_final2$treatment=="cw"] <- "co2+ 1-degree warming"
+Jmax25_final2$treatment_label[Jmax25_final2$treatment=="cw3"] <- "co2+ 3-degree warming"
+Jmax25_final2$treatment_label[Jmax25_final2$treatment=="cwd"] <- "co2 + warming + drought"
+Jmax25_final2$treatment_label[Jmax25_final2$treatment=="d"] <- "drought"
+Jmax25_final2$treatment_label[Jmax25_final2$treatment=="f"] <- "fertilization"
+Jmax25_final2$treatment_label[Jmax25_final2$treatment=="i"] <- "irrigation"
+Jmax25_final2$treatment_label[Jmax25_final2$treatment=="w"] <- "1-degree warming"
+Jmax25_final2$treatment_label[Jmax25_final2$treatment=="w2"] <- " 2-degree warming "
+Jmax25_final2$treatment_label[Jmax25_final2$treatment=="wd"] <- "warming + drought"
+
+ggplot(Jmax25_final2, aes(x=treatment_label, y=response_ratio)) +geom_jitter()+geom_boxplot(alpha=0.5,color="red")+
+  geom_hline( yintercept=0.0, size=0.5 ) +labs(y="Log response ratio of Jmax25", x = " ") +ylim(-3,3) +theme_classic()+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
+ggsave(paste("~/data/output_gcme/test3.jpg",sep=""),width = 30, height = 15)
+
+ggplot(subset(Jmax25_final2,treatment=="f"), aes(x=exp_nam, y=response_ratio)) +geom_jitter()+geom_boxplot(alpha=0.5,color="red")+
+  geom_hline( yintercept=0.0, size=0.5 ) +labs(y="Log response ratio of vcmax25", x = " ") +ylim(-3,3) +theme_classic()+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
+
+#aggregate by site
+Jmax25_final2_expnam <- aggregate(Jmax25_final2,by=list(Jmax25_final2$exp_nam,Jmax25_final2$treatment_label), FUN=mean, na.rm=TRUE)
+Jmax25_final2_expnam
+ggplot(Jmax25_final2_expnam, aes(x=Group.2, y=response_ratio)) +geom_jitter()+geom_boxplot(alpha=0.5,color="red")+
+  geom_hline( yintercept=0.0, size=0.5 ) +labs(y="Log response ratio of Jmax25", x = " ") +ylim(-3,3) +theme_classic()+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
+ggsave(paste("~/data/output_gcme/test4.jpg",sep=""),width = 30, height = 15)
+
+
+#attempt:
+#jmax only (after removal)
+ggplot(subset(Jmax25_final2,method=="jmax"), aes(x=treatment_label, y=response_ratio)) +geom_jitter()+geom_boxplot(alpha=0.5,color="red")+
+  geom_hline( yintercept=0.0, size=0.5 ) +labs(y="Log response ratio of Jmax25", x = " ") +ylim(-3,3) +theme_classic()+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
+#Amax only (after removal)
+ggplot(subset(Jmax25_final2,method=="amax"), aes(x=treatment_label, y=response_ratio)) +geom_jitter()+geom_boxplot(alpha=0.5,color="red")+
+  geom_hline( yintercept=0.0, size=0.5 ) +labs(y="Log response ratio of Jmax25", x = " ") +ylim(-3,3) +theme_classic()+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
+
+#include all original jmax
+ggplot(Jmax_all_final_Tg, aes(x=treatment, y=response_ratio)) +geom_jitter()+geom_boxplot(alpha=0.5,color="red")+
+  geom_hline( yintercept=0.0, size=0.5 ) +labs(y="Log response ratio of Jmax25", x = " ") +ylim(-3,3) +theme_classic()+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
+
+
+#now, start forcing
+#forcing R file was available at ~/yunkepeng/gcme/vcmax_forcing.R
+#forcing output was available in /Users/yunpeng/data/gcme/vcmax_forcing/
+#siteinfo was available in /Users/yunpeng/data/gcme/yunke_coord/forcing_vcmax.csv
+summary(vcmax25_final2)
+summary(Jmax25_final2)
+#c,cw,cw3,w,w2 were firstly selected to test its response in pmodel
+vcmax25_warmingco2 <- subset(vcmax25_final2,treatment=="c"|treatment=="cw"|treatment=="cw3"|treatment=="w"|treatment=="w2")
+Jmax25_warmingco2 <- subset(Jmax25_final2,treatment=="c"|treatment=="cw"|treatment=="cw3"|treatment=="w"|treatment=="w2")
+
+subset(vcmax25_final2,treatment=="c"|treatment=="cw"|treatment=="cw3") %>% group_by(co2_a,co2_e)  %>% summarise(number = n())
+subset(Jmax25_warmingco2,treatment=="c"|treatment=="cw"|treatment=="cw3") %>% group_by(co2_a,co2_e)  %>% summarise(number = n())
+
+subset(vcmax25_final2,treatment=="w"|treatment=="w2"|treatment=="cw"|treatment=="cw3") %>% group_by(warm_a,warm_e,warmQ_e)  %>% summarise(number = n())
+subset(Jmax25_warmingco2,treatment=="w"|treatment=="w2"|treatment=="cw"|treatment=="cw3") %>% group_by(warm_a,warm_e,warmQ_e)  %>% summarise(number = n())
+#using warm_e, about how many temperature increased
+
+#combine with siteinfo
+siteinfo <- read.csv("/Users/yunpeng/data/gcme/yunke_coord/forcing_vcmax.csv")
+siteinfo <- siteinfo[,c("lon","lat","elv","year_start","year_end","sitename")]
+names(siteinfo) <- c("lon","lat","z","year_start","year_end","sitename")
+vcmax25_warmingco2_siteinfo <- merge(vcmax25_warmingco2,siteinfo,by=c("lon","lat","z","year_start","year_end"),all.x=TRUE)
+Jmax25_warmingco2_siteinfo <- merge(Jmax25_warmingco2,siteinfo,by=c("lon","lat","z","year_start","year_end"),all.x=TRUE)
+
+#now, start p-model
+devtools::load_all("~/yunkepeng/gcme/pmodel/ingestr/")
+devtools::load_all("~/yunkepeng/gcme/pmodel/rsofun/")
+
+df_soiltexture <- bind_rows(
+  top    = tibble(layer = "top",    fsand = 0.4, fclay = 0.3, forg = 0.1, fgravel = 0.1),
+  bottom = tibble(layer = "bottom", fsand = 0.4, fclay = 0.3, forg = 0.1, fgravel = 0.1))
+params_modl <- list(
+  kphio           = 0.09423773,
+  soilm_par_a     = 0.33349283,
+  soilm_par_b     = 1.45602286,
+  tau_acclim_tempstress = 10,
+  par_shape_tempstress  = 0.0)
+
+forcing_path <- "/Users/yunpeng/data/gcme/vcmax_forcing/"
+vcmax25_warmingco2_siteinfo$elv <- vcmax25_warmingco2_siteinfo$z
+
+
+for (i in 1:nrow(vcmax25_warmingco2_siteinfo)){
+  siteinfo_site <- vcmax25_warmingco2_siteinfo[i,c("sitename","lon","lat","elv","year_start","year_end")]
+  sitename <- siteinfo_site$sitename
+    
+  df1 <- read.csv(paste(forcing_path,sitename,".csv",sep="")) # this is for ambient
+  df2 <- read.csv(paste(forcing_path,sitename,".csv",sep="")) # this is for elevated
+    
+  #Q1 - add warming directly
+  df2$temp <- df2$temp+vcmax25_warmingco2_siteinfo$warm_e[i]
+
+  #Q2 - if having co2 then replacing it directly - if not then using co2 at measurement year
+  if (is.na(vcmax25_warmingco2_siteinfo$co2_a[i])==TRUE|is.na(vcmax25_warmingco2_siteinfo$co2_e[i])==TRUE) { 
+      df1$co2 <- df1$co2
+      df2$co2 <- df2$co2
+    } else {
+      df1$co2 <- vcmax25_warmingco2_siteinfo$co2_a[i] # set to ambient 
+      df2$co2 <- vcmax25_warmingco2_siteinfo$co2_e[i] # set to elevated 
+    }
+    
+  modlist1 <- run_pmodel_f_bysite( 
+      sitename=sitename, 
+      params_siml <- list(#ambient
+        spinup             = TRUE,
+        spinupyears        = 10,
+        recycle            = 1,
+        soilmstress        = TRUE,
+        tempstress         = TRUE,
+        calc_aet_fapar_vpd = FALSE,
+        in_ppfd            = TRUE,
+        in_netrad          = FALSE,
+        outdt              = 1,
+        ltre               = FALSE,
+        ltne               = FALSE,
+        ltrd               = FALSE,
+        ltnd               = FALSE,
+        lgr3               = TRUE,
+        lgn3               = FALSE,
+        lgr4               = FALSE,
+        firstyeartrend = siteinfo_site$year_start,
+        nyeartrend = siteinfo_site$year_end-siteinfo_site$year_start+1), 
+      siteinfo = siteinfo_site, 
+      df1, 
+      df_soiltexture, 
+      params_modl = params_modl, 
+      makecheck = TRUE)
+    
+  modlist2 <- run_pmodel_f_bysite( #elevated
+      sitename=sitename, 
+      params_siml <- list(
+        spinup             = TRUE,
+        spinupyears        = 10,
+        recycle            = 1,
+        soilmstress        = TRUE,
+        tempstress         = TRUE,
+        calc_aet_fapar_vpd = FALSE,
+        in_ppfd            = TRUE,
+        in_netrad          = FALSE,
+        outdt              = 1,
+        ltre               = FALSE,
+        ltne               = FALSE,
+        ltrd               = FALSE,
+        ltnd               = FALSE,
+        lgr3               = TRUE,
+        lgn3               = FALSE,
+        lgr4               = FALSE,
+        firstyeartrend = siteinfo_site$year_start,
+        nyeartrend = siteinfo_site$year_end-siteinfo_site$year_start+1), 
+      siteinfo = siteinfo_site, 
+      df2, 
+      df_soiltexture, 
+      params_modl = params_modl, 
+      makecheck = TRUE)
+    
+  mean_vcmax25_ambient <- mean(modlist1$vcmax25)*1000000
+  mean_vcmax25_elevated <- mean(modlist2$vcmax25)*1000000
+  
+  #mean_vcmax25_ambient <- max(modlist1$vcmax25)*1000000
+  #mean_vcmax25_elevated <- max(modlist2$vcmax25)*1000000
+  
+  vcmax25_warmingco2_siteinfo$mean_vcmax25_ambient[i] <- mean_vcmax25_ambient
+  vcmax25_warmingco2_siteinfo$mean_vcmax25_elevated[i] <- mean_vcmax25_elevated
+  vcmax25_warmingco2_siteinfo$pred_response_ratio[i] <- log(vcmax25_warmingco2_siteinfo$mean_vcmax25_elevated[i]/vcmax25_warmingco2_siteinfo$mean_vcmax25_ambient[i])
+}
+
+
+# do the same for jmax
+summary(Jmax25_warmingco2_siteinfo)
+Jmax25_warmingco2_siteinfo$elv <- Jmax25_warmingco2_siteinfo$z
+
+
+for (i in 1:nrow(Jmax25_warmingco2_siteinfo)){
+  siteinfo_site <- Jmax25_warmingco2_siteinfo[i,c("sitename","lon","lat","elv","year_start","year_end")]
+  sitename <- siteinfo_site$sitename
+  
+  df1 <- read.csv(paste(forcing_path,sitename,".csv",sep="")) # this is for ambient
+  df2 <- read.csv(paste(forcing_path,sitename,".csv",sep="")) # this is for elevated
+  
+  #Q1 - add warming directly
+  df2$temp <- df2$temp+Jmax25_warmingco2_siteinfo$warm_e[i]
+  
+  #Q2 - if having co2 then replacing it directly - if not then using co2 at measurement year
+  if (is.na(Jmax25_warmingco2_siteinfo$co2_a[i])==TRUE|is.na(Jmax25_warmingco2_siteinfo$co2_e[i])==TRUE) { 
+    df1$co2 <- df1$co2
+    df2$co2 <- df2$co2
+  } else {
+    df1$co2 <- Jmax25_warmingco2_siteinfo$co2_a[i] # set to ambient 
+    df2$co2 <- Jmax25_warmingco2_siteinfo$co2_e[i] # set to elevated 
+  }
+  
+  modlist1 <- run_pmodel_f_bysite( 
+    sitename=sitename, 
+    params_siml <- list(#ambient
+      spinup             = TRUE,
+      spinupyears        = 10,
+      recycle            = 1,
+      soilmstress        = TRUE,
+      tempstress         = TRUE,
+      calc_aet_fapar_vpd = FALSE,
+      in_ppfd            = TRUE,
+      in_netrad          = FALSE,
+      outdt              = 1,
+      ltre               = FALSE,
+      ltne               = FALSE,
+      ltrd               = FALSE,
+      ltnd               = FALSE,
+      lgr3               = TRUE,
+      lgn3               = FALSE,
+      lgr4               = FALSE,
+      firstyeartrend = siteinfo_site$year_start,
+      nyeartrend = siteinfo_site$year_end-siteinfo_site$year_start+1), 
+    siteinfo = siteinfo_site, 
+    df1, 
+    df_soiltexture, 
+    params_modl = params_modl, 
+    makecheck = TRUE)
+  
+  modlist2 <- run_pmodel_f_bysite( #elevated
+    sitename=sitename, 
+    params_siml <- list(
+      spinup             = TRUE,
+      spinupyears        = 10,
+      recycle            = 1,
+      soilmstress        = TRUE,
+      tempstress         = TRUE,
+      calc_aet_fapar_vpd = FALSE,
+      in_ppfd            = TRUE,
+      in_netrad          = FALSE,
+      outdt              = 1,
+      ltre               = FALSE,
+      ltne               = FALSE,
+      ltrd               = FALSE,
+      ltnd               = FALSE,
+      lgr3               = TRUE,
+      lgn3               = FALSE,
+      lgr4               = FALSE,
+      firstyeartrend = siteinfo_site$year_start,
+      nyeartrend = siteinfo_site$year_end-siteinfo_site$year_start+1), 
+    siteinfo = siteinfo_site, 
+    df2, 
+    df_soiltexture, 
+    params_modl = params_modl, 
+    makecheck = TRUE)
+  
+  mean_jmax25_ambient <- mean(modlist1$jmax25)*1000000
+  mean_jmax25_elevated <- mean(modlist2$jmax25)*1000000
+  #mean_jmax25_ambient <- max(modlist1$jmax25)*1000000
+  #mean_jmax25_elevated <- max(modlist2$jmax25)*1000000
+  
+  Jmax25_warmingco2_siteinfo$mean_jmax25_ambient[i] <- mean_jmax25_ambient
+  Jmax25_warmingco2_siteinfo$mean_jmax25_elevated[i] <- mean_jmax25_elevated
+  Jmax25_warmingco2_siteinfo$pred_response_ratio[i] <- log(Jmax25_warmingco2_siteinfo$mean_jmax25_elevated[i]/Jmax25_warmingco2_siteinfo$mean_jmax25_ambient[i])
+}
+
+
+ggplot(subset(vcmax25_warmingco2_siteinfo,is.na(response_ratio)==FALSE), aes(x=treatment_label, y=response_ratio)) +geom_jitter()+
+  geom_boxplot(alpha=0.5,color="black")+
+  geom_boxplot(aes(x=treatment_label, y=pred_response_ratio),alpha=0.5,color="red") +
+  geom_hline( yintercept=0.0, size=0.5 ) +labs(y="Log response ratio of vcmax25", x = " ") +ylim(-3,3) +theme_classic()+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
+ggsave(paste("~/data/output_gcme/vcmax25_com.jpg",sep=""),width = 30, height = 15)
+
+aa <- subset(vcmax25_warmingco2_siteinfo,is.na(response_ratio)==FALSE)
+aaa <- aggregate(aa,by=list(aa$exp_nam,aa$treatment_label), FUN=mean, na.rm=TRUE)
+aaa
+ggplot(aaa, aes(x=Group.2 , y=response_ratio)) +geom_jitter()+
+  geom_boxplot(alpha=0.5,color="black")+
+  geom_boxplot(aes(x=Group.2 , y=pred_response_ratio),alpha=0.5,color="red") +
+  geom_hline( yintercept=0.0, size=0.5 ) +labs(y="Log response ratio of vcmax25", x = " ") +ylim(-3,3) +theme_classic()+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
+
+ggplot(subset(vcmax25_warmingco2_siteinfo,is.na(response_ratio)==FALSE &method=="vcmax"),
+       aes(x=treatment_label, y=response_ratio)) +geom_jitter()+
+  geom_boxplot(alpha=0.5,color="black")+
+  geom_boxplot(aes(x=treatment_label, y=pred_response_ratio),alpha=0.5,color="red") +
+  geom_hline( yintercept=0.0, size=0.5 ) +labs(y="vcmax25 from measured vcmax", x = " ") +ylim(-3,3) +theme_classic()+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
+ggsave(paste("~/data/output_gcme/vc25_vcmax.jpg",sep=""),width = 30, height = 15)
+
+ggplot(subset(vcmax25_warmingco2_siteinfo,is.na(response_ratio)==FALSE &method=="asat"),
+       aes(x=treatment_label, y=response_ratio)) +geom_jitter()+
+  geom_boxplot(alpha=0.5,color="black")+
+  geom_boxplot(aes(x=treatment_label, y=pred_response_ratio),alpha=0.5,color="red") +
+  geom_hline( yintercept=0.0, size=0.5 ) +labs(y="vcmax25 from measured Asat", x = " ") +ylim(-3,3) +theme_classic()+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
+ggsave(paste("~/data/output_gcme/vc25_asat.jpg",sep=""),width = 30, height = 15)
+
+
+ggplot(subset(Jmax25_warmingco2_siteinfo,is.na(response_ratio)==FALSE), aes(x=treatment_label, y=response_ratio)) +geom_jitter()+
+  geom_boxplot(alpha=0.5,color="black")+
+  geom_boxplot(aes(x=treatment_label, y=pred_response_ratio),alpha=0.5,color="red") +
+  geom_hline( yintercept=0.0, size=0.5 ) +labs(y="Log response ratio of Jmax25", x = " ") +ylim(-3,3) +theme_classic()+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
+ggsave(paste("~/data/output_gcme/jmax25_com.jpg",sep=""),width = 30, height = 15)
+
+ggplot(subset(Jmax25_warmingco2_siteinfo,is.na(response_ratio)==FALSE & method=="jmax"), aes(x=treatment_label, y=response_ratio)) +geom_jitter()+
+  geom_boxplot(alpha=0.5,color="black")+
+  geom_boxplot(aes(x=treatment_label, y=pred_response_ratio),alpha=0.5,color="red") +
+  geom_hline( yintercept=0.0, size=0.5 ) +labs(y="Jmax25 from jmax", x = " ") +ylim(-3,3) +theme_classic()+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
+ggsave(paste("~/data/output_gcme/jmax25_from_jmax.jpg",sep=""),width = 30, height = 15)
+
+ggplot(subset(Jmax25_warmingco2_siteinfo,is.na(response_ratio)==FALSE & method=="amax"), aes(x=treatment_label, y=response_ratio)) +geom_jitter()+
+  geom_boxplot(alpha=0.5,color="black")+
+  geom_boxplot(aes(x=treatment_label, y=pred_response_ratio),alpha=0.5,color="red") +
+  geom_hline( yintercept=0.0, size=0.5 ) +labs(y="Jmax25 from amax", x = " ") +ylim(-3,3) +theme_classic()+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
+ggsave(paste("~/data/output_gcme/jmax25_from_amax.jpg",sep=""),width = 30, height = 15)
+
+
+
+aa <- subset(Jmax25_warmingco2_siteinfo,is.na(response_ratio)==FALSE)
+aaa <- aggregate(aa,by=list(aa$exp_nam,aa$treatment_label), FUN=mean, na.rm=TRUE)
+aaa
+ggplot(aaa, aes(x=Group.2 , y=response_ratio)) +geom_jitter()+
+  geom_boxplot(alpha=0.5,color="black")+
+  geom_boxplot(aes(x=Group.2 , y=pred_response_ratio),alpha=0.5,color="red") +
+  geom_hline( yintercept=0.0, size=0.5 ) +labs(y="Log response ratio of Jmax25", x = " ") +ylim(-3,3) +theme_classic()+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()

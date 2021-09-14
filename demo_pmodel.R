@@ -55,8 +55,8 @@ params_modl <- list(
   par_shape_tempstress  = 0.0)
 
 forcing <- ddf_meteo
-forcing$tmax <- forcing$temp
-forcing$tmin <- forcing$temp
+forcing$co2 <- forcing$co2
+
 head(forcing)
 
 sitename <- "a1"
@@ -94,4 +94,4 @@ modlist <- run_pmodel_f_bysite(
   df_soiltexture, 
   params_modl = params_modl, 
   makecheck = TRUE)
-head(modlist)
+mean(modlist$jmax25)*1000000
