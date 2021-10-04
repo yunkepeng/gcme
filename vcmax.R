@@ -744,8 +744,12 @@ vcmax25_warmingco2_siteinfo <- merge(vcmax25_warmingco2,siteinfo,by=c("lon","lat
 Jmax25_warmingco2_siteinfo <- merge(Jmax25_warmingco2,siteinfo,by=c("lon","lat","z","year_start","year_end"),all.x=TRUE)
 
 #now, start p-model
-devtools::load_all("~/yunkepeng/gcme/pmodel/ingestr/")
+#devtools::load_all("~/yunkepeng/gcme/pmodel/ingestr/")
+
+#default inst_vcmax
 devtools::load_all("~/yunkepeng/gcme/pmodel/rsofun/")
+#changing to use adjusted parameters for inst_vcmax from Smith and Keenan 2020 GCB - doesn't change anything!
+#devtools::load_all("~/yunkepeng/gcme/pmodel_modified/rsofun/")
 
 df_soiltexture <- bind_rows(
   top    = tibble(layer = "top",    fsand = 0.4, fclay = 0.3, forg = 0.1, fgravel = 0.1),
@@ -836,15 +840,19 @@ for (i in 1:nrow(vcmax25_warmingco2_siteinfo)){
     
   mean_vcmax25_ambient <- mean(modlist1$vcmax25)*1000000
   mean_vcmax25_elevated <- mean(modlist2$vcmax25)*1000000
+  mean_vcmax_ambient <- mean(modlist1$vcmax)*1000000
+  mean_vcmax_elevated <- mean(modlist2$vcmax)*1000000
   
   #mean_vcmax25_ambient <- max(modlist1$vcmax25)*1000000
   #mean_vcmax25_elevated <- max(modlist2$vcmax25)*1000000
   
   vcmax25_warmingco2_siteinfo$mean_vcmax25_ambient[i] <- mean_vcmax25_ambient
   vcmax25_warmingco2_siteinfo$mean_vcmax25_elevated[i] <- mean_vcmax25_elevated
+  vcmax25_warmingco2_siteinfo$mean_vcmax_ambient[i] <- mean_vcmax_ambient
+  vcmax25_warmingco2_siteinfo$mean_vcmax_elevated[i] <- mean_vcmax_elevated
   vcmax25_warmingco2_siteinfo$pred_response_ratio[i] <- log(vcmax25_warmingco2_siteinfo$mean_vcmax25_elevated[i]/vcmax25_warmingco2_siteinfo$mean_vcmax25_ambient[i])
 }
-
+summary(vcmax25_warmingco2_siteinfo$pred_response_ratio)
 
 # do the same for jmax
 summary(Jmax25_warmingco2_siteinfo)
@@ -926,14 +934,22 @@ for (i in 1:nrow(Jmax25_warmingco2_siteinfo)){
   
   mean_jmax25_ambient <- mean(modlist1$jmax25)*1000000
   mean_jmax25_elevated <- mean(modlist2$jmax25)*1000000
+  mean_jmax_ambient <- mean(modlist1$jmax)*1000000
+  mean_jmax_elevated <- mean(modlist2$jmax)*1000000
   #mean_jmax25_ambient <- max(modlist1$jmax25)*1000000
   #mean_jmax25_elevated <- max(modlist2$jmax25)*1000000
   
   Jmax25_warmingco2_siteinfo$mean_jmax25_ambient[i] <- mean_jmax25_ambient
   Jmax25_warmingco2_siteinfo$mean_jmax25_elevated[i] <- mean_jmax25_elevated
+  Jmax25_warmingco2_siteinfo$mean_jmax_ambient[i] <- mean_jmax_ambient
+  Jmax25_warmingco2_siteinfo$mean_jmax_elevated[i] <- mean_jmax_elevated
   Jmax25_warmingco2_siteinfo$pred_response_ratio[i] <- log(Jmax25_warmingco2_siteinfo$mean_jmax25_elevated[i]/Jmax25_warmingco2_siteinfo$mean_jmax25_ambient[i])
 }
 
+#now, merge with ECM, AM...
+ECM_info <- leaf_all_coord[,c("exp_nam","prev_name","ALIAS","AM","EcM","ErM")]
+vcmax25_warmingco2_siteinfo_ECM <- merge(vcmax25_warmingco2_siteinfo,ECM_info,by=c("exp_nam","prev_name","ALIAS"),all.x=TRUE)
+#not too many data...
 
 ggplot(subset(vcmax25_warmingco2_siteinfo,is.na(response_ratio)==FALSE), aes(x=treatment_label, y=response_ratio)) +geom_jitter()+
   geom_boxplot(alpha=0.5,color="black")+
@@ -951,13 +967,45 @@ ggplot(aaa, aes(x=Group.2 , y=response_ratio)) +geom_jitter()+
   geom_hline( yintercept=0.0, size=0.5 ) +labs(y="Log response ratio of vcmax25", x = " ") +ylim(-3,3) +theme_classic()+
   theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
 
+
 ggplot(subset(vcmax25_warmingco2_siteinfo,is.na(response_ratio)==FALSE &method=="vcmax"),
        aes(x=treatment_label, y=response_ratio)) +geom_jitter()+
   geom_boxplot(alpha=0.5,color="black")+
   geom_boxplot(aes(x=treatment_label, y=pred_response_ratio),alpha=0.5,color="red") +
   geom_hline( yintercept=0.0, size=0.5 ) +labs(y="vcmax25 from measured vcmax", x = " ") +ylim(-3,3) +theme_classic()+
   theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
+
 ggsave(paste("~/data/output_gcme/vc25_vcmax.jpg",sep=""),width = 30, height = 15)
+
+#now, summarise temperature  
+subset(vcmax25_warmingco2_siteinfo,is.na(response_ratio)==FALSE
+       &method=="vcmax"&treatment=="cw")%>% group_by(exp_nam)  %>% summarise(number = n())
+subset(vcmax25_warmingco2_siteinfo,is.na(response_ratio)==FALSE
+       &method=="vcmax"&treatment=="w")%>% group_by(exp_nam)  %>% summarise(number = n())
+
+
+subset(vcmax25_warmingco2_siteinfo,is.na(response_ratio)==FALSE &method=="vcmax"&treatment=="w")[,c("exp_nam","year_start","year_end","Sampling_date")]
+
+ggplot(subset(vcmax25_warmingco2_siteinfo,is.na(response_ratio)==FALSE &method=="vcmax"&treatment=="w"),
+       aes(x=exp_nam, y=response_ratio)) +geom_jitter()+
+  geom_boxplot(alpha=0.5,color="black")+
+  geom_boxplot(aes(x=exp_nam, y=pred_response_ratio),alpha=0.5,color="red") +
+  geom_hline( yintercept=0.0, size=0.5 ) +labs(y="vcmax25: warming only", x = " ") +ylim(-3,3) +theme_classic()+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
+
+ggplot(subset(vcmax25_warmingco2_siteinfo,is.na(response_ratio)==FALSE &method=="vcmax"&treatment=="cw"),
+       aes(x=exp_nam, y=response_ratio)) +geom_jitter()+
+  geom_boxplot(alpha=0.5,color="black")+
+  geom_boxplot(aes(x=exp_nam, y=pred_response_ratio),alpha=0.5,color="red") +
+  geom_hline( yintercept=0.0, size=0.5 ) +labs(y="vcmax25: warming +co2", x = " ") +ylim(-3,3) +theme_classic()+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
+
+ggplot(subset(vcmax25_warmingco2_siteinfo,is.na(response_ratio)==FALSE &method=="vcmax"&treatment=="c"),
+       aes(x=exp_nam, y=response_ratio)) +geom_jitter()+
+  geom_boxplot(alpha=0.5,color="black")+
+  geom_boxplot(aes(x=exp_nam, y=pred_response_ratio),alpha=0.5,color="red") +
+  geom_hline( yintercept=0.0, size=0.5 ) +labs(y="vcmax25: co2", x = " ") +ylim(-3,3) +theme_classic()+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
 
 ggplot(subset(vcmax25_warmingco2_siteinfo,is.na(response_ratio)==FALSE &method=="asat"),
        aes(x=treatment_label, y=response_ratio)) +geom_jitter()+
@@ -999,3 +1047,48 @@ ggplot(aaa, aes(x=Group.2 , y=response_ratio)) +geom_jitter()+
   geom_boxplot(aes(x=Group.2 , y=pred_response_ratio),alpha=0.5,color="red") +
   geom_hline( yintercept=0.0, size=0.5 ) +labs(y="Log response ratio of Jmax25", x = " ") +ylim(-3,3) +theme_classic()+
   theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
+
+#now, do something about fertilization exp
+summary(vcmax25_final2)
+#c,cw,cw3,w,w2 were firstly selected to test its response in pmodel
+vcmax25_fertilization <- subset(vcmax25_final2,treatment=="f"|treatment=="cf")
+fer_name <- vcmax25_fertilization%>% group_by(exp_nam,treatment)  %>% summarise(number = n())
+
+
+LAI_all <- subset(df,Data_type=="LAI"|Data_type=="max_LAI"|Data_type=="maximum_LAI")
+LAI_all$LAI_response_ratio <- log(LAI_all$elevated/LAI_all$ambient)
+LAI_final <-LAI_all[,c("exp_nam","treatment","LAI_response_ratio")]
+LAI_final_sitemean <- aggregate(LAI_final,by=list(LAI_final$exp_nam,LAI_final$treatment),
+                 FUN=mean, na.rm=TRUE)
+LAI_final_sitemean <-LAI_final_sitemean[,c("Group.1","Group.2","LAI_response_ratio")]
+names(LAI_final_sitemean) <- c("exp_nam","treatment","LAI_response_ratio")
+LAI_final_sitemean
+
+vcmax25_fertilization_LAI <- merge(vcmax25_fertilization,LAI_final_sitemean,
+                                   by=c("exp_nam","treatment"),all.x=TRUE)
+vcmax25_fertilization_LAI_1 <- aggregate(vcmax25_fertilization_LAI,
+                                         by=list(vcmax25_fertilization_LAI$exp_nam,vcmax25_fertilization_LAI$treatment),
+                                FUN=mean, na.rm=TRUE)
+
+subset(vcmax25_fertilization_LAI_1,is.na(LAI_response_ratio)==FALSE)$Group.2
+length(subset(vcmax25_fertilization_LAI_1,is.na(LAI_response_ratio)==FALSE)$Group.1)
+dim(vcmax25_fertilization_LAI_1)
+
+#how about anpp?
+ANPP_all <- subset(df,Data_type=="ANPP")
+ANPP_all$ANPP_response_ratio <- log(ANPP_all$elevated/ANPP_all$ambient)
+ANPP_final <-ANPP_all[,c("exp_nam","treatment","ANPP_response_ratio")]
+ANPP_final_sitemean <- aggregate(ANPP_final,by=list(ANPP_final$exp_nam,ANPP_final$treatment),
+                                FUN=mean, na.rm=TRUE)
+ANPP_final_sitemean <-ANPP_final_sitemean[,c("Group.1","Group.2","ANPP_response_ratio")]
+names(ANPP_final_sitemean) <- c("exp_nam","treatment","ANPP_response_ratio")
+hist(ANPP_final_sitemean$ANPP_response_ratio)
+
+vcmax25_fertilization_ANPP <- merge(vcmax25_fertilization,ANPP_final_sitemean,
+                                   by=c("exp_nam","treatment"),all.x=TRUE)
+plot(response_ratio~ANPP_response_ratio,subset(vcmax25_fertilization_ANPP,treatment=="f"))
+
+vcmax25_fertilization_ANPP_1 <- aggregate(vcmax25_fertilization_ANPP,
+                                         by=list(vcmax25_fertilization_ANPP$exp_nam,vcmax25_fertilization_ANPP$treatment),
+                                         FUN=mean, na.rm=TRUE)
+plot(response_ratio~ANPP_response_ratio,vcmax25_fertilization_ANPP_1)

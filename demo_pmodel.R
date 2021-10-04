@@ -3,7 +3,8 @@ lon <- -1.32
 lat <- 51.46
 elv <- 124
 year_start <- 2008
-year_end <- 2008
+year_end <- 2012
+
 siteinfo2 <- data.frame(sitename,lon,lat,elv,year_start,year_end)
 
 devtools::load_all("~/yunkepeng/gcme/pmodel/ingestr/")
@@ -53,18 +54,9 @@ params_modl <- list(
   soilm_par_b     = 1.45602286,
   tau_acclim_tempstress = 10,
   par_shape_tempstress  = 0.0)
-
 forcing <- ddf_meteo
-forcing$co2 <- forcing$co2
-
 head(forcing)
 
-sitename <- "a1"
-lon <- -1.32
-lat <- 51.46
-elv <- 124
-year_start <- 2008
-year_end <- 2008
 
 siteinfo2 <- data.frame(sitename,lon,lat,elv,year_start,year_end)
 
