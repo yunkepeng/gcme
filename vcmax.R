@@ -297,31 +297,16 @@ Asat_expnam <- Asat_all_final%>% group_by(exp_nam,treatment)  %>% summarise(numb
 names(Asat_expnam) <- c("exp_nam","treatment","number_Asat")
 
 Asat_need <- merge(Asat_expnam,vcmax_expnam,by=c("exp_nam","treatment"),all.x=TRUE)
-Asat_new <- subset(Asat_need,is.na(number_vcmax)==TRUE) #this plot are what vcmax didn't have - can be included anyways
-Asat_new_but_remove_vcmax <- subset(Asat_need,number_Asat-number_vcmax > 5) #this plot are what vcmax have but less than Asat - can be included but need to remove relevant one in vcmax so that it does not repeat!
-Asat_no_include <- subset(Asat_need,number_Asat-number_vcmax <= 5) #this plot are what vcmax have but more than Asat - we don't need such plot!
-# we set 5 here just make within plot data is complete either in Asat_no_include or Asat_new_but_remove_vcmax - otherwise if jut > or < than it will be mixed!
-#we can also set 10 if you want - just introducing more vcmax and less Asat - although numbers could be slightly less!
+#now, create new definition - if having vcmax, even if its number is much less than Asat.
+Asat_need$method[is.na(Asat_need$number_vcmax)==TRUE] <- "Asat"
+Asat_need$method[is.na(Asat_need$number_vcmax)==FALSE] <- "vcmax"
 
-#remove below plots in vcmax_all_final_Tg, before updating them
-Asat_new_but_remove_vcmax%>% group_by(exp_nam)  %>% summarise(number = number_vcmax)
-
-dim(subset(vcmax_all_final_Tg,exp_nam=="BioCON"))
-dim(subset(vcmax_all_final_Tg,exp_nam=="Brandbjerg"))
-dim(subset(vcmax_all_final_Tg,exp_nam=="DUKE"))
-dim(subset(vcmax_all_final_Tg,exp_nam=="FACTS_II_FACE3_pt"))
-dim(subset(vcmax_all_final_Tg,exp_nam=="FACTS_II_FACE4_bp"))# all consistent with below summary - safely remove them before adding new Asat
-
-vcmax_all_final_Tg_removal <- subset(vcmax_all_final_Tg,exp_nam!="BioCON" & exp_nam!="Brandbjerg"& exp_nam!="DUKE"& exp_nam!="FACTS_II_FACE3_pt"& exp_nam!="FACTS_II_FACE4_bp")
-dim(vcmax_all_final_Tg_removal)
-
-#now, start processing Asat - firstly removing points that vcmax already included
-Asat_no_include$removal <- "removal"
-Asat_no_include_info <- Asat_no_include[,c("exp_nam","treatment","removal")]
+Asat_no_include_info <- Asat_need[,c("exp_nam","treatment","method")]
 
 Asat_all_final_removal <- merge(Asat_all_final,Asat_no_include_info,by=c("exp_nam","treatment"),all.x=TRUE)
-Asat_all_final_removal_yes <- subset(Asat_all_final_removal,is.na(removal)==TRUE)
-
+Asat_all_final_removal_yes <- subset(Asat_all_final_removal,method!="vcmax")
+dim(Asat_all_final_removal)
+dim(Asat_all_final_removal_yes) # 327 of 807 samples were selected, because rest of them was already included in vcmax dataset
 
 #now, start one-point method
 tmn_df <- read.csv("/Users/yunpeng/data/gcme/yunke_coord/climates/Asat_tmn.csv")
@@ -429,7 +414,6 @@ Asat_all_final_removal_yes$year_start[Asat_all_final_removal_yes$year_end>2016] 
 Asat_all_final_removal_yes$year_end[Asat_all_final_removal_yes$year_end>2016] <- 2016
 summary(Asat_all_final_removal_yes)
 Asat_all_final_removal_yes_onepoint <- merge(Asat_all_final_removal_yes,Ca_df,by=c("lon","lat","z","year_start","year_end"),all.x=TRUE)
-summary(vcmax_all_final_Tg)
 
 Asat_all_final_removal_yes_onepoint$vcmax_a <-Asat_all_final_removal_yes_onepoint$ambient/((Asat_all_final_removal_yes_onepoint$Ci-Asat_all_final_removal_yes_onepoint$Gstar)/(Asat_all_final_removal_yes_onepoint$Ci+Asat_all_final_removal_yes_onepoint$K)-0.015)
 Asat_all_final_removal_yes_onepoint$vcmax25_a <- Asat_all_final_removal_yes_onepoint$vcmax_a*exp((65330/8.314)*((1/(273.15+Asat_all_final_removal_yes_onepoint$Tg))-(1/298.15)))
@@ -445,6 +429,9 @@ names(vcmax_all_final_Tg)
 
 vcmax_all_final_Tg$method <- "vcmax"
 Asat_all_final_removal_yes_onepoint$method <- "asat"
+
+vcmax_all_final_Tg%>% group_by(exp_nam)  %>% summarise(number = n())
+Asat_all_final_removal_yes_onepoint%>% group_by(exp_nam)  %>% summarise(number = n())
 
 vcmax25_final <- dplyr::bind_rows(vcmax_all_final_Tg,Asat_all_final_removal_yes_onepoint)
 
@@ -564,6 +551,7 @@ Jmax_all_final_Tg$Jmax_e <- Jmax_all_final_Tg$elevated
 
 hist(Jmax_all_final_Tg$response_ratio)
 
+
 #now, decide which rest of Asat will be used then!
 Jmax_expnam <- Jmax_all_final_Tg%>% group_by(exp_nam,treatment)  %>% summarise(number = n())
 names(Jmax_expnam) <- c("exp_nam","treatment","number_Jmax")
@@ -571,33 +559,16 @@ Amax_expnam <- Amax_all_final%>% group_by(exp_nam,treatment)  %>% summarise(numb
 names(Amax_expnam) <- c("exp_nam","treatment","number_Amax")
 
 Amax_need <- merge(Amax_expnam,Jmax_expnam,by=c("exp_nam","treatment"),all.x=TRUE)
-Amax_new <- subset(Amax_need,is.na(number_Jmax)==TRUE) #this plot are what vcmax didn't have - can be included anyways
-Amax_new_but_remove_Jmax <- subset(Amax_need,number_Amax-number_Jmax > 5) #this plot are what vcmax have but less than Asat - can be included but need to remove relevant one in vcmax so that it does not repeat!
-Amax_no_include <- subset(Amax_need,number_Amax-number_Jmax <= 5) #this plot are what vcmax have but more than Asat - we don't need such plot!
-# we set 5 here just make within plot data is complete either in Asat_no_include or Asat_new_but_remove_vcmax - otherwise if jut > or < than it will be mixed!
-#we can also set 10 if you want - just introducing more vcmax and less Asat - although numbers could be slightly less!
+#now, create new definition - if having vcmax, even if its number is much less than Asat.
+Amax_need$method[is.na(Amax_need$number_Jmax)==TRUE] <- "Amax"
+Amax_need$method[is.na(Amax_need$number_Jmax)==FALSE] <- "Jmax"
 
-#remove below plots in vcmax_all_final_Tg, before updating them
-Amax_new_but_remove_Jmax%>% group_by(exp_nam)  %>% summarise(number = number_Jmax)
-
-dim(subset(Jmax_all_final_Tg,exp_nam=="BioCON"))
-dim(subset(Jmax_all_final_Tg,exp_nam=="Brandbjerg"))
-dim(subset(Jmax_all_final_Tg,exp_nam=="DUKE"))
-dim(subset(Jmax_all_final_Tg,exp_nam=="FACTS_II_FACE3_pt"))
-dim(subset(Jmax_all_final_Tg,exp_nam=="Nevada_Desert_FACE"))# all consistent with below summary - safely remove them before adding new Asat
-
-Jmax_all_final_Tg_removal <- subset(Jmax_all_final_Tg,exp_nam!="BioCON" & exp_nam!="Brandbjerg"& exp_nam!="DUKE"& exp_nam!="FACTS_II_FACE3_pt"& exp_nam!="Nevada_Desert_FACE")
-dim(Jmax_all_final_Tg)-dim(Jmax_all_final_Tg_removal)
-
-#now, start processing Asat - firstly removing points that vcmax already included
-Amax_no_include$removal <- "removal"
-Amax_no_include_info <- Amax_no_include[,c("exp_nam","treatment","removal")]
+Amax_no_include_info <- Amax_need[,c("exp_nam","treatment","method")]
 
 Amax_all_final_removal <- merge(Amax_all_final,Amax_no_include_info,by=c("exp_nam","treatment"),all.x=TRUE)
-Amax_all_final_removal_yes <- subset(Amax_all_final_removal,is.na(removal)==TRUE)
-dim(Amax_all_final_removal_yes)
-
-
+Amax_all_final_removal_yes <- subset(Amax_all_final_removal,method!="Jmax")
+dim(Amax_all_final_removal)
+dim(Amax_all_final_removal_yes) # 314 of 771 samples were selected, because rest of them was already included in Jmax dataset
 #now, include Tg
 tmn_df <- read.csv("/Users/yunpeng/data/gcme/yunke_coord/climates/Amax_tmn.csv")
 tmx_df <- read.csv("/Users/yunpeng/data/gcme/yunke_coord/climates/Amax_tmx.csv")
@@ -656,6 +627,8 @@ Amax_all_final_Tg$response_ratio <- log(Amax_all_final_Tg$Jmax25_e/Amax_all_fina
 
 Amax_all_final_Tg$Jmax_a <- Amax_all_final_Tg$ambient*4
 Amax_all_final_Tg$Jmax_e <- Amax_all_final_Tg$elevated*4
+
+Jmax_all_final_Tg_removal <- Jmax_all_final_Tg
 
 names(Jmax_all_final_Tg_removal)
 names(Amax_all_final_Tg)
@@ -1023,12 +996,33 @@ ggplot(subset(Jmax25_warmingco2_siteinfo,is.na(response_ratio)==FALSE), aes(x=tr
   theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
 ggsave(paste("~/data/output_gcme/jmax25_com.jpg",sep=""),width = 30, height = 15)
 
+
 ggplot(subset(Jmax25_warmingco2_siteinfo,is.na(response_ratio)==FALSE & method=="jmax"), aes(x=treatment_label, y=response_ratio)) +geom_jitter()+
   geom_boxplot(alpha=0.5,color="black")+
   geom_boxplot(aes(x=treatment_label, y=pred_response_ratio),alpha=0.5,color="red") +
   geom_hline( yintercept=0.0, size=0.5 ) +labs(y="Jmax25 from jmax", x = " ") +ylim(-3,3) +theme_classic()+
   theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
 ggsave(paste("~/data/output_gcme/jmax25_from_jmax.jpg",sep=""),width = 30, height = 15)
+
+
+#divide by plots
+ggplot(subset(Jmax25_warmingco2_siteinfo,is.na(response_ratio)==FALSE & method=="jmax"&treatment=="w"), aes(x=exp_nam, y=response_ratio)) +geom_jitter()+
+  geom_boxplot(alpha=0.5,color="black")+
+  geom_boxplot(aes(x=exp_nam, y=pred_response_ratio),alpha=0.5,color="red") +
+  geom_hline( yintercept=0.0, size=0.5 ) +labs(y="Log response ratio of Jmax25", x = " ") +ylim(-3,3) +theme_classic()+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
+
+ggplot(subset(Jmax25_warmingco2_siteinfo,is.na(response_ratio)==FALSE & method=="jmax"&treatment=="cw"), aes(x=exp_nam, y=response_ratio)) +geom_jitter()+
+  geom_boxplot(alpha=0.5,color="black")+
+  geom_boxplot(aes(x=exp_nam, y=pred_response_ratio),alpha=0.5,color="red") +
+  geom_hline( yintercept=0.0, size=0.5 ) +labs(y="Log response ratio of Jmax25", x = " ") +ylim(-3,3) +theme_classic()+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
+
+ggplot(subset(Jmax25_warmingco2_siteinfo,is.na(response_ratio)==FALSE & method=="jmax"&treatment=="c"), aes(x=exp_nam, y=response_ratio)) +geom_jitter()+
+  geom_boxplot(alpha=0.5,color="black")+
+  geom_boxplot(aes(x=exp_nam, y=pred_response_ratio),alpha=0.5,color="red") +
+  geom_hline( yintercept=0.0, size=0.5 ) +labs(y="Log response ratio of Jmax25", x = " ") +ylim(-3,3) +theme_classic()+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
 
 ggplot(subset(Jmax25_warmingco2_siteinfo,is.na(response_ratio)==FALSE & method=="amax"), aes(x=treatment_label, y=response_ratio)) +geom_jitter()+
   geom_boxplot(alpha=0.5,color="black")+
@@ -1092,3 +1086,79 @@ vcmax25_fertilization_ANPP_1 <- aggregate(vcmax25_fertilization_ANPP,
                                          by=list(vcmax25_fertilization_ANPP$exp_nam,vcmax25_fertilization_ANPP$treatment),
                                          FUN=mean, na.rm=TRUE)
 plot(response_ratio~ANPP_response_ratio,vcmax25_fertilization_ANPP_1)
+
+
+#how about leaf N
+#how about anpp?
+leaf_N <- subset(df,Data_type=="leaf_N")
+leaf_N$leafN_response_ratio <- log(leaf_N$elevated/leaf_N$ambient)
+leaf_N <-leaf_N[,c("exp_nam","treatment","leafN_response_ratio")]
+leaf_N_sitemean <- aggregate(leaf_N,by=list(leaf_N$exp_nam,leaf_N$treatment),
+                                 FUN=mean, na.rm=TRUE)
+dim(leaf_N_sitemean)
+leaf_N_sitemean <-leaf_N_sitemean[,c("Group.1","Group.2","leafN_response_ratio")]
+names(leaf_N_sitemean) <- c("exp_nam","treatment","leafN_response_ratio")
+hist(leaf_N_sitemean$leafN_response_ratio)
+
+vcmax25_final2_leafN <- merge(vcmax25_final2,leaf_N_sitemean,
+                                    by=c("exp_nam","treatment"),all.x=TRUE)
+
+ggplot(leaf_N, aes(x=treatment, y=leafN_response_ratio)) +geom_jitter()+geom_boxplot(alpha=0.5,color="red")+
+  geom_hline( yintercept=0.0, size=0.5 ) +labs(y="Log response ratio of leaf N", x = " ") +ylim(-3,3) +theme_classic()+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
+
+
+ggplot(subset(vcmax25_final2_leafN,is.na(response_ratio)==FALSE & method=="vcmax"&treatment=="c"&is.na(leafN_response_ratio)==FALSE),
+       aes(x=exp_nam, y=response_ratio)) +
+  geom_boxplot(aes(x=exp_nam, y=response_ratio),alpha=0.5,color="red") +
+  geom_boxplot(aes(x=exp_nam, y=leafN_response_ratio),alpha=0.5,color="blue") +
+  geom_hline( yintercept=0.0, size=0.5 ) +labs(y="Log response ratio of vcmax25 and leaf N", x = " ") +ylim(-3,3) +theme_classic()+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
+
+ggplot(subset(vcmax25_final2_leafN,is.na(response_ratio)==FALSE & method=="vcmax"&treatment=="w"&is.na(leafN_response_ratio)==FALSE),
+       aes(x=exp_nam, y=response_ratio)) +
+  geom_boxplot(aes(x=exp_nam, y=response_ratio),alpha=0.5,color="red") +
+  geom_boxplot(aes(x=exp_nam, y=leafN_response_ratio),alpha=0.5,color="blue") +
+  geom_hline( yintercept=0.0, size=0.5 ) +labs(y="Log response ratio of vcmax25 and leaf N", x = " ") +ylim(-3,3) +theme_classic()+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
+
+ggplot(subset(vcmax25_final2_leafN,is.na(response_ratio)==FALSE & method=="vcmax"&treatment=="f"&is.na(leafN_response_ratio)==FALSE),
+       aes(x=exp_nam, y=response_ratio)) +
+  geom_boxplot(aes(x=exp_nam, y=response_ratio),alpha=0.5,color="red") +
+  geom_boxplot(aes(x=exp_nam, y=leafN_response_ratio),alpha=0.5,color="blue") +
+  geom_hline( yintercept=0.0, size=0.5 ) +labs(y="Log response ratio of vcmax25 and leaf N", x = " ") +ylim(-3,3) +theme_classic()+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
+
+Jmax25_final2_leafN <- merge(Jmax25_final2,leaf_N_sitemean,
+                              by=c("exp_nam","treatment"),all.x=TRUE)
+
+Vcmax25_final2_LAI <- merge(vcmax25_final2,LAI_final_sitemean,
+                             by=c("exp_nam","treatment"),all.x=TRUE)
+Vcmax25_final2_ANPP <- merge(vcmax25_final2,ANPP_final_sitemean,
+                            by=c("exp_nam","treatment"),all.x=TRUE)
+ggplot(subset(Vcmax25_final2_ANPP,is.na(ANPP_response_ratio)==FALSE &treatment=="cf"&is.na(ANPP_response_ratio)==FALSE),
+       aes(x=exp_nam, y=response_ratio)) +
+  geom_boxplot(aes(x=exp_nam, y=response_ratio),alpha=0.5,color="red") +
+  geom_boxplot(aes(x=exp_nam, y=ANPP_response_ratio),alpha=0.5,color="blue") +
+  geom_hline( yintercept=0.0, size=0.5 ) +labs(y="Log response ratio of vcmax25 and LAI under N fer + co2", x = " ") +ylim(-3,3) +theme_classic()+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
+
+#how about leaf area
+LA <- subset(df,Data_type=="leaf_area"|Data_type=="leaf_area_")
+LA$LA_response_ratio <- log(LA$elevated/LA$ambient)
+LA <-LA[,c("exp_nam","treatment","LA_response_ratio")]
+LA_sitemean <- aggregate(LA,by=list(LA$exp_nam,LA$treatment),
+                             FUN=mean, na.rm=TRUE)
+dim(LA_sitemean)
+LA_sitemean <-LA_sitemean[,c("Group.1","Group.2","LA_response_ratio")]
+names(LA_sitemean) <- c("exp_nam","treatment","LA_response_ratio")
+hist(LA_sitemean$LA_response_ratio)
+
+vcmax25_final2_LA <- merge(vcmax25_final2,LA_sitemean,
+                              by=c("exp_nam","treatment"),all.x=TRUE)
+ggplot(subset(vcmax25_final2_LA,is.na(response_ratio)==FALSE &treatment=="c"&is.na(LA_response_ratio)==FALSE),
+       aes(x=exp_nam, y=response_ratio)) +
+  geom_boxplot(aes(x=exp_nam, y=response_ratio),alpha=0.5,color="red") +
+  geom_boxplot(aes(x=exp_nam, y=LA_response_ratio),alpha=0.5,color="blue") +
+  geom_hline( yintercept=0.0, size=0.5 ) +labs(y="Log response ratio of vcmax25 and LAI", x = " ") +ylim(-3,3) +theme_classic()+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
