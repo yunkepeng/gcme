@@ -3,6 +3,26 @@ library(dplyr)
 library(metafor)  
 library(ggplot2)
 library(stringr)
+library(tidyverse) 
+library(ncmeta)
+library(viridis)
+library(ggthemes)
+library(LSD)
+library(yardstick)
+library(ggplot2)
+library(RColorBrewer)
+library(dplyr)
+library(gplots)
+library(tidyselect)
+library(extrafont)
+library(rbeni)
+library(raster)
+library(maps)
+library(rworldmap)
+library(cowplot)
+library(ncdf4)
+library(scales)
+library(ggpubr)
 df <- read_csv("~/data/gcme/data_received_190325/NewData_wide_CORRECTED2.csv") %>%
   mutate( ambient_Sd  = as.numeric(ambient_Sd),  ambient_Se  = as.numeric(ambient_Se), 
           elevated_Sd = as.numeric(elevated_Sd), elevated_Se = as.numeric(elevated_Se) )
@@ -280,14 +300,26 @@ vcmax_all_final$year_end[vcmax_all_final$year_end>2016] <- 2016
 vcmax_all_final_Tg <- merge(vcmax_all_final,vcmax_Tg,by=c("lon","lat","z","year_start","year_end"),all.x=TRUE)
 summary(vcmax_all_final_Tg)
 
+
+
 #now, calculate response ratio directly
 vcmax_all_final_Tg$vcmax25_a <- vcmax_all_final_Tg$ambient*exp((65330/8.314)*((1/(vcmax_all_final_Tg$Tg+273.15))-(1/298.15)))
 vcmax_all_final_Tg$vcmax25_e <- vcmax_all_final_Tg$elevated*exp((65330/8.314)*((1/(vcmax_all_final_Tg$Tg+273.15))-(1/298.15)))
 vcmax_all_final_Tg$response_ratio <- log(vcmax_all_final_Tg$vcmax25_e/vcmax_all_final_Tg$vcmax25_a)
 
+#use alternative way (kattge and Knorr, 2007) - assume Tcgrowth = Tleaf = Tg
+tcgrowth <- vcmax_all_final_Tg$Tg + 273.15
+tkleaf <- vcmax_all_final_Tg$Tg + 273.15
+dent <-  668.39-1.07*tcgrowth
+fva <- exp( 71513 * (tkleaf - 298.15) / (298.15 * 8.3145 * tkleaf) )
+fvb <- (1.0 + exp( (298.15 * dent - 200000)/(8.3145 * 298.15) ) ) / (1.0 + exp( (tkleaf * dent - 200000)/(8.3145 * tkleaf) ) )
+fv  <- fva * fvb
+vcmax_all_final_Tg$vcmax25_a_inst <- vcmax_all_final_Tg$ambient/fv
+vcmax_all_final_Tg$vcmax25_e_inst <- vcmax_all_final_Tg$elevated/fv
+vcmax_all_final_Tg$response_ratio_inst <- log(vcmax_all_final_Tg$vcmax25_e_inst/vcmax_all_final_Tg$vcmax25_a_inst)
 vcmax_all_final_Tg$vcmax_a <- vcmax_all_final_Tg$ambient
 vcmax_all_final_Tg$vcmax_e <- vcmax_all_final_Tg$elevated
-
+#nothing changed here...just update the formula..
 hist(vcmax_all_final_Tg$response_ratio)
 
 #now, decide which rest of Asat will be used then!
@@ -946,9 +978,9 @@ ggplot(subset(vcmax25_warmingco2_siteinfo,is.na(response_ratio)==FALSE &method==
   geom_boxplot(alpha=0.5,color="black")+
   geom_boxplot(aes(x=treatment_label, y=pred_response_ratio),alpha=0.5,color="red") +
   geom_hline( yintercept=0.0, size=0.5 ) +labs(y="vcmax25 from measured vcmax", x = " ") +ylim(-3,3) +theme_classic()+
-  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
+  theme(axis.text=element_text(size=40),axis.title =element_text(size=20))+coord_flip()
 
-ggsave(paste("~/data/output_gcme/vc25_vcmax.jpg",sep=""),width = 30, height = 15)
+ggsave(paste("~/data/output_gcme/vc25_vcmax.jpg",sep=""),width = 15, height = 15)
 
 #now, summarise temperature  
 subset(vcmax25_warmingco2_siteinfo,is.na(response_ratio)==FALSE
@@ -965,6 +997,8 @@ ggplot(subset(vcmax25_warmingco2_siteinfo,is.na(response_ratio)==FALSE &method==
   geom_boxplot(aes(x=exp_nam, y=pred_response_ratio),alpha=0.5,color="red") +
   geom_hline( yintercept=0.0, size=0.5 ) +labs(y="vcmax25: warming only", x = " ") +ylim(-3,3) +theme_classic()+
   theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
+ggsave(paste("~/data/output_gcme/vc25_vcmax_warming.jpg",sep=""),width = 15, height = 15)
+
 
 ggplot(subset(vcmax25_warmingco2_siteinfo,is.na(response_ratio)==FALSE &method=="vcmax"&treatment=="cw"),
        aes(x=exp_nam, y=response_ratio)) +geom_jitter()+
@@ -972,6 +1006,7 @@ ggplot(subset(vcmax25_warmingco2_siteinfo,is.na(response_ratio)==FALSE &method==
   geom_boxplot(aes(x=exp_nam, y=pred_response_ratio),alpha=0.5,color="red") +
   geom_hline( yintercept=0.0, size=0.5 ) +labs(y="vcmax25: warming +co2", x = " ") +ylim(-3,3) +theme_classic()+
   theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
+ggsave(paste("~/data/output_gcme/vc25_vcmax_warming_co2.jpg",sep=""),width = 15, height = 15)
 
 ggplot(subset(vcmax25_warmingco2_siteinfo,is.na(response_ratio)==FALSE &method=="vcmax"&treatment=="c"),
        aes(x=exp_nam, y=response_ratio)) +geom_jitter()+
@@ -979,30 +1014,31 @@ ggplot(subset(vcmax25_warmingco2_siteinfo,is.na(response_ratio)==FALSE &method==
   geom_boxplot(aes(x=exp_nam, y=pred_response_ratio),alpha=0.5,color="red") +
   geom_hline( yintercept=0.0, size=0.5 ) +labs(y="vcmax25: co2", x = " ") +ylim(-3,3) +theme_classic()+
   theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
+ggsave(paste("~/data/output_gcme/vc25_vcmax_co2.jpg",sep=""),width = 15, height = 15)
 
 ggplot(subset(vcmax25_warmingco2_siteinfo,is.na(response_ratio)==FALSE &method=="asat"),
        aes(x=treatment_label, y=response_ratio)) +geom_jitter()+
   geom_boxplot(alpha=0.5,color="black")+
   geom_boxplot(aes(x=treatment_label, y=pred_response_ratio),alpha=0.5,color="red") +
   geom_hline( yintercept=0.0, size=0.5 ) +labs(y="vcmax25 from measured Asat", x = " ") +ylim(-3,3) +theme_classic()+
-  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
-ggsave(paste("~/data/output_gcme/vc25_asat.jpg",sep=""),width = 30, height = 15)
+  theme(axis.text=element_text(size=30),axis.title =element_text(size=20))+coord_flip()
+ggsave(paste("~/data/output_gcme/vc25_asat.jpg",sep=""),width = 15, height = 15)
 
 
 ggplot(subset(Jmax25_warmingco2_siteinfo,is.na(response_ratio)==FALSE), aes(x=treatment_label, y=response_ratio)) +geom_jitter()+
   geom_boxplot(alpha=0.5,color="black")+
   geom_boxplot(aes(x=treatment_label, y=pred_response_ratio),alpha=0.5,color="red") +
   geom_hline( yintercept=0.0, size=0.5 ) +labs(y="Log response ratio of Jmax25", x = " ") +ylim(-3,3) +theme_classic()+
-  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
-ggsave(paste("~/data/output_gcme/jmax25_com.jpg",sep=""),width = 30, height = 15)
+  theme(axis.text=element_text(size=30),axis.title =element_text(size=30))+coord_flip()
+ggsave(paste("~/data/output_gcme/jmax25_com.jpg",sep=""),width = 15, height = 15)
 
 
 ggplot(subset(Jmax25_warmingco2_siteinfo,is.na(response_ratio)==FALSE & method=="jmax"), aes(x=treatment_label, y=response_ratio)) +geom_jitter()+
   geom_boxplot(alpha=0.5,color="black")+
   geom_boxplot(aes(x=treatment_label, y=pred_response_ratio),alpha=0.5,color="red") +
   geom_hline( yintercept=0.0, size=0.5 ) +labs(y="Jmax25 from jmax", x = " ") +ylim(-3,3) +theme_classic()+
-  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
-ggsave(paste("~/data/output_gcme/jmax25_from_jmax.jpg",sep=""),width = 30, height = 15)
+  theme(axis.text=element_text(size=30),axis.title =element_text(size=30))+coord_flip()
+ggsave(paste("~/data/output_gcme/jmax25_from_jmax.jpg",sep=""),width = 15, height = 15)
 
 
 #divide by plots
@@ -1010,26 +1046,29 @@ ggplot(subset(Jmax25_warmingco2_siteinfo,is.na(response_ratio)==FALSE & method==
   geom_boxplot(alpha=0.5,color="black")+
   geom_boxplot(aes(x=exp_nam, y=pred_response_ratio),alpha=0.5,color="red") +
   geom_hline( yintercept=0.0, size=0.5 ) +labs(y="Log response ratio of Jmax25", x = " ") +ylim(-3,3) +theme_classic()+
-  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=30))+coord_flip()
+ggsave(paste("~/data/output_gcme/jmax25_from_jmax_warming.jpg",sep=""),width = 15, height = 15)
 
 ggplot(subset(Jmax25_warmingco2_siteinfo,is.na(response_ratio)==FALSE & method=="jmax"&treatment=="cw"), aes(x=exp_nam, y=response_ratio)) +geom_jitter()+
   geom_boxplot(alpha=0.5,color="black")+
   geom_boxplot(aes(x=exp_nam, y=pred_response_ratio),alpha=0.5,color="red") +
   geom_hline( yintercept=0.0, size=0.5 ) +labs(y="Log response ratio of Jmax25", x = " ") +ylim(-3,3) +theme_classic()+
   theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
+ggsave(paste("~/data/output_gcme/jmax25_from_jmax_warming_co2.jpg",sep=""),width = 15, height = 15)
 
 ggplot(subset(Jmax25_warmingco2_siteinfo,is.na(response_ratio)==FALSE & method=="jmax"&treatment=="c"), aes(x=exp_nam, y=response_ratio)) +geom_jitter()+
   geom_boxplot(alpha=0.5,color="black")+
   geom_boxplot(aes(x=exp_nam, y=pred_response_ratio),alpha=0.5,color="red") +
   geom_hline( yintercept=0.0, size=0.5 ) +labs(y="Log response ratio of Jmax25", x = " ") +ylim(-3,3) +theme_classic()+
   theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
+ggsave(paste("~/data/output_gcme/jmax25_from_jmax_co2.jpg",sep=""),width = 15, height = 15)
 
 ggplot(subset(Jmax25_warmingco2_siteinfo,is.na(response_ratio)==FALSE & method=="amax"), aes(x=treatment_label, y=response_ratio)) +geom_jitter()+
   geom_boxplot(alpha=0.5,color="black")+
   geom_boxplot(aes(x=treatment_label, y=pred_response_ratio),alpha=0.5,color="red") +
   geom_hline( yintercept=0.0, size=0.5 ) +labs(y="Jmax25 from amax", x = " ") +ylim(-3,3) +theme_classic()+
-  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
-ggsave(paste("~/data/output_gcme/jmax25_from_amax.jpg",sep=""),width = 30, height = 15)
+  theme(axis.text=element_text(size=30),axis.title =element_text(size=30))+coord_flip()
+ggsave(paste("~/data/output_gcme/jmax25_from_amax.jpg",sep=""),width = 15, height = 15)
 
 
 
@@ -1091,6 +1130,8 @@ plot(response_ratio~ANPP_response_ratio,vcmax25_fertilization_ANPP_1)
 #how about leaf N
 #how about anpp?
 leaf_N <- subset(df,Data_type=="leaf_N")
+unit_leafN <- leaf_N%>% group_by(Unit)  %>% summarise(number = n())
+
 leaf_N$leafN_response_ratio <- log(leaf_N$elevated/leaf_N$ambient)
 leaf_N <-leaf_N[,c("exp_nam","treatment","leafN_response_ratio")]
 leaf_N_sitemean <- aggregate(leaf_N,by=list(leaf_N$exp_nam,leaf_N$treatment),
@@ -1106,28 +1147,32 @@ vcmax25_final2_leafN <- merge(vcmax25_final2,leaf_N_sitemean,
 ggplot(leaf_N, aes(x=treatment, y=leafN_response_ratio)) +geom_jitter()+geom_boxplot(alpha=0.5,color="red")+
   geom_hline( yintercept=0.0, size=0.5 ) +labs(y="Log response ratio of leaf N", x = " ") +ylim(-3,3) +theme_classic()+
   theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
+ggsave(paste("~/data/output_gcme/leafN.jpg",sep=""),width = 15, height = 15)
 
 
-ggplot(subset(vcmax25_final2_leafN,is.na(response_ratio)==FALSE & method=="vcmax"&treatment=="c"&is.na(leafN_response_ratio)==FALSE),
+ggplot(subset(vcmax25_final2_leafN, method=="vcmax"&treatment=="c"),
        aes(x=exp_nam, y=response_ratio)) +
   geom_boxplot(aes(x=exp_nam, y=response_ratio),alpha=0.5,color="red") +
   geom_boxplot(aes(x=exp_nam, y=leafN_response_ratio),alpha=0.5,color="blue") +
   geom_hline( yintercept=0.0, size=0.5 ) +labs(y="Log response ratio of vcmax25 and leaf N", x = " ") +ylim(-3,3) +theme_classic()+
   theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
+ggsave(paste("~/data/output_gcme/vcmax25_leafN_co2.jpg",sep=""),width = 15, height = 15)
 
-ggplot(subset(vcmax25_final2_leafN,is.na(response_ratio)==FALSE & method=="vcmax"&treatment=="w"&is.na(leafN_response_ratio)==FALSE),
+ggplot(subset(vcmax25_final2_leafN, method=="vcmax"&treatment=="w"),
        aes(x=exp_nam, y=response_ratio)) +
   geom_boxplot(aes(x=exp_nam, y=response_ratio),alpha=0.5,color="red") +
   geom_boxplot(aes(x=exp_nam, y=leafN_response_ratio),alpha=0.5,color="blue") +
   geom_hline( yintercept=0.0, size=0.5 ) +labs(y="Log response ratio of vcmax25 and leaf N", x = " ") +ylim(-3,3) +theme_classic()+
   theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
+ggsave(paste("~/data/output_gcme/vcmax25_leafN_warming.jpg",sep=""),width = 15, height = 15)
 
-ggplot(subset(vcmax25_final2_leafN,is.na(response_ratio)==FALSE & method=="vcmax"&treatment=="f"&is.na(leafN_response_ratio)==FALSE),
+ggplot(subset(vcmax25_final2_leafN, treatment=="f"),
        aes(x=exp_nam, y=response_ratio)) +
   geom_boxplot(aes(x=exp_nam, y=response_ratio),alpha=0.5,color="red") +
   geom_boxplot(aes(x=exp_nam, y=leafN_response_ratio),alpha=0.5,color="blue") +
   geom_hline( yintercept=0.0, size=0.5 ) +labs(y="Log response ratio of vcmax25 and leaf N", x = " ") +ylim(-3,3) +theme_classic()+
   theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
+ggsave(paste("~/data/output_gcme/vcmax25_all_leafN_fertilization.jpg",sep=""),width = 15, height = 15)
 
 Jmax25_final2_leafN <- merge(Jmax25_final2,leaf_N_sitemean,
                               by=c("exp_nam","treatment"),all.x=TRUE)
@@ -1136,12 +1181,21 @@ Vcmax25_final2_LAI <- merge(vcmax25_final2,LAI_final_sitemean,
                              by=c("exp_nam","treatment"),all.x=TRUE)
 Vcmax25_final2_ANPP <- merge(vcmax25_final2,ANPP_final_sitemean,
                             by=c("exp_nam","treatment"),all.x=TRUE)
-ggplot(subset(Vcmax25_final2_ANPP,is.na(ANPP_response_ratio)==FALSE &treatment=="cf"&is.na(ANPP_response_ratio)==FALSE),
+ggplot(subset(Vcmax25_final2_ANPP,treatment=="f"),
        aes(x=exp_nam, y=response_ratio)) +
   geom_boxplot(aes(x=exp_nam, y=response_ratio),alpha=0.5,color="red") +
   geom_boxplot(aes(x=exp_nam, y=ANPP_response_ratio),alpha=0.5,color="blue") +
-  geom_hline( yintercept=0.0, size=0.5 ) +labs(y="Log response ratio of vcmax25 and LAI under N fer + co2", x = " ") +ylim(-3,3) +theme_classic()+
+  geom_hline( yintercept=0.0, size=0.5 ) +labs(y="Log response ratio of vcmax25 and ANPP under N", x = " ") +ylim(-3,3) +theme_classic()+
   theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
+ggsave(paste("~/data/output_gcme/vcmax25_all_ANPP_fertilization.jpg",sep=""),width = 15, height = 15)
+
+ggplot(subset(Vcmax25_final2_LAI,treatment=="f"),
+       aes(x=exp_nam, y=response_ratio)) +
+  geom_boxplot(aes(x=exp_nam, y=response_ratio),alpha=0.5,color="red") +
+  geom_boxplot(aes(x=exp_nam, y=LAI_response_ratio),alpha=0.5,color="blue") +
+  geom_hline( yintercept=0.0, size=0.5 ) +labs(y="Log response ratio of vcmax25 and LAI under N ", x = " ") +ylim(-3,3) +theme_classic()+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
+ggsave(paste("~/data/output_gcme/vcmax25_all_LAI_fertilization.jpg",sep=""),width = 15, height = 15)
 
 #how about leaf area
 LA <- subset(df,Data_type=="leaf_area"|Data_type=="leaf_area_")
@@ -1156,9 +1210,165 @@ hist(LA_sitemean$LA_response_ratio)
 
 vcmax25_final2_LA <- merge(vcmax25_final2,LA_sitemean,
                               by=c("exp_nam","treatment"),all.x=TRUE)
-ggplot(subset(vcmax25_final2_LA,is.na(response_ratio)==FALSE &treatment=="c"&is.na(LA_response_ratio)==FALSE),
+ggplot(subset(vcmax25_final2_LA,treatment=="f"),
        aes(x=exp_nam, y=response_ratio)) +
   geom_boxplot(aes(x=exp_nam, y=response_ratio),alpha=0.5,color="red") +
   geom_boxplot(aes(x=exp_nam, y=LA_response_ratio),alpha=0.5,color="blue") +
-  geom_hline( yintercept=0.0, size=0.5 ) +labs(y="Log response ratio of vcmax25 and LAI", x = " ") +ylim(-3,3) +theme_classic()+
+  geom_hline( yintercept=0.0, size=0.5 ) +labs(y="Log response ratio of vcmax25 and LA", x = " ") +ylim(-3,3) +theme_classic()+
   theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
+
+
+
+#how about leaf N
+leaf_N <- subset(df,Data_type=="leaf_N")
+leaf_N$leafN_response_ratio <- log(leaf_N$elevated/leaf_N$ambient)
+
+leaf_N$treatment_label[leaf_N$treatment=="c"] <- "co2"
+leaf_N$treatment_label[leaf_N$treatment=="cf"] <- "co2 + fertilization"
+leaf_N$treatment_label[leaf_N$treatment=="cw"] <- "co2+ 1-degree warming"
+leaf_N$treatment_label[leaf_N$treatment=="d"] <- "drought"
+leaf_N$treatment_label[leaf_N$treatment=="f"] <- "fertilization"
+leaf_N$treatment_label[leaf_N$treatment=="w"] <- "1-degree warming"
+
+
+unit_leafN <- leaf_N%>% group_by(Unit)  %>% summarise(number = n())
+leafNmass <-  subset(leaf_N,Unit=="%"|Unit=="g/g"|Unit=="g/kg"|Unit=="mg_/_g"|Unit=="mg/g"|Unit=="g/mg"|
+                            Unit=="mg/g_"|Unit=="mg/kg"|Unit=="mol/g"|Unit=="mmol/g")
+dim(leafNmass)
+leafNarea <-  subset(leaf_N,Unit!="%" & Unit!="g/g" & Unit!="g/kg" & Unit!="mg_/_g" & Unit!="mg/g" & Unit!="g/mg" &
+                       Unit!="mg/g_" & Unit!="mg/kg" & Unit!="mol/g" & Unit!="mmol/g")
+dim(leafNarea)
+#already checked - well divided now
+
+#check nmass
+leafNmass_cfw <- subset(leafNmass,treatment=="f"|treatment=="c"|treatment=="w"|
+                          treatment=="cf"|treatment=="cw"|treatment=="d")
+p1 <- ggplot(leafNmass_cfw, aes(x=treatment_label, y=leafN_response_ratio)) +geom_jitter()+geom_boxplot(alpha=0.5,color="red")+
+  geom_hline( yintercept=0.0, size=0.5 ) +labs(y="Log response ratio of leaf Nmass", x = " ") +ylim(-3,3) +theme_classic()+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=30))+coord_flip()
+
+#check narea
+leafNarea_cfw <- subset(leafNarea,treatment=="f"|treatment=="c"|treatment=="w"|
+                          treatment=="cf"|treatment=="cw"|treatment=="d")
+p2 <- ggplot(leafNarea_cfw, aes(x=treatment_label, y=leafN_response_ratio)) +geom_jitter()+geom_boxplot(alpha=0.5,color="red")+
+  geom_hline( yintercept=0.0, size=0.5 ) +labs(y="Log response ratio of leaf Narea", x = " ") +ylim(-3,3) +theme_classic()+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=30))+coord_flip()
+plot_grid(p1,p2)
+ggsave(paste("~/data/output_gcme/leaf_Narea_Nmass.jpg",sep=""),width = 30, height = 15)
+
+#now, merging vcmax25_final2 (pred+obs) and LMA into df
+LMA_SLA <- subset(df,Data_type=="leaf_mass_per_area"|Data_type=="leaf_mass_per_unit_leaf_area"|Data_type=="LMA"|
+                Data_type=="specific_leaf_area"|Data_type=="SLA")
+LMA_SLA%>% group_by(Unit)  %>% summarise(number = n())# all reasonable unit
+LMA_SLA$LMA_response_ratio <- log(LMA_SLA$elevated/LMA_SLA$ambient)
+#because they are inverse!
+LMA_SLA$LMA_response_ratio[LMA_SLA$Data_type=="specific_leaf_area"] <- log(LMA_SLA$ambient[LMA_SLA$Data_type=="specific_leaf_area"]/LMA_SLA$elevated[LMA_SLA$Data_type=="specific_leaf_area"])
+LMA_SLA$LMA_response_ratio[LMA_SLA$Data_type=="SLA"] <- log(LMA_SLA$ambient[LMA_SLA$Data_type=="SLA"]/LMA_SLA$elevated[LMA_SLA$Data_type=="SLA"])
+hist(LMA_SLA$LMA_response_ratio)
+
+LMA_SLA_final <-LMA_SLA[,c("exp_nam","treatment","LMA_response_ratio")]
+LMA_SLA_final <- aggregate(LMA_SLA_final,by=list(LMA_SLA_final$exp_nam,LMA_SLA_final$treatment),
+                                 FUN=mean, na.rm=TRUE)
+LMA_SLA_final <-LMA_SLA_final[,c("Group.1","Group.2","LMA_response_ratio")]
+names(LMA_SLA_final) <- c("exp_nam","treatment","LMA_response_ratio")
+hist(LMA_SLA_final$LMA_response_ratio)
+dim(LMA_SLA_final)
+
+dim(leafNmass)
+#vcmax25_final# saves all observation but only choose vcmax data
+vcmax25_obs <- subset(vcmax25_final,is.na(response_ratio)==FALSE &method=="vcmax")
+dim(vcmax25_obs)
+vcmax25_obs_final <-vcmax25_obs[,c("exp_nam","treatment","response_ratio")]
+vcmax25_obs_final <- aggregate(vcmax25_obs_final,by=list(vcmax25_obs_final$exp_nam,vcmax25_obs_final$treatment),
+                           FUN=mean, na.rm=TRUE)
+vcmax25_obs_final <-vcmax25_obs_final[,c("Group.1","Group.2","response_ratio")]
+names(vcmax25_obs_final) <- c("exp_nam","treatment","vcmax25_response_ratio")
+
+#vcmax25_warmingco2_siteinfo: saves prediction only (c,w) --> filter with method=="vcmax"
+vcmax25_pred <- subset(vcmax25_warmingco2_siteinfo,is.na(response_ratio)==FALSE &method=="vcmax")
+dim(vcmax25_pred)
+vcmax25_pred_final <-vcmax25_pred[,c("exp_nam","treatment","pred_response_ratio")]
+vcmax25_pred_final <- aggregate(vcmax25_pred_final,by=list(vcmax25_pred_final$exp_nam,vcmax25_pred_final$treatment),
+                               FUN=mean, na.rm=TRUE)
+vcmax25_pred_final <-vcmax25_pred_final[,c("Group.1","Group.2","pred_response_ratio")]
+names(vcmax25_pred_final) <- c("exp_nam","treatment","pred_vcmax25_response_ratio")
+
+#leafNarea
+leafNarea <-leafNarea[,c("exp_nam","treatment","leafN_response_ratio")]
+leafNarea_final <- aggregate(leafNarea,by=list(leafNarea$exp_nam,leafNarea$treatment),
+                                FUN=mean, na.rm=TRUE)
+leafNarea_final <-leafNarea_final[,c("Group.1","Group.2","leafN_response_ratio")]
+names(leafNarea_final) <- c("exp_nam","treatment","Narea_response_ratio")
+
+#now, time to merged Nmass (all invidividuals) with narea,obs_vcmax25,pred_vcmax25, lma
+dim(leafNmass)
+leaf_traits <-Reduce(function(x,y) merge(x = x, y = y, by = c("exp_nam","treatment"),all.x=TRUE),
+                 list(leafNmass,leafNarea_final,vcmax25_obs_final,vcmax25_pred_final,LMA_SLA_final))
+summary(leaf_traits)
+
+leaf_traits_cfw <- subset(leaf_traits,treatment=="f"|treatment=="c"|treatment=="w"|
+                          treatment=="cf"|treatment=="cw"|treatment=="d")
+leaf_traits_c <- subset(leaf_traits,treatment=="c")
+
+ggplot(leaf_traits_cfw, aes(x=treatment_label, y=leafN_response_ratio)) +geom_jitter()+geom_boxplot(alpha=0.5,color="red")+
+  geom_hline( yintercept=0.0, size=0.5 ) +labs(y="Log response ratio of leaf Nmass", x = " ") +ylim(-3,3) +theme_classic()+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
+
+ggplot(subset(leaf_traits,treatment=="c"),
+       aes(x=exp_nam, y=leafN_response_ratio)) +geom_boxplot(alpha=0.5,color="black")+
+  geom_boxplot(aes(x=exp_nam, y=LMA_response_ratio),alpha=0.5,color="green") +
+  geom_boxplot(aes(x=exp_nam, y=pred_vcmax25_response_ratio),alpha=0.5,color="orange") +
+  geom_boxplot(aes(x=exp_nam, y=vcmax25_response_ratio),alpha=0.5,color="red") +
+  geom_hline( yintercept=0.0, size=0.5 ) +labs(y="co2 effect: Log response ratio of Leaf Nmass, measured vcmax25 (red), predicted vcmax25 (orange), and lma (green)", x = " ") +ylim(-3,3) +theme_classic()+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=30))+coord_flip()
+ggsave(paste("~/data/output_gcme/Nmass_vcmax25_LMA_co2.jpg",sep=""),width = 30, height = 15)
+
+ggplot(subset(leaf_traits,treatment=="w"),
+       aes(x=exp_nam, y=leafN_response_ratio)) +geom_boxplot(alpha=0.5,color="black")+
+  geom_boxplot(aes(x=exp_nam, y=LMA_response_ratio),alpha=0.5,color="green") +
+  geom_boxplot(aes(x=exp_nam, y=pred_vcmax25_response_ratio),alpha=0.5,color="orange") +
+  geom_boxplot(aes(x=exp_nam, y=vcmax25_response_ratio),alpha=0.5,color="red") +
+  geom_hline( yintercept=0.0, size=0.5 ) +labs(y="warming effect: Log response ratio of Leaf Nmass, measured vcmax25 (red), predicted vcmax25 (orange), and lma (green)", x = " ") +ylim(-3,3) +theme_classic()+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=30))+coord_flip()
+ggsave(paste("~/data/output_gcme/Nmass_vcmax25_LMA_warming.jpg",sep=""),width = 30, height = 15)
+
+ggplot(subset(leaf_traits,treatment=="cf"),
+       aes(x=exp_nam, y=leafN_response_ratio)) +geom_boxplot(alpha=0.5,color="black")+
+  geom_boxplot(aes(x=exp_nam, y=LMA_response_ratio),alpha=0.5,color="green") +
+  geom_boxplot(aes(x=exp_nam, y=pred_vcmax25_response_ratio),alpha=0.5,color="orange") +
+  geom_boxplot(aes(x=exp_nam, y=vcmax25_response_ratio),alpha=0.5,color="red") +
+  geom_hline( yintercept=0.0, size=0.5 ) +labs(y="co2 + fertilization: Log response ratio of Leaf Nmass (black), vcmax25 (red) and lma (green)", x = " ") +ylim(-3,3) +theme_classic()+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=30))+coord_flip()
+ggsave(paste("~/data/output_gcme/Nmass_vcmax25_LMA_co2_fertilization.jpg",sep=""),width = 30, height = 15)
+
+ggplot(subset(leaf_traits,treatment=="f"),
+       aes(x=exp_nam, y=leafN_response_ratio)) +geom_boxplot(alpha=0.5,color="black")+
+  geom_boxplot(aes(x=exp_nam, y=LMA_response_ratio),alpha=0.5,color="green") +
+  geom_boxplot(aes(x=exp_nam, y=pred_vcmax25_response_ratio),alpha=0.5,color="orange") +
+  geom_boxplot(aes(x=exp_nam, y=vcmax25_response_ratio),alpha=0.5,color="red") +
+  geom_hline( yintercept=0.0, size=0.5 ) +labs(y="fertilization: Log response ratio of Leaf Nmass (black), vcmax25 (red) and lma (green)", x = " ") +ylim(-3,3) +theme_classic()+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=30))+coord_flip()
+ggsave(paste("~/data/output_gcme/Nmass_vcmax25_LMA_fertilization.jpg",sep=""),width = 30, height = 15)
+
+ggplot(subset(leaf_traits,treatment=="f"),
+       aes(x=exp_nam, y=leafN_response_ratio)) +geom_boxplot(alpha=0.5,color="black")+
+  geom_boxplot(aes(x=exp_nam, y=LMA_response_ratio),alpha=0.5,color="green") +
+  geom_boxplot(aes(x=exp_nam, y=Narea_response_ratio),alpha=0.5,color="cyan") +
+  geom_boxplot(aes(x=exp_nam, y=vcmax25_response_ratio),alpha=0.5,color="red") +
+  geom_hline( yintercept=0.0, size=0.5 ) +labs(y="fertilization: Log response ratio of Leaf Nmass (black), Narea(cyan), vcmax25 (red) and lma (green)", x = " ") +ylim(-3,3) +theme_classic()+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=30))+coord_flip()
+ggsave(paste("~/data/output_gcme/Nmass_vcmax25_LMA_fertilization_v2.jpg",sep=""),width = 30, height = 15)
+
+#now, filter N fertilzation plots and see which variables they have
+Nfer <- subset(df,treatment=="f")
+dim(Nfer)
+Nfer%>% group_by(exp_nam,Data_type)  %>% summarise(number = n())# all reasonable unit
+aa <- Nfer%>% group_by(Data_type)  %>% summarise(number = n())# all reasonable unit
+
+vcmax_N_fert_sitename <- subset(vcmax25_final2,treatment=="f")%>% group_by(exp_nam)  %>% summarise(number = n())
+Nfer_available <- merge(Nfer,vcmax_N_fert_sitename,by=c("exp_nam"),all.x=TRUE)
+Nfer_available <- subset(Nfer_available,number>0)
+aa <- Nfer_available%>% group_by(exp_nam,Data_type)  %>% summarise(number = n())# all reasonable unit
+
+dim(vcmax_N_fert_sitename) # 9 plots including N fertilzation effect on vcmax
+final_available <- aa%>% group_by(Data_type)  %>% summarise(number = n())
