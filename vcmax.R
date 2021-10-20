@@ -15,7 +15,7 @@ library(dplyr)
 library(gplots)
 library(tidyselect)
 library(extrafont)
-library(rbeni)
+devtools::load_all("/Users/yunpeng/yunkepeng/rbeni/")
 library(raster)
 library(maps)
 library(rworldmap)
@@ -752,7 +752,7 @@ Jmax25_warmingco2_siteinfo <- merge(Jmax25_warmingco2,siteinfo,by=c("lon","lat",
 #devtools::load_all("~/yunkepeng/gcme/pmodel/ingestr/")
 
 #default inst_vcmax
-devtools::load_all("~/yunkepeng/gcme/pmodel/rsofun/")
+devtools::load_all("/Users/yunpeng/yunkepeng/gcme/pmodel/rsofun/")
 #changing to use adjusted parameters for inst_vcmax from Smith and Keenan 2020 GCB - doesn't change anything!
 #devtools::load_all("~/yunkepeng/gcme/pmodel_modified/rsofun/")
 
@@ -810,7 +810,7 @@ for (i in 1:nrow(vcmax25_warmingco2_siteinfo)){
         lgr4               = FALSE,
         firstyeartrend = siteinfo_site$year_start,
         nyeartrend = siteinfo_site$year_end-siteinfo_site$year_start+1), 
-      siteinfo = siteinfo_site, 
+      siteinfo_site, 
       df1, 
       df_soiltexture, 
       params_modl = params_modl, 
@@ -837,7 +837,7 @@ for (i in 1:nrow(vcmax25_warmingco2_siteinfo)){
         lgr4               = FALSE,
         firstyeartrend = siteinfo_site$year_start,
         nyeartrend = siteinfo_site$year_end-siteinfo_site$year_start+1), 
-      siteinfo = siteinfo_site, 
+      siteinfo_site, 
       df2, 
       df_soiltexture, 
       params_modl = params_modl, 
@@ -904,7 +904,7 @@ for (i in 1:nrow(Jmax25_warmingco2_siteinfo)){
       lgr4               = FALSE,
       firstyeartrend = siteinfo_site$year_start,
       nyeartrend = siteinfo_site$year_end-siteinfo_site$year_start+1), 
-    siteinfo = siteinfo_site, 
+    siteinfo_site, 
     df1, 
     df_soiltexture, 
     params_modl = params_modl, 
@@ -931,7 +931,7 @@ for (i in 1:nrow(Jmax25_warmingco2_siteinfo)){
       lgr4               = FALSE,
       firstyeartrend = siteinfo_site$year_start,
       nyeartrend = siteinfo_site$year_end-siteinfo_site$year_start+1), 
-    siteinfo = siteinfo_site, 
+    siteinfo_site, 
     df2, 
     df_soiltexture, 
     params_modl = params_modl, 
@@ -1174,6 +1174,15 @@ ggplot(subset(vcmax25_final2_leafN, treatment=="f"),
   theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
 ggsave(paste("~/data/output_gcme/vcmax25_all_leafN_fertilization.jpg",sep=""),width = 15, height = 15)
 
+#remove Asat
+ggplot(subset(vcmax25_final2_leafN, treatment=="f" & method=="vcmax"),
+       aes(x=exp_nam, y=response_ratio)) +
+  geom_boxplot(aes(x=exp_nam, y=response_ratio),alpha=0.5,color="red") +
+  geom_boxplot(aes(x=exp_nam, y=leafN_response_ratio),alpha=0.5,color="blue") +
+  geom_hline( yintercept=0.0, size=0.5 ) +labs(y="Log response ratio of vcmax25 and leaf N", x = " ") +ylim(-3,3) +theme_classic()+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
+
+
 Jmax25_final2_leafN <- merge(Jmax25_final2,leaf_N_sitemean,
                               by=c("exp_nam","treatment"),all.x=TRUE)
 
@@ -1196,6 +1205,15 @@ ggplot(subset(Vcmax25_final2_LAI,treatment=="f"),
   geom_hline( yintercept=0.0, size=0.5 ) +labs(y="Log response ratio of vcmax25 and LAI under N ", x = " ") +ylim(-3,3) +theme_classic()+
   theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
 ggsave(paste("~/data/output_gcme/vcmax25_all_LAI_fertilization.jpg",sep=""),width = 15, height = 15)
+
+#remove Asat?
+ggplot(subset(Vcmax25_final2_LAI,treatment=="f" & method=="vcmax"),
+       aes(x=exp_nam, y=response_ratio)) +
+  geom_boxplot(aes(x=exp_nam, y=response_ratio),alpha=0.5,color="red") +
+  geom_boxplot(aes(x=exp_nam, y=LAI_response_ratio),alpha=0.5,color="blue") +
+  geom_hline( yintercept=0.0, size=0.5 ) +labs(y="Log response ratio of vcmax25 and LAI under N ", x = " ") +ylim(-3,3) +theme_classic()+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
+
 
 #how about leaf area
 LA <- subset(df,Data_type=="leaf_area"|Data_type=="leaf_area_")
@@ -1372,3 +1390,8 @@ aa <- Nfer_available%>% group_by(exp_nam,Data_type)  %>% summarise(number = n())
 
 dim(vcmax_N_fert_sitename) # 9 plots including N fertilzation effect on vcmax
 final_available <- aa%>% group_by(Data_type)  %>% summarise(number = n())
+
+#check some extremely negative points
+vcmax_N_fert_sitename
+aa <- subset(vcmax25_final2,exp_nam=="Duke_pinus2" & treatment=="f")
+
