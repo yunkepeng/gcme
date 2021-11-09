@@ -24,6 +24,7 @@ library(cowplot)
 library(ncdf4)
 library(scales)
 library(ggpubr)
+library(MAd)
 df <- read_csv("~/data/gcme/data_received_190325/NewData_wide_CORRECTED2.csv") %>%
   mutate( ambient_Sd  = as.numeric(ambient_Sd),  ambient_Se  = as.numeric(ambient_Se), 
           elevated_Sd = as.numeric(elevated_Sd), elevated_Se = as.numeric(elevated_Se) )
@@ -1055,16 +1056,16 @@ final_ecm_co2_info <- merge(final_ecm_co2,ecm_info,
                                    by=c("exp_nam"),all.x=TRUE)
 
 ggplot(final_ecm_co2_info,
-       aes(x=response_ratio, y=pred_response_ratio,label=exp_nam,color=ecm_final)) +geom_point() +geom_text(aes(label=exp_nam),hjust=0, vjust=0,size=2)+
+       aes(x=response_ratio, y=pred_response_ratio,label=exp_nam,color=ecm_final)) +geom_point(size=3) +geom_text(aes(label=exp_nam),hjust=0, vjust=0,size=2)+
   labs(y="predicted response ratio", x = "measured response ratio") +ylim(-0.2,0.2)+xlim(-0.2,0.2) +theme_classic()+geom_abline(slope=1)+
-  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))
+  theme(axis.text=element_text(size=30),axis.title =element_text(size=30),legend.text=element_text(size=20))
 ggsave(paste("~/data/output_gcme/vc25_vcmax_co2_ecm_name.jpg",sep=""),width = 15, height = 15)
 
 ggplot(final_ecm_co2_info,
        aes(x=response_ratio, y=pred_response_ratio,color=ecm_final)) +geom_point(size=3) +
   labs(y="predicted response ratio", x = "measured response ratio") +
   ylim(-0.2,0.2)+xlim(-0.2,0.2) +theme_classic()+geom_abline(slope=1)+
-  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))
+  theme(axis.text=element_text(size=30),axis.title =element_text(size=30),legend.text=element_text(size=20))
 ggsave(paste("~/data/output_gcme/vc25_vcmax_co2_ecm.jpg",sep=""),width = 15, height = 15)
 
 ggplot(subset(vcmax25_warmingco2_siteinfo,is.na(response_ratio)==FALSE &method=="asat"),
@@ -1124,16 +1125,16 @@ final_ecm_co2_jmax_info$ecm_final[final_ecm_co2_jmax_info$exp_nam=="RiceFACE_Jap
 final_ecm_co2_jmax_info$ecm_final[final_ecm_co2_jmax_info$exp_nam=="RiceFACE_Japan_A_2004_39,38_140,57"] <- "AM"
 
 ggplot(final_ecm_co2_jmax_info,
-       aes(x=response_ratio, y=pred_response_ratio,label=exp_nam,color=ecm_final)) +geom_point() +geom_text(aes(label=exp_nam),hjust=0, vjust=0,size=2)+
+       aes(x=response_ratio, y=pred_response_ratio,label=exp_nam,color=ecm_final)) +geom_point(size=3) +geom_text(aes(label=exp_nam),hjust=0, vjust=0,size=2)+
   labs(y="predicted response ratio jmax25", x = "measured response ratio jmax25") +ylim(-0.2,0.2)+xlim(-0.2,0.2) +theme_classic()+geom_abline(slope=1)+
-  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))
-ggsave(paste("~/data/output_gcme/vc25_jmax_co2_ecm_name.jpg",sep=""),width = 15, height = 15)
+  theme(axis.text=element_text(size=30),axis.title =element_text(size=30),legend.text=element_text(size=20))
+ggsave(paste("~/data/output_gcme/jmax25_jmax_co2_ecm_name.jpg",sep=""),width = 15, height = 15)
 
 ggplot(final_ecm_co2_jmax_info,
-       aes(x=response_ratio, y=pred_response_ratio,color=ecm_final)) +geom_point() +
+       aes(x=response_ratio, y=pred_response_ratio,color=ecm_final)) +geom_point(size=3) +
   labs(y="predicted response ratio jmax25", x = "measured response ratio jmax25") +ylim(-0.2,0.2)+xlim(-0.2,0.2) +theme_classic()+geom_abline(slope=1)+
-  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))
-ggsave(paste("~/data/output_gcme/vc25_jmax_co2_ecm.jpg",sep=""),width = 15, height = 15)
+  theme(axis.text=element_text(size=30),axis.title =element_text(size=30),legend.text=element_text(size=20))
+ggsave(paste("~/data/output_gcme/jmax25_jmax_co2_ecm.jpg",sep=""),width = 15, height = 15)
 
 
 ggplot(subset(Jmax25_warmingco2_siteinfo,is.na(response_ratio)==FALSE & method=="amax"), aes(x=treatment_label, y=response_ratio)) +geom_jitter()+
