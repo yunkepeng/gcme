@@ -1,3 +1,4 @@
+rm(list = ls())
 library(readr)
 library(dplyr)
 library(metafor)  
@@ -28,7 +29,7 @@ df <- read_csv("~/data/gcme/data_received_190325/NewData_wide_CORRECTED2.csv") %
           elevated_Sd = as.numeric(elevated_Sd), elevated_Se = as.numeric(elevated_Se) )
 
 # save experiments names
-df_experiments <- df %>% select(exp_nam, prev_name) %>% distinct()
+df_experiments <- df %>% dplyr::select(exp_nam, prev_name) %>% distinct()
 
 ### Duplicate rows
 #Some rows are simply duplicates. This is dangerous.
@@ -41,7 +42,7 @@ df_experiments <- df %>% select(exp_nam, prev_name) %>% distinct()
 #print(nrow(df))
 
 ## Determine all experiments that have more than 1 year data
-list_exp_gt1yr <- df %>% filter(!is.na(Year)) %>% group_by(exp_nam) %>% summarise(nyears=max(Year)) %>% filter(nyears>1) %>% select(exp_nam) %>% unlist() %>% unname()
+list_exp_gt1yr <- df %>% filter(!is.na(Year)) %>% group_by(exp_nam) %>% summarise(nyears=max(Year)) %>% filter(nyears>1) %>% dplyr::select(exp_nam) %>% unlist() %>% unname()
 
 #include coordinates and experimental details
 coord <- read.csv("~/data/gcme/data_received_190325/table_var_exp_names.csv")[,c("Site.Name","System.Type","Latitude","Lat","Longitude","Lon","Elevation","AM","EcM","ErM")]
@@ -78,9 +79,9 @@ names(experimental) <- c("exp_nam","prev_name","Start_Year","End_Year","Cquantit
 
 df_experiments_coord_exp <- merge(df_experiments_coord,experimental,by=c("exp_nam","prev_name"),all.x=TRUE)
 
-check_na <- subset(df_experiments_coord_exp,is.na(lon)==TRUE) %>% select(exp_nam) %>% distinct()
+check_na <- subset(df_experiments_coord_exp,is.na(lon)==TRUE) %>% dplyr::select(exp_nam) %>% distinct()
 dim(check_na)
-check_yes <- subset(df_experiments_coord_exp,is.na(lon)==FALSE) %>% select(exp_nam) %>% distinct()
+check_yes <- subset(df_experiments_coord_exp,is.na(lon)==FALSE) %>% dplyr::select(exp_nam) %>% distinct()
 dim(check_yes)
 #output to site coordinates csv
 csvfile <- paste("/Users/yunpeng/data/gcme/yunke_coord/coord_df.csv")
@@ -106,7 +107,7 @@ leaf_all_coord <- merge(Asat_leafN_final,df_experiments_coord_exp,by=c("exp_nam"
 dim(Asat_leafN_final)
 dim(leaf_all_coord)
 
-coord_Asat <- leaf_all_coord %>% select(exp_nam,lat,lon,z) %>% distinct()
+coord_Asat <- leaf_all_coord %>% dplyr::select(exp_nam,lat,lon,z) %>% distinct()
 dim(coord_Asat)
 csvfile <- paste("/Users/yunpeng/data/gcme/yunke_coord/coord_Asat_leafN.csv")
 write.csv(coord_Asat, csvfile, row.names = TRUE)
@@ -1016,6 +1017,56 @@ ggplot(subset(vcmax25_warmingco2_siteinfo,is.na(response_ratio)==FALSE &method==
   theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
 ggsave(paste("~/data/output_gcme/vc25_vcmax_co2.jpg",sep=""),width = 15, height = 15)
 
+#now, manually merged with ECM/AM plots
+naming_expnam <- vcmax25_warmingco2_siteinfo %>% group_by(exp_nam) %>% summarise(number=n()) 
+naming_expnam
+#csvfile <- paste("~/data/gcme/data_received_190325/co2_plot.csv")
+#write.csv(naming_expnam, csvfile, row.names = TRUE)
+#newly update sitename, so that it can be merged with ECM/AM info properly
+naming_expnam_filled <- read.csv("/Users/yunpeng/data/gcme/data_received_190325/co2_plot_filled.csv")
+naming_expnam_filled <- naming_expnam_filled[,c("exp_nam_update","exp_nam")]
+names(naming_expnam_filled) <- c("Site.Name","exp_nam")
+coord_org <- read.csv("~/data/gcme/data_received_190325/table_var_exp_names.csv")
+df_experiments_coord <- merge(coord_org,naming_expnam_filled,by=c("Site.Name"),all.x=TRUE)
+df_experiments_coord_co2 <- subset(df_experiments_coord,is.na(exp_nam)==FALSE)
+dim(df_experiments_coord_co2)
+
+#final merge
+vcmax25_warmingco2_siteinfo_ecm <- merge(vcmax25_warmingco2_siteinfo,df_experiments_coord_co2,by=c("exp_nam"),all.x=TRUE)
+vcmax25_warmingco2_siteinfo_ecm%>% group_by(AM)  %>% summarise(number = n())
+vcmax25_warmingco2_siteinfo_ecm%>% group_by(ECM)  %>% summarise(number = n())
+vcmax25_warmingco2_siteinfo_ecm$ecm_type <- "NA"
+vcmax25_warmingco2_siteinfo_ecm$ecm_type[vcmax25_warmingco2_siteinfo_ecm$EcM==TRUE] <- "ECM"
+vcmax25_warmingco2_siteinfo_ecm$ecm_type[vcmax25_warmingco2_siteinfo_ecm$AM==TRUE] <- "AM"
+vcmax25_warmingco2_siteinfo_ecm$ecm_type[vcmax25_warmingco2_siteinfo_ecm$ErM==TRUE] <- "ErM"
+vcmax25_warmingco2_siteinfo_ecm$ecm_type[vcmax25_warmingco2_siteinfo_ecm$Moss==TRUE] <- "Moss"
+
+final_co2 <- subset(vcmax25_warmingco2_siteinfo_ecm,is.na(response_ratio)==FALSE &method=="vcmax"&treatment=="c")
+
+ecm_info <- aggregate(final_co2,by=list(final_co2$exp_nam,final_co2$ecm_type), FUN=mean, na.rm=TRUE)
+ecm_info <- ecm_info[,1:2]
+names(ecm_info) <- c("exp_nam","ecm_final")
+#manually add rest of points basing on Terrer et al. 2016 New Phytol- fig.1
+ecm_info$ecm_final[ecm_info$exp_nam=="BioCON"] <-"AM"
+
+final_ecm_co2 <- aggregate(final_co2,by=list(final_co2$exp_nam), FUN=mean, na.rm=TRUE)
+final_ecm_co2$exp_nam <- final_ecm_co2$Group.1
+final_ecm_co2_info <- merge(final_ecm_co2,ecm_info,
+                                   by=c("exp_nam"),all.x=TRUE)
+
+ggplot(final_ecm_co2_info,
+       aes(x=response_ratio, y=pred_response_ratio,label=exp_nam,color=ecm_final)) +geom_point() +geom_text(aes(label=exp_nam),hjust=0, vjust=0,size=2)+
+  labs(y="predicted response ratio", x = "measured response ratio") +ylim(-0.2,0.2)+xlim(-0.2,0.2) +theme_classic()+geom_abline(slope=1)+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))
+ggsave(paste("~/data/output_gcme/vc25_vcmax_co2_ecm_name.jpg",sep=""),width = 15, height = 15)
+
+ggplot(final_ecm_co2_info,
+       aes(x=response_ratio, y=pred_response_ratio,color=ecm_final)) +geom_point(size=3) +
+  labs(y="predicted response ratio", x = "measured response ratio") +
+  ylim(-0.2,0.2)+xlim(-0.2,0.2) +theme_classic()+geom_abline(slope=1)+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))
+ggsave(paste("~/data/output_gcme/vc25_vcmax_co2_ecm.jpg",sep=""),width = 15, height = 15)
+
 ggplot(subset(vcmax25_warmingco2_siteinfo,is.na(response_ratio)==FALSE &method=="asat"),
        aes(x=treatment_label, y=response_ratio)) +geom_jitter()+
   geom_boxplot(alpha=0.5,color="black")+
@@ -1062,6 +1113,28 @@ ggplot(subset(Jmax25_warmingco2_siteinfo,is.na(response_ratio)==FALSE & method==
   geom_hline( yintercept=0.0, size=0.5 ) +labs(y="Log response ratio of Jmax25", x = " ") +ylim(-3,3) +theme_classic()+
   theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
 ggsave(paste("~/data/output_gcme/jmax25_from_jmax_co2.jpg",sep=""),width = 15, height = 15)
+
+final_co2_jmax <- subset(Jmax25_warmingco2_siteinfo,is.na(response_ratio)==FALSE & method=="jmax"&treatment=="c")
+
+final_ecm_co2_jmax <- aggregate(final_co2_jmax,by=list(final_co2_jmax$exp_nam), FUN=mean, na.rm=TRUE)
+final_ecm_co2_jmax$exp_nam <- final_ecm_co2_jmax$Group.1
+final_ecm_co2_jmax_info <- merge(final_ecm_co2_jmax,ecm_info,
+                            by=c("exp_nam"),all.x=TRUE)
+final_ecm_co2_jmax_info$ecm_final[final_ecm_co2_jmax_info$exp_nam=="RiceFACE_Japan_A_2003_39,38_140,57"] <- "AM"
+final_ecm_co2_jmax_info$ecm_final[final_ecm_co2_jmax_info$exp_nam=="RiceFACE_Japan_A_2004_39,38_140,57"] <- "AM"
+
+ggplot(final_ecm_co2_jmax_info,
+       aes(x=response_ratio, y=pred_response_ratio,label=exp_nam,color=ecm_final)) +geom_point() +geom_text(aes(label=exp_nam),hjust=0, vjust=0,size=2)+
+  labs(y="predicted response ratio jmax25", x = "measured response ratio jmax25") +ylim(-0.2,0.2)+xlim(-0.2,0.2) +theme_classic()+geom_abline(slope=1)+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))
+ggsave(paste("~/data/output_gcme/vc25_jmax_co2_ecm_name.jpg",sep=""),width = 15, height = 15)
+
+ggplot(final_ecm_co2_jmax_info,
+       aes(x=response_ratio, y=pred_response_ratio,color=ecm_final)) +geom_point() +
+  labs(y="predicted response ratio jmax25", x = "measured response ratio jmax25") +ylim(-0.2,0.2)+xlim(-0.2,0.2) +theme_classic()+geom_abline(slope=1)+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))
+ggsave(paste("~/data/output_gcme/vc25_jmax_co2_ecm.jpg",sep=""),width = 15, height = 15)
+
 
 ggplot(subset(Jmax25_warmingco2_siteinfo,is.na(response_ratio)==FALSE & method=="amax"), aes(x=treatment_label, y=response_ratio)) +geom_jitter()+
   geom_boxplot(alpha=0.5,color="black")+
@@ -1197,6 +1270,7 @@ ggplot(subset(Vcmax25_final2_ANPP,treatment=="f"),
   geom_hline( yintercept=0.0, size=0.5 ) +labs(y="Log response ratio of vcmax25 and ANPP under N", x = " ") +ylim(-3,3) +theme_classic()+
   theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
 ggsave(paste("~/data/output_gcme/vcmax25_all_ANPP_fertilization.jpg",sep=""),width = 15, height = 15)
+
 
 ggplot(subset(Vcmax25_final2_LAI,treatment=="f"),
        aes(x=exp_nam, y=response_ratio)) +
@@ -1394,4 +1468,16 @@ final_available <- aa%>% group_by(Data_type)  %>% summarise(number = n())
 #check some extremely negative points
 vcmax_N_fert_sitename
 aa <- subset(vcmax25_final2,exp_nam=="Duke_pinus2" & treatment=="f")
+
+#some additionals
+dim(Vcmax25_final2_ANPP)
+aaa <- Vcmax25_final2_ANPP[grep("f", Vcmax25_final2_ANPP$treatment),]
+list_var <- aggregate(aaa,by=list(aaa$exp_nam), FUN=mean, na.rm=TRUE)$Group.1
+
+str( df[,list_var] )
+final_Nfer <- (subset(df, exp_nam %in% list_var))
+fff <- final_Nfer%>% group_by(Data_type)%>% summarise(number = n())
+
+dim(subset(final_Nfer,Data_type=="specific_leaf_area")%>% group_by(exp_nam)%>% summarise(number = n()))
+
 

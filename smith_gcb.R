@@ -57,11 +57,11 @@ df$vcmax25_32obs <- df$Vcmax32_obs/calc_vcmax_to_vcmax25(df$Tleaf32_Vcmax_obs+27
 df$vcmax25_41obs <- df$Vcmax41_obs/calc_vcmax_to_vcmax25(df$Tleaf41_Vcmax_obs+273.15,df$GrowthT+273.15)
 df$vcmax25_50obs <- df$Vcmax50_obs/calc_vcmax_to_vcmax25(df$Tleaf50_Vcmax_obs+273.15,df$GrowthT+273.15)
 
-df$Jmax25_14obs <- df$Jmax14_obs/calc_jmax_to_jmax25(df$Tleaf14_Jmax_obs+273.15,df$GrowthT+273.15)
-df$Jmax25_23obs <- df$Jmax23_obs/calc_jmax_to_jmax25(df$Tleaf23_Jmax_obs+273.15,df$GrowthT+273.15)
-df$Jmax25_32obs <- df$Jmax32_obs/calc_jmax_to_jmax25(df$Tleaf32_Jmax_obs+273.15,df$GrowthT+273.15)
-df$Jmax25_41obs <- df$Jmax41_obs/calc_jmax_to_jmax25(df$Tleaf41_Jmax_obs+273.15,df$GrowthT+273.15)
-df$Jmax25_50obs <- df$Jmax50_obs/calc_jmax_to_jmax25(df$Tleaf50_Jmax_obs+273.15,df$GrowthT+273.15)
+df$jmax25_14obs <- df$Jmax14_obs/calc_jmax_to_jmax25(df$Tleaf14_Jmax_obs+273.15,df$GrowthT+273.15)
+df$jmax25_23obs <- df$Jmax23_obs/calc_jmax_to_jmax25(df$Tleaf23_Jmax_obs+273.15,df$GrowthT+273.15)
+df$jmax25_32obs <- df$Jmax32_obs/calc_jmax_to_jmax25(df$Tleaf32_Jmax_obs+273.15,df$GrowthT+273.15)
+df$jmax25_41obs <- df$Jmax41_obs/calc_jmax_to_jmax25(df$Tleaf41_Jmax_obs+273.15,df$GrowthT+273.15)
+df$jmax25_50obs <- df$Jmax50_obs/calc_jmax_to_jmax25(df$Tleaf50_Jmax_obs+273.15,df$GrowthT+273.15)
 
 #prepare forcing data
 # first - collect climate forcing
@@ -157,6 +157,8 @@ for (i in 1:nrow(df)){
     df_soiltexture, 
     params_modl = params_modl, 
     makecheck = TRUE)
+  df$pred_vcmax[i] <- mean(modlist$vcmax*1000000,na.rm=TRUE)
+  df$pred_jmax[i] <- mean(modlist$jmax*1000000,na.rm=TRUE)
   df$pred_vcmax25[i] <- mean(modlist$vcmax25*1000000,na.rm=TRUE)
   df$pred_jmax25[i] <- mean(modlist$jmax25*1000000,na.rm=TRUE)
 }
@@ -197,10 +199,12 @@ for (i in 1:nrow(df)){
     df_soiltexture, 
     params_modl = params_modl, 
     makecheck = TRUE)
+  df$pred_vcmax_smith[i] <- mean(modlist$vcmax*1000000,na.rm=TRUE)
+  df$pred_jmax_smith[i] <- mean(modlist$jmax*1000000,na.rm=TRUE)
   df$pred_vcmax25_smith[i] <- mean(modlist$vcmax25*1000000,na.rm=TRUE)
   df$pred_jmax25_smith[i] <- mean(modlist$jmax25*1000000,na.rm=TRUE)
 }
-df$GrowthT # 15,20,25,30,35
+#df$GrowthT # 15,20,25,30,35
 #tleaf #14,23,32,41,50
 names(df)
 ggplot(df, aes(x=GrowthT)) +geom_point(aes(y=vcmax25_14obs),color="black")+geom_smooth(aes(y=vcmax25_14obs),color="black")+geom_point(aes(y=pred_vcmax25),color="red")+geom_smooth(aes(y=pred_vcmax25),color="red")
@@ -209,27 +213,106 @@ ggplot(df, aes(x=GrowthT)) +geom_point(aes(y=vcmax25_32obs),color="black")+geom_
 ggplot(df, aes(x=GrowthT)) +geom_point(aes(y=vcmax25_41obs),color="black")+geom_smooth(aes(y=vcmax25_41obs),color="black")+geom_point(aes(y=pred_vcmax25),color="red")+geom_smooth(aes(y=pred_vcmax25),color="red")
 ggplot(df, aes(x=GrowthT)) +geom_point(aes(y=vcmax25_50obs),color="black")+geom_smooth(aes(y=vcmax25_50obs),color="black")+geom_point(aes(y=pred_vcmax25),color="red")+geom_smooth(aes(y=pred_vcmax25),color="red")
 
-ggplot(df, aes(x=GrowthT))+geom_point(aes(y=pred_vcmax25),color="red")+geom_smooth(aes(y=pred_vcmax25),color="red")+
-  geom_smooth(aes(y=vcmax25_14obs),color="gold",se=F)+geom_smooth(aes(y=vcmax25_23obs),color="gold2",se=F)+geom_smooth(aes(y=vcmax25_32obs),color="gold4",se=F)+
-  geom_smooth(aes(y=vcmax25_41obs),color="dodgerblue",se=F)+geom_smooth(aes(y=vcmax25_50obs),color="dodgerblue4",se=F)
+ggplot(df, aes(x=GrowthT))+geom_point(aes(y=pred_vcmax25))+geom_smooth(aes(y=pred_vcmax25,colour="prediction"))+
+  geom_smooth(aes(y=vcmax25_14obs,color="Tleaf = 14"),se=F)+geom_smooth(aes(y=vcmax25_23obs,color="Tleaf = 23"),se=F)+geom_smooth(aes(y=vcmax25_32obs,color="Tleaf = 32"),se=F)+
+  geom_smooth(aes(y=vcmax25_41obs,color="Tleaf = 41"),se=F)+geom_smooth(aes(y=vcmax25_50obs,color="Tleaf = 50"),se=F)+
+  theme_bw() +
+  theme(axis.title.x = element_text(size = 15, vjust=-.2)) +
+  theme(axis.title.y = element_text(size = 15, vjust=0.3))
 
-  
+#vcmax?
+ggplot(df, aes(x=GrowthT))+geom_point(aes(y=pred_vcmax))+geom_smooth(aes(y=pred_vcmax,colour="prediction"))+
+  geom_smooth(aes(y=Vcmax14_obs,color="Tleaf = 14"))+geom_smooth(aes(y=Vcmax23_obs,color="Tleaf = 23"))+geom_smooth(aes(y=Vcmax32_obs,color="Tleaf = 32"))+
+  geom_smooth(aes(y=Vcmax41_obs,color="Tleaf = 41"))+geom_smooth(aes(y=Vcmax50_obs,color="Tleaf = 50"))+
+  theme_bw() +
+  theme(axis.title.x = element_text(size = 15, vjust=-.2)) +
+  theme(axis.title.y = element_text(size = 15, vjust=0.3))
 
-#another: just using normal design
+#another: just using Arrhenius design
 df$vcmax25_14obs_normal <- df$Vcmax14_obs*exp((65330/8.314)*((1/(df$Tleaf14_Vcmax_obs+273.15))-(1/298.15)))
 df$vcmax25_23obs_normal <- df$Vcmax23_obs*exp((65330/8.314)*((1/(df$Tleaf23_Vcmax_obs+273.15))-(1/298.15)))
 df$vcmax25_32obs_normal <- df$Vcmax32_obs*exp((65330/8.314)*((1/(df$Tleaf32_Vcmax_obs+273.15))-(1/298.15)))
 df$vcmax25_41obs_normal <- df$Vcmax41_obs*exp((65330/8.314)*((1/(df$Tleaf41_Vcmax_obs+273.15))-(1/298.15)))
 df$vcmax25_50obs_normal <- df$Vcmax50_obs*exp((65330/8.314)*((1/(df$Tleaf50_Vcmax_obs+273.15))-(1/298.15)))
 
-ggplot(df, aes(x=GrowthT))+geom_point(aes(y=pred_vcmax25),color="red")+geom_smooth(aes(y=pred_vcmax25),color="red")+
-  geom_smooth(aes(y=vcmax25_14obs_normal),color="gold",se=F)+geom_smooth(aes(y=vcmax25_23obs_normal),color="gold2",se=F)+geom_smooth(aes(y=vcmax25_32obs_normal),color="gold4",se=F)+
-  geom_smooth(aes(y=vcmax25_41obs_normal),color="dodgerblue",se=F)+geom_smooth(aes(y=vcmax25_50obs_normal),color="dodgerblue4",se=F)
+a1 <- as.data.frame(cbind(df$vcmax25_14obs_normal,df$vcmax25_14obs,df$Tleaf14_Vcmax_obs,df$Vcmax14_obs,df$GrowthT,df$pred_vcmax,df$pred_vcmax25,df$pred_vcmax25_smith))
+a2 <- as.data.frame(cbind(df$vcmax25_23obs_normal,df$vcmax25_23obs,df$Tleaf23_Vcmax_obs,df$Vcmax23_obs,df$GrowthT,df$pred_vcmax,df$pred_vcmax25,df$pred_vcmax25_smith))
+a3 <- as.data.frame(cbind(df$vcmax25_32obs_normal,df$vcmax25_32obs,df$Tleaf32_Vcmax_obs,df$Vcmax32_obs,df$GrowthT,df$pred_vcmax,df$pred_vcmax25,df$pred_vcmax25_smith))
+a4 <- as.data.frame(cbind(df$vcmax25_41obs_normal,df$vcmax25_41obs,df$Tleaf41_Vcmax_obs,df$Vcmax41_obs,df$GrowthT,df$pred_vcmax,df$pred_vcmax25,df$pred_vcmax25_smith))
+a5 <- as.data.frame(cbind(df$vcmax25_50obs_normal,df$vcmax25_50obs,df$Tleaf50_Vcmax_obs,df$Vcmax50_obs,df$GrowthT,df$pred_vcmax,df$pred_vcmax25,df$pred_vcmax25_smith))
+
+a_final <- dplyr::bind_rows(a1,a2,a3,a4,a5) 
+names(a_final) <- c("vcmax25_Arrhenius","vcmax25","Tleaf","vcmax","Tgrowth","pred_vcmax","pred_vcmax25","pred_vcmax25_smith")
+a_final$Tgrowth_type <- as.character(a_final$Tgrowth)
+ggplot(a_final)+geom_smooth(aes(x=Tleaf,y=vcmax,color=Tgrowth_type),se=F)
+ggplot(a_final)+geom_smooth(aes(x=Tleaf,y=vcmax25,color=Tgrowth_type),se=F)
+
+#only subset Tleaf near equal to Tgrowth
+a_final_strict <- subset(a_final,Tgrowth - Tleaf >= -3 & Tgrowth - Tleaf <=3)
+dim(a_final_strict)
+#vcmax25 using peaked function
+ggplot(a_final_strict)+geom_smooth(aes(x=Tgrowth,y=vcmax25))+geom_point(aes(x=Tgrowth,y=vcmax25))+
+  geom_smooth(aes(x=Tgrowth,y=pred_vcmax25),color="red")
+
+#vcmax25 using normal function
+ggplot(a_final_strict)+geom_smooth(aes(x=Tgrowth,y=vcmax25_Arrhenius))+geom_point(aes(x=Tgrowth,y=vcmax25))+
+  geom_smooth(aes(x=Tgrowth,y=pred_vcmax25),color="red")
+
+ggplot(a_final_strict)+geom_smooth(aes(x=Tgrowth,y=vcmax25_Arrhenius))+
+  geom_smooth(aes(x=Tgrowth,y=vcmax25),color="red")
+
+ggplot(a_final_strict)+geom_smooth(aes(x=Tgrowth,y=vcmax))+geom_point(aes(x=Tgrowth,y=vcmax))+
+  geom_smooth(aes(x=Tgrowth,y=pred_vcmax),color="red")
+
+#now, jmax25 response
+ggplot(df, aes(x=GrowthT))+geom_point(aes(y=pred_jmax25))+geom_smooth(aes(y=pred_jmax25,colour="prediction"))+
+  geom_smooth(aes(y=jmax25_14obs,color="Tleaf = 14"),se=F)+geom_smooth(aes(y=jmax25_23obs,color="Tleaf = 23"),se=F)+geom_smooth(aes(y=jmax25_32obs,color="Tleaf = 32"),se=F)+
+  geom_smooth(aes(y=jmax25_41obs,color="Tleaf = 41"),se=F)+geom_smooth(aes(y=jmax25_50obs,color="Tleaf = 50"),se=F)+
+  theme_bw() +
+  theme(axis.title.x = element_text(size = 15, vjust=-.2)) +
+  theme(axis.title.y = element_text(size = 15, vjust=0.3))
+
+#another: just using Arrhenius design
+df$jmax25_14obs_normal <- df$Jmax14_obs*exp((43540/8.314)*((1/(df$Tleaf14_Jmax_obs+273.15))-(1/298.15)))
+df$jmax25_23obs_normal <- df$Jmax23_obs*exp((43540/8.314)*((1/(df$Tleaf23_Jmax_obs+273.15))-(1/298.15)))
+df$jmax25_32obs_normal <- df$Jmax32_obs*exp((43540/8.314)*((1/(df$Tleaf32_Jmax_obs+273.15))-(1/298.15)))
+df$jmax25_41obs_normal <- df$Jmax41_obs*exp((43540/8.314)*((1/(df$Tleaf41_Jmax_obs+273.15))-(1/298.15)))
+df$jmax25_50obs_normal <- df$Jmax50_obs*exp((43540/8.314)*((1/(df$Tleaf50_Jmax_obs+273.15))-(1/298.15)))
+
+b1 <- as.data.frame(cbind(df$jmax25_14obs_normal,df$jmax25_14obs,df$Tleaf14_Jmax_obs,df$Jmax14_obs,df$GrowthT,df$pred_jmax,df$pred_jmax25,df$pred_jmax25_smith))
+b2 <- as.data.frame(cbind(df$jmax25_23obs_normal,df$jmax25_23obs,df$Tleaf23_Jmax_obs,df$Jmax23_obs,df$GrowthT,df$pred_jmax,df$pred_jmax25,df$pred_jmax25_smith))
+b3 <- as.data.frame(cbind(df$jmax25_32obs_normal,df$jmax25_32obs,df$Tleaf32_Jmax_obs,df$Jmax32_obs,df$GrowthT,df$pred_jmax,df$pred_jmax25,df$pred_jmax25_smith))
+b4 <- as.data.frame(cbind(df$jmax25_41obs_normal,df$jmax25_41obs,df$Tleaf41_Jmax_obs,df$Jmax41_obs,df$GrowthT,df$pred_jmax,df$pred_jmax25,df$pred_jmax25_smith))
+b5 <- as.data.frame(cbind(df$jmax25_50obs_normal,df$jmax25_50obs,df$Tleaf50_Jmax_obs,df$Jmax50_obs,df$GrowthT,df$pred_jmax,df$pred_jmax25,df$pred_jmax25_smith))
+
+b_final <- dplyr::bind_rows(b1,b2,b3,b4,b5) 
+names(b_final) <- c("jmax25_Arrhenius","jmax25","Tleaf","jmax","Tgrowth","pred_jmax","pred_jmax25","pred_jmax25_smith")
+b_final$Tgrowth_type <- as.character(b_final$Tgrowth)
+ggplot(b_final)+geom_smooth(aes(x=Tleaf,y=jmax,color=Tgrowth_type),se=F)
+ggplot(b_final)+geom_smooth(aes(x=Tleaf,y=jmax25,color=Tgrowth_type),se=F)
+
+#only subset Tleaf near equal to Tgrowth
+b_final_strict <- subset(b_final,Tgrowth - Tleaf >= -3 & Tgrowth - Tleaf <=3)
+dim(b_final_strict)
+#jmax25 using peaked function
+ggplot(b_final_strict)+geom_smooth(aes(x=Tgrowth,y=jmax25))+geom_point(aes(x=Tgrowth,y=jmax25))+
+  geom_smooth(aes(x=Tgrowth,y=pred_jmax25),color="red")
+
+#jmax25 using normal function
+ggplot(b_final_strict)+geom_smooth(aes(x=Tgrowth,y=jmax25_Arrhenius))+geom_point(aes(x=Tgrowth,y=jmax25))+
+  geom_smooth(aes(x=Tgrowth,y=pred_jmax25),color="red")
+
+ggplot(b_final_strict)+geom_smooth(aes(x=Tgrowth,y=jmax25_Arrhenius))+
+  geom_smooth(aes(x=Tgrowth,y=jmax25),color="red")
+
+ggplot(b_final_strict)+geom_smooth(aes(x=Tgrowth,y=jmax))+geom_point(aes(x=Tgrowth,y=jmax))+
+  geom_smooth(aes(x=Tgrowth,y=pred_jmax),color="red")
+
+#leaf N per area
+df$narea <- 10*df$Nconc_P/df$Larea_P # mg/cm2 --> g/m2 
+df$LMA <- 10000*df$Lmass_P/df$Larea_P # g/cm2 --> g/m2
+
+ggplot(df, aes(x=GrowthT))+geom_point(aes(y=narea))+geom_smooth(aes(y=narea,colour="fitted"))
+ggplot(df, aes(x=GrowthT))+geom_point(aes(y=LMA))+geom_smooth(aes(y=LMA,colour="fitted"))
 
 
-# select observed vcmax25 approximately equal to tleaf = tgrowth's value
-df$obs_vcmax25[df$GrowthT==15] <- df$vcmax25_14obs[df$GrowthT==15]
-df$obs_vcmax25[df$GrowthT==20] <- df$vcmax25_23obs[df$GrowthT==20]
-df$obs_vcmax25[df$GrowthT==25] <- df$vcmax25_23obs[df$GrowthT==25]
-df$obs_vcmax25[df$GrowthT==30] <- df$vcmax25_32obs[df$GrowthT==30]
-df$obs_vcmax25[df$GrowthT==35] <- df$vcmax25_35obs[df$GrowthT==35]
