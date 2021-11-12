@@ -816,3 +816,14 @@ Jmax25_warmingco2_siteinfo_ecm$ecm_type[Jmax25_warmingco2_siteinfo_ecm$exp_nam==
 Jmax25_warmingco2_siteinfo_ecm$ecm_type[Jmax25_warmingco2_siteinfo_ecm$exp_nam=="RiceFACE_Japan_A_2003_39,38_140,57"] <-"AM"
 Jmax25_warmingco2_siteinfo_ecm$ecm_type[Jmax25_warmingco2_siteinfo_ecm$exp_nam=="RiceFACE_Japan_A_2004_39,38_140,57"] <-"AM"
 final_co2_jmax <- subset(Jmax25_warmingco2_siteinfo_ecm,is.na(response_ratio)==FALSE &method=="vcmax"&treatment=="c")
+
+#now, it is time to apply 3 functions!
+#firstly, only working on vcmax25
+dim(vcmax25_warmingco2_siteinfo_ecm)
+dim(Jmax25_warmingco2_siteinfo_ecm)
+#not yet divided into co2 and warming...
+vc25_data <- response_ratio(vcmax25_warmingco2_siteinfo_ecm,"vcmax25")
+vc25_data_sitemean <- agg_plot(vc25_data,"vcmax25")
+
+ 
+
