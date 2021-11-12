@@ -220,6 +220,13 @@ ggplot(df, aes(x=GrowthT))+geom_point(aes(y=pred_vcmax25))+geom_smooth(aes(y=pre
   theme(axis.title.x = element_text(size = 15, vjust=-.2)) +
   theme(axis.title.y = element_text(size = 15, vjust=0.3))
 
+ggplot(df, aes(x=GrowthT))+geom_point(aes(y=pred_vcmax25))+geom_smooth(aes(y=pred_vcmax25,colour="prediction"))+
+  geom_smooth(aes(y=vcmax25_23obs,color="Tleaf = 23 using kinetic"),se=F)+
+  geom_smooth(aes(y=vcmax25_23obs_normal,color="Tleaf = 23 using arrhenius"),se=F)+
+  theme_bw() +
+  theme(axis.title.x = element_text(size = 15, vjust=-.2)) +
+  theme(axis.title.y = element_text(size = 15, vjust=0.3))
+
 #vcmax?
 ggplot(df, aes(x=GrowthT))+geom_point(aes(y=pred_vcmax))+geom_smooth(aes(y=pred_vcmax,colour="prediction"))+
   geom_smooth(aes(y=Vcmax14_obs,color="Tleaf = 14"))+geom_smooth(aes(y=Vcmax23_obs,color="Tleaf = 23"))+geom_smooth(aes(y=Vcmax32_obs,color="Tleaf = 32"))+

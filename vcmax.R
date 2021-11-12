@@ -1056,7 +1056,7 @@ final_ecm_co2_info <- merge(final_ecm_co2,ecm_info,
                                    by=c("exp_nam"),all.x=TRUE)
 
 ggplot(final_ecm_co2_info,
-       aes(x=response_ratio, y=pred_response_ratio,label=exp_nam,color=ecm_final)) +geom_point(size=3) +geom_text(aes(label=exp_nam),hjust=0, vjust=0,size=2)+
+       aes(x=response_ratio, y=pred_response_ratio,label=exp_nam,color=ecm_final)) +geom_point(size=3) +geom_text(aes(label=exp_nam),hjust=0, vjust=0,size=4,check_overlap=TRUE)+
   labs(y="predicted response ratio", x = "measured response ratio") +ylim(-0.2,0.2)+xlim(-0.2,0.2) +theme_classic()+geom_abline(slope=1)+
   theme(axis.text=element_text(size=30),axis.title =element_text(size=30),legend.text=element_text(size=20))
 ggsave(paste("~/data/output_gcme/vc25_vcmax_co2_ecm_name.jpg",sep=""),width = 15, height = 15)
@@ -1155,6 +1155,7 @@ ggplot(aaa, aes(x=Group.2 , y=response_ratio)) +geom_jitter()+
   geom_hline( yintercept=0.0, size=0.5 ) +labs(y="Log response ratio of Jmax25", x = " ") +ylim(-3,3) +theme_classic()+
   theme(axis.text=element_text(size=20),axis.title =element_text(size=20))+coord_flip()
 
+#stop at here!!!!
 #now, do something about fertilization exp
 summary(vcmax25_final2)
 #c,cw,cw3,w,w2 were firstly selected to test its response in pmodel
