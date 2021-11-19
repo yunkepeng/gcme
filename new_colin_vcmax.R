@@ -28,8 +28,7 @@ library(MAd)
 
 #a test of function to unify all important steps: samples -> per plot -> all plots
 final_co2 <- read.csv("~/data/example_df.csv")
-final_co2<- final_co2[,c("exp_nam","ambient","ambient_Sd","ambient_Se",
-                         "elevated","elevated_Se","elevated_Se","elevated_Sd","n_plots")]
+#final_co2<- final_co2[,c("exp_nam","ambient","ambient_Sd","ambient_Se","elevated","elevated_Se","elevated_Se","elevated_Sd","n_plots")]
 
 #1. response_ratio includes metafor::escalc() to calculate response ratio 
 response_ratio <- function(df,variable_name){
@@ -99,51 +98,49 @@ agg_plot <- function(df_c_sub,variable_name){
 bb <- agg_plot(aa,"vcmax25")
 
 
-#3. aggregate on all plots to for a final overall boxplot of vcmax25-co2
-agg_meta <- function(df, groupvar){
-  
-  out_meta <- df %>% dplyr::filter(my_varnam==eval(parse_character(groupvar))) %>% 
-    
-    # main meta analysis function call, adjusted step size (see http://www.metafor-project.org/doku.php/tips:convergence_problems_rma)
-    # metafor::rma( logr, logr_var, method = "REML", slab = exp_nam, control = list(stepadj=0.3), data = . )
-    metafor::rma.mv( logr, logr_var, method = "REML", random = ~ 1 | exp_nam, slab = exp_nam, control = list(stepadj=0.3), data = . )
-  
-  # transform back
-  out_meta_scaled <- predict( out_meta, transf=exp )
-  
-  df_box <- tibble(
-    my_varnam=groupvar, 
-    middle = out_meta$b[1,1], 
-    ymin   = out_meta$ci.lb, 
-    ymax   = out_meta$ci.ub,
-    
-    middle_scaled = out_meta_scaled$pred, 
-    ymin_scaled   = out_meta_scaled$ci.lb, 
-    ymax_scaled   = out_meta_scaled$ci.ub
-  )
-  return(list(df_box=df_box, out_meta=out_meta))
-}
-list_meta  <- purrr::map(as.list("vcmax25"), ~agg_meta(bb, .))
-df_varnams <- tibble(my_varnam = c("vcmax25"),my_lab    = c("vcmax25"))
-df_metabox <- purrr::map_dfr(list_meta, "df_box") %>% left_join( df_varnams, by = "my_varnam" )
-names(list_meta) <- "vcmax25"
+#3. an overall boxplot of vcmax25-co2: based on each plot - needs further work
+#create a function that input original df and plot-mean df and output a metabox
 
-bb %>%
-  ggplot( aes(x=my_varnam, y=logr)) +
+agg_meta <- function(df){
+  explist <- unique(df$exp_nam)
+  mylist <- list() #create an empty list
+  #some are just all NA for original data's standard deviation - needs division -> in this way just calculate normal mean, lower and upper band
+  for (i in 1:length(explist)){
+    if (all(is.na(subset(df,exp_nam==explist[i])$logr_var)) == TRUE){
+      uncertainty <- qt(.975,9)*sd(as.vector(subset(df,exp_nam==explist[i])$logr))/sqrt(length(as.vector(subset(df,exp_nam==explist[i])$logr)))
+      mean_value <- mean(subset(df,exp_nam==explist[i])$logr,na.rm=TRUE)
+      df_box <- tibble(
+        exp_nam=explist[i], middle = mean_value,
+        ymin   = mean_value-uncertainty,
+        ymax   = mean_value+uncertainty,
+        middle_scaled = NA, ymin_scaled   = NA, ymax_scaled   = NA,variance_info ="No")
+    } else {
+      #where year is random factor
+      out_meta <- metafor::rma.mv( logr, logr_var, method = "REML",
+                                   random = ~ 1 | Year, slab = Year, control = list(stepadj=0.3),data = subset(df,exp_nam==explist[i]))
+      out_meta_scaled <- predict( out_meta, transf=exp )
+      df_box <- tibble(
+        exp_nam=explist[i], middle = out_meta$b[1,1], ymin   = out_meta$ci.lb, ymax   = out_meta$ci.ub,
+        middle_scaled = out_meta_scaled$pred, ymin_scaled   = out_meta_scaled$ci.lb, ymax_scaled   = out_meta_scaled$ci.ub,variance_info ="Yes")
+      }
+      mylist[[i]] <- df_box}
+  output <- do.call("rbind",mylist)
+  return(output)
+}
+
+#do meta-analysis for all each bplot
+df_metabox <- agg_meta(aa)
+
+aa %>%
+  ggplot( aes(x=exp_nam, y=logr)) +
   geom_jitter( color = rgb(0,0,0,0.3), aes( size = 1/logr_se ), position = position_jitter(w = 0.2, h = 0) ) +
-  geom_crossbar( data = df_metabox, aes(x=my_lab, y=middle, ymin=ymin, ymax=ymax), fill = "grey80", alpha = 0.6, width = 0.5 ) +
+  geom_boxplot(alpha=0.2,outlier.shape = NA,color="red") + # to compare
+  geom_crossbar( data = df_metabox, aes(x=exp_nam, y=middle, ymin=ymin, ymax=ymax), fill = "grey80", alpha = 0.6, width = 0.5 ) +
   geom_hline( yintercept=0.0, size=0.5 ) +
   labs(x="", y="Log Response Ratio", size=expression(paste("Error"^{-1}))) +
   coord_flip() +
   ylim(-1,1) 
-
-aa %>%
-  ggplot( aes(x=exp_nam, y=logr)) +
-  geom_boxplot(alpha=0.2,outlier.shape = NA) +
-  geom_jitter( color = rgb(0,0,0,0.3),alpha=0.2, aes( size = logr_se ), position = position_jitter(w = 0.2, h = 0) ) +
-  geom_hline( yintercept=0.0, size=0.5 ) +
-  labs(x="", y="Log Response Ratio", size=expression(paste("Standard Error"))) +
-  coord_flip() 
+# big difference!
 
 
 #above is just a test - now starts
@@ -1209,4 +1206,13 @@ subset(vc25_f_data_traits,treatment=="f") %>%
   coord_flip() 
 ggsave(paste("~/data/output_gcme/colin/Nfer_3.jpg",sep=""))
 
-# leaf traits c13, n15, narea, lma 
+#now, start soil N collection
+summary(vcmax25_final2)
+summary(Jmax25_final2)
+all_expnam <- aggregate(vcmax25_final2,by=list(vcmax25_final2$exp_nam), FUN=mean, na.rm=TRUE)$Group.1
+df_part <- df %>% filter(exp_nam %in% all_expnam)
+df_part_soil <- df_part[grep("soil", df_part$Data_type),] # all soil data - just see
+#check how many variables
+df_part_soil%>% group_by(Data_type,exp_nam) %>% summarise(number=n()) %>%
+  group_by(Data_type) %>% summarise(number=n()) %>% arrange(desc(number), .by_group = TRUE)
+#
