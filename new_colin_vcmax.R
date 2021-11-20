@@ -66,6 +66,8 @@ response_ratio <- function(df,variable_name){
 aa <- response_ratio(final_co2,"vcmax25")
 
 #2. agg_plot includes MAd::agg to aggregate samples into plot mean
+#NOT used
+#since agg_meta was done - not used this because the aggregation was not useful after discussing with beni
 agg_plot <- function(df_c_sub,variable_name){
   #-----------------------------------------------------------------------
   # Input: 
@@ -96,7 +98,6 @@ agg_plot <- function(df_c_sub,variable_name){
   #-----------------------------------------------------------------------
 }
 bb <- agg_plot(aa,"vcmax25")
-
 
 #3. an overall boxplot of vcmax25-co2: based on each plot - needs further work
 #create a function that input original df and plot-mean df and output a metabox
@@ -130,7 +131,7 @@ agg_meta <- function(df){
 
 #do meta-analysis for all each bplot
 df_metabox <- agg_meta(aa)
-
+summary(df_metabox$middle)
 aa %>%
   ggplot( aes(x=exp_nam, y=logr)) +
   geom_jitter( color = rgb(0,0,0,0.3), aes( size = 1/logr_se ), position = position_jitter(w = 0.2, h = 0) ) +
