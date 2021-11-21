@@ -115,19 +115,29 @@ agg_meta <- function(df){
         ymin   = mean_value-uncertainty,
         ymax   = mean_value+uncertainty,
         middle_scaled = NA, ymin_scaled   = NA, ymax_scaled   = NA,variance_info ="No")
-    } else {
-      #where year is random factor
-      out_meta <- metafor::rma.mv( logr, logr_var, method = "REML",
-                                   random = ~ 1 | Year, slab = Year, control = list(stepadj=0.3),data = subset(df,exp_nam==explist[i]))
+    } else {# define if uncertainty is 0, when N = 1
+      if (length(subset(df,exp_nam==explist[i])$logr_var) ==1){
+        uncertainty <- 0
+        mean_value <- mean(subset(df,exp_nam==explist[i])$logr,na.rm=TRUE)
+        df_box <- tibble(
+          exp_nam=explist[i], middle = mean_value,
+          ymin   = mean_value-uncertainty,
+          ymax   = mean_value+uncertainty,
+          middle_scaled = NA, ymin_scaled   = NA, ymax_scaled   = NA,variance_info ="No")
+      } else 
+        #where year is random factor
+        out_meta <- metafor::rma.mv( logr, logr_var, method = "REML",
+                                     random = ~ 1 | Year, slab = Year, control = list(stepadj=0.3),data = subset(df,exp_nam==explist[i]))
       out_meta_scaled <- predict( out_meta, transf=exp )
       df_box <- tibble(
         exp_nam=explist[i], middle = out_meta$b[1,1], ymin   = out_meta$ci.lb, ymax   = out_meta$ci.ub,
         middle_scaled = out_meta_scaled$pred, ymin_scaled   = out_meta_scaled$ci.lb, ymax_scaled   = out_meta_scaled$ci.ub,variance_info ="Yes")
-      }
-      mylist[[i]] <- df_box}
+    }
+  mylist[[i]] <- df_box}
   output <- do.call("rbind",mylist)
   return(output)
 }
+
 
 #do meta-analysis for all each bplot
 df_metabox <- agg_meta(aa)
@@ -444,9 +454,6 @@ vcmax25_final2$treatment_label[vcmax25_final2$treatment=="i"] <- "irrigation"
 vcmax25_final2$treatment_label[vcmax25_final2$treatment=="w"] <- "1-degree warming"
 vcmax25_final2$treatment_label[vcmax25_final2$treatment=="w2"] <- " 2-degree warming "
 vcmax25_final2$treatment_label[vcmax25_final2$treatment=="wd"] <- "warming + drought"
-
-
-
 
 #now, jmax!!
 #1.jmax25
@@ -791,61 +798,55 @@ coord_org <- read.csv("~/data/gcme/data_received_190325/table_var_exp_names.csv"
 df_experiments_coord <- merge(coord_org,naming_expnam_filled,by=c("Site.Name"),all.x=TRUE)
 df_experiments_coord_co2 <- subset(df_experiments_coord,is.na(exp_nam)==FALSE)
 dim(df_experiments_coord_co2)
+#now, divide them in advance
+df_experiments_coord_co2$ecm_type <- "NA"
+df_experiments_coord_co2$ecm_type[df_experiments_coord_co2$EcM==TRUE] <- "ECM"
+df_experiments_coord_co2$ecm_type[df_experiments_coord_co2$AM==TRUE] <- "AM"
+df_experiments_coord_co2$ecm_type[df_experiments_coord_co2$ErM==TRUE] <- "ErM"
+df_experiments_coord_co2$ecm_type[df_experiments_coord_co2$Moss==TRUE] <- "Moss"
+
+df_experiments_coord_co2$pft_info <- "NA"
+df_experiments_coord_co2$pft_info[df_experiments_coord_co2$Fern==TRUE] <-"fern"
+df_experiments_coord_co2$pft_info[df_experiments_coord_co2$C3.grass==TRUE] <-"grassland"
+df_experiments_coord_co2$pft_info[df_experiments_coord_co2$C4.grass==TRUE] <-"grassland"
+df_experiments_coord_co2$pft_info[df_experiments_coord_co2$C3.herb==TRUE] <-"grassland"
+df_experiments_coord_co2$pft_info[df_experiments_coord_co2$C4.herb==TRUE] <-"grassland"
+df_experiments_coord_co2$pft_info[df_experiments_coord_co2$pft_info=="NA"] <- "forest"
+
+df_experiments_coord_co2$c3c4 <- "NA"
+df_experiments_coord_co2$c3c4[df_experiments_coord_co2$C4.grass==TRUE] <-"c4"
+df_experiments_coord_co2$c3c4[df_experiments_coord_co2$C4.herb==TRUE] <-"c4"
+df_experiments_coord_co2$c3c4[df_experiments_coord_co2$c3c4=="NA"] <- "c3"
+
+#some additionals from Cesar's paper - page 14 - SI- Table 1 - https://static-content.springer.com/esm/art%3A10.1038%2Fs41558-019-0545-2/MediaObjects/41558_2019_545_MOESM1_ESM.pdf
+#now, fully checked
+df_experiments_coord_co2$ecm_type[df_experiments_coord_co2$exp_nam=="FACTS_II_FACE3_pt"] <-"ECM"
+df_experiments_coord_co2$ecm_type[df_experiments_coord_co2$exp_nam=="FACTS_II_FACE4_bp"] <-"ECM"
+df_experiments_coord_co2$ecm_type[df_experiments_coord_co2$exp_nam=="EucFACE"] <-"ECM"
+df_experiments_coord_co2$ecm_type[df_experiments_coord_co2$exp_nam=="EUROFACE4_pn"] <-"ECM"
+df_experiments_coord_co2$ecm_type[df_experiments_coord_co2$exp_nam=="EUROFACE4_pe"] <-"ECM"
+df_experiments_coord_co2$ecm_type[df_experiments_coord_co2$exp_nam=="EUROFACE4_pa"] <-"ECM"
+df_experiments_coord_co2$ecm_type[df_experiments_coord_co2$exp_nam=="POPFACE_pa"] <-"ECM"
+df_experiments_coord_co2$ecm_type[df_experiments_coord_co2$exp_nam=="POPFACE_pe"] <-"ECM"
+df_experiments_coord_co2$ecm_type[df_experiments_coord_co2$exp_nam=="POPFACE_pn"] <-"ECM"
+df_experiments_coord_co2$ecm_type[df_experiments_coord_co2$exp_nam=="Nevada_Desert_FACE"] <-"AM"
+df_experiments_coord_co2$ecm_type[df_experiments_coord_co2$exp_nam=="Brandbjerg"] <-"AM"
+
+
 
 #final merge
 vcmax25_warmingco2_siteinfo_ecm <- merge(vcmax25_warmingco2_siteinfo,df_experiments_coord_co2,by=c("exp_nam"),all.x=TRUE)
-vcmax25_warmingco2_siteinfo_ecm%>% group_by(AM)  %>% summarise(number = n())
-vcmax25_warmingco2_siteinfo_ecm%>% group_by(EcM)  %>% summarise(number = n())
-vcmax25_warmingco2_siteinfo_ecm$ecm_type <- "NA"
-vcmax25_warmingco2_siteinfo_ecm$ecm_type[vcmax25_warmingco2_siteinfo_ecm$EcM==TRUE] <- "ECM"
-vcmax25_warmingco2_siteinfo_ecm$ecm_type[vcmax25_warmingco2_siteinfo_ecm$AM==TRUE] <- "AM"
-vcmax25_warmingco2_siteinfo_ecm$ecm_type[vcmax25_warmingco2_siteinfo_ecm$ErM==TRUE] <- "ErM"
-vcmax25_warmingco2_siteinfo_ecm$ecm_type[vcmax25_warmingco2_siteinfo_ecm$Moss==TRUE] <- "Moss"
 #manually add rest of points basing on Terrer et al. 2016 New Phytol- fig.1
 vcmax25_warmingco2_siteinfo_ecm$ecm_type[vcmax25_warmingco2_siteinfo_ecm$exp_nam=="BioCON"] <-"AM"
-
-#also defines pft and c3/c4
-vcmax25_warmingco2_siteinfo_ecm$pft_info <- "NA"
-vcmax25_warmingco2_siteinfo_ecm$pft_info[vcmax25_warmingco2_siteinfo_ecm$Fern==TRUE] <-"fern"
-vcmax25_warmingco2_siteinfo_ecm$pft_info[vcmax25_warmingco2_siteinfo_ecm$C3.grass==TRUE] <-"grassland"
-vcmax25_warmingco2_siteinfo_ecm$pft_info[vcmax25_warmingco2_siteinfo_ecm$C4.grass==TRUE] <-"grassland"
-vcmax25_warmingco2_siteinfo_ecm$pft_info[vcmax25_warmingco2_siteinfo_ecm$C3.herb==TRUE] <-"grassland"
-vcmax25_warmingco2_siteinfo_ecm$pft_info[vcmax25_warmingco2_siteinfo_ecm$C4.herb==TRUE] <-"grassland"
-vcmax25_warmingco2_siteinfo_ecm$pft_info[vcmax25_warmingco2_siteinfo_ecm$pft_info=="NA"] <- "forest"
-
-vcmax25_warmingco2_siteinfo_ecm$c3c4 <- "NA"
-vcmax25_warmingco2_siteinfo_ecm$c3c4[vcmax25_warmingco2_siteinfo_ecm$C4.grass==TRUE] <-"c4"
-vcmax25_warmingco2_siteinfo_ecm$c3c4[vcmax25_warmingco2_siteinfo_ecm$C4.herb==TRUE] <-"c4"
-vcmax25_warmingco2_siteinfo_ecm$c3c4[vcmax25_warmingco2_siteinfo_ecm$c3c4=="NA"] <- "c3"
-
+vcmax25_warmingco2_siteinfo_ecm$pft_info[vcmax25_warmingco2_siteinfo_ecm$exp_nam=="BioCON"] <-"grassland"
+vcmax25_warmingco2_siteinfo_ecm$c3c4[vcmax25_warmingco2_siteinfo_ecm$exp_nam=="BioCON"] <-"c3"
 
 # do the same for jmax
 Jmax25_warmingco2_siteinfo_ecm <- merge(Jmax25_warmingco2_siteinfo,df_experiments_coord_co2,by=c("exp_nam"),all.x=TRUE)
-Jmax25_warmingco2_siteinfo_ecm%>% group_by(AM)  %>% summarise(number = n())
-Jmax25_warmingco2_siteinfo_ecm%>% group_by(EcM)  %>% summarise(number = n())
-Jmax25_warmingco2_siteinfo_ecm$ecm_type <- "NA"
-Jmax25_warmingco2_siteinfo_ecm$ecm_type[Jmax25_warmingco2_siteinfo_ecm$EcM==TRUE] <- "ECM"
-Jmax25_warmingco2_siteinfo_ecm$ecm_type[Jmax25_warmingco2_siteinfo_ecm$AM==TRUE] <- "AM"
-Jmax25_warmingco2_siteinfo_ecm$ecm_type[Jmax25_warmingco2_siteinfo_ecm$ErM==TRUE] <- "ErM"
-Jmax25_warmingco2_siteinfo_ecm$ecm_type[Jmax25_warmingco2_siteinfo_ecm$Moss==TRUE] <- "Moss"
 #manually add rest of points basing on Terrer et al. 2016 New Phytol- fig.1
 Jmax25_warmingco2_siteinfo_ecm$ecm_type[Jmax25_warmingco2_siteinfo_ecm$exp_nam=="BioCON"] <-"AM"
-Jmax25_warmingco2_siteinfo_ecm$ecm_type[Jmax25_warmingco2_siteinfo_ecm$exp_nam=="RiceFACE_Japan_A_2003_39,38_140,57"] <-"AM"
-Jmax25_warmingco2_siteinfo_ecm$ecm_type[Jmax25_warmingco2_siteinfo_ecm$exp_nam=="RiceFACE_Japan_A_2004_39,38_140,57"] <-"AM"
-#also defines pft and c3/c4
-Jmax25_warmingco2_siteinfo_ecm$pft_info <- "NA"
-Jmax25_warmingco2_siteinfo_ecm$pft_info[Jmax25_warmingco2_siteinfo_ecm$Fern==TRUE] <-"fern"
-Jmax25_warmingco2_siteinfo_ecm$pft_info[Jmax25_warmingco2_siteinfo_ecm$C3.grass==TRUE] <-"grassland"
-Jmax25_warmingco2_siteinfo_ecm$pft_info[Jmax25_warmingco2_siteinfo_ecm$C4.grass==TRUE] <-"grassland"
-Jmax25_warmingco2_siteinfo_ecm$pft_info[Jmax25_warmingco2_siteinfo_ecm$C3.herb==TRUE] <-"grassland"
-Jmax25_warmingco2_siteinfo_ecm$pft_info[Jmax25_warmingco2_siteinfo_ecm$C4.herb==TRUE] <-"grassland"
-Jmax25_warmingco2_siteinfo_ecm$pft_info[Jmax25_warmingco2_siteinfo_ecm$pft_info=="NA"] <- "forest"
-
-Jmax25_warmingco2_siteinfo_ecm$c3c4 <- "NA"
-Jmax25_warmingco2_siteinfo_ecm$c3c4[Jmax25_warmingco2_siteinfo_ecm$C4.grass==TRUE] <-"c4"
-Jmax25_warmingco2_siteinfo_ecm$c3c4[Jmax25_warmingco2_siteinfo_ecm$C4.herb==TRUE] <-"c4"
-Jmax25_warmingco2_siteinfo_ecm$c3c4[Jmax25_warmingco2_siteinfo_ecm$c3c4=="NA"] <- "c3"
-
+Jmax25_warmingco2_siteinfo_ecm$pft_info[Jmax25_warmingco2_siteinfo_ecm$exp_nam=="BioCON"] <-"grassland"
+Jmax25_warmingco2_siteinfo_ecm$c3c4[Jmax25_warmingco2_siteinfo_ecm$exp_nam=="BioCON"] <-"c3"
 
 #now, it is time to apply 3 functions!
 #firstly, only working on vcmax25
@@ -853,82 +854,55 @@ dim(vcmax25_warmingco2_siteinfo_ecm)
 dim(Jmax25_warmingco2_siteinfo_ecm)
 #not yet divided into co2 and warming...
 vc25_data <- response_ratio(vcmax25_warmingco2_siteinfo_ecm,"vcmax25")
-vc25_data_sitemean <- agg_plot(vc25_data,"vcmax25")
+co2_vcmax25 <- subset(vc25_data,treatment=="c")
+#within same plot and treatment -> now agg plot (basing on logr, logr_var and Year as the only random factor)
+vc25_data_sitemean <- agg_meta(co2_vcmax25)
 #now, output figure
 #treatment divided by c, cw, w, w2, cf, f
-co2_vcmax25 <- subset(vc25_data,treatment=="c")
-#three three below should be the same --> so the response ratio should just be directly calculated as from original data!
-summary(co2_vcmax25$vcmax25_e_inst/co2_vcmax25$vcmax25_a_inst)
-summary(co2_vcmax25$vcmax25_e/co2_vcmax25$vcmax25_a)
-summary(co2_vcmax25$elevated/co2_vcmax25$ambient)
+##three three below should be the same --> so the response ratio should just be directly calculated as from original data!
+#summary(co2_vcmax25$vcmax25_e_inst/co2_vcmax25$vcmax25_a_inst)
+#summary(co2_vcmax25$vcmax25_e/co2_vcmax25$vcmax25_a)
+#summary(co2_vcmax25$elevated/co2_vcmax25$ambient)
+
+#check ecm/am type is all correct after check cesar's si table
+vcmax25_warmingco2_siteinfo_ecm
+aa <- vcmax25_warmingco2_siteinfo_ecm %>% group_by(exp_nam,ecm_type) %>% summarise(number=n())
+#Something should be changed: AM: Brandbjerg
+#Something should be changed: ECM: POPFACE_pa, POPFACE_pe, POPFACE_pn
 
 #fig.1 co2 effect on vcmax25
 #not added:   geom_jitter(alpha=0.2, aes(size = logr_se), position = position_jitter(w = 0.2, h = 0) ) +
 co2_vcmax25 %>%
-  ggplot( aes(x=exp_nam, y=logr,fill=ecm_type)) + #ecm_type, c3c4, pft_info
-  geom_jitter(alpha=0.2, aes(size = logr_se), position = position_jitter(w = 0.2, h = 0) ) +
-  geom_boxplot(outlier.shape = NA,alpha=0.3) +
-  geom_boxplot(aes(x=exp_nam, y=pred_response_ratio),color="red",outlier.shape = NA)+
-  geom_hline( yintercept=0.0, size=0.5 )+scale_fill_manual(values=c("yellow","purple","brown","green"))+
-  labs(x="", y="CO2 effects on vcmax25", size=expression(paste("Standard Error"))) +
+  ggplot( aes(x=exp_nam, y=logr)) +
+  geom_jitter(alpha=0.2, aes(size = 1/logr_se)) +
+  geom_crossbar( data = vc25_data_sitemean, aes(x=exp_nam, y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5 ) +
+  geom_boxplot(aes(x=exp_nam, y=pred_response_ratio,color=ecm_type),size=1)+ # pft_info,c3c4
+  geom_hline( yintercept=0.0, size=0.5 )+
+  labs(x="", y="CO2 effects on vcmax25", size=expression(paste("Error"^{-1}))) +
   coord_flip() 
 ggsave(paste("~/data/output_gcme/colin/co2_1.jpg",sep=""))
 
-co2_vcmax25 %>%
-  ggplot( aes(x=exp_nam, y=logr,fill=pft_info)) + #ecm_type, c3c4, pft_info
-  geom_boxplot(outlier.shape = NA) +
-  geom_boxplot(aes(x=exp_nam, y=pred_response_ratio),color="red",outlier.shape = NA)+
-  geom_hline( yintercept=0.0, size=0.5 )+scale_fill_manual(values=c("yellow","purple","brown","green"))+
-  labs(x="", y="CO2 effects on vcmax25", size=expression(paste("Standard Error"))) +
-  coord_flip() 
-ggsave(paste("~/data/output_gcme/colin/co2_1a.jpg",sep=""))
-
-co2_vcmax25 %>%
-  ggplot( aes(x=exp_nam, y=logr,fill=c3c4)) + #ecm_type, c3c4, pft_info
-  geom_boxplot(outlier.shape = NA) +
-  geom_boxplot(aes(x=exp_nam, y=pred_response_ratio),color="red",outlier.shape = NA)+
-  geom_hline( yintercept=0.0, size=0.5 )+scale_fill_manual(values=c("yellow","purple","brown","green"))+
-  labs(x="", y="CO2 effects on vcmax25", size=expression(paste("Standard Error"))) +
-  coord_flip() 
-ggsave(paste("~/data/output_gcme/colin/co2_1b.jpg",sep=""))
-
 #now, jmax25
 Jmax25_data <- response_ratio(Jmax25_warmingco2_siteinfo_ecm,"jmax25")
-Jmax25_data_sitemean <- agg_plot(Jmax25_data,"jmax25")
+co2_Jmax25 <- subset(Jmax25_data,treatment=="c")
+Jmax25_data_sitemean <- agg_meta(co2_Jmax25)
 #now, output figure
 #treatment divided by c, cw, w, w2, cf, f
-co2_Jmax25 <- subset(Jmax25_data,treatment=="c")
 
 #fig.2 co2 effect on vcmax25
 #not added:   geom_jitter(alpha=0.2, aes(size = logr_se), position = position_jitter(w = 0.2, h = 0) ) +
 co2_Jmax25 %>%
-  ggplot( aes(x=exp_nam, y=logr,fill=ecm_type)) + #ecm_type, c3c4, pft_info
-  geom_boxplot(outlier.shape = NA) +
-  geom_boxplot(aes(x=exp_nam, y=pred_response_ratio),color="red",outlier.shape = NA)+
-  geom_hline( yintercept=0.0, size=0.5 )+scale_fill_manual(values=c("yellow","purple","brown","green"))+
-  labs(x="", y="CO2 effects on Jmax25", size=expression(paste("Standard Error"))) +
+  ggplot( aes(x=exp_nam, y=logr)) +
+  geom_jitter(alpha=0.2, aes(size = 1/logr_se)) +
+  geom_crossbar( data = Jmax25_data_sitemean, aes(x=exp_nam, y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5 ) +
+  geom_boxplot(aes(x=exp_nam, y=pred_response_ratio,color=ecm_type),size=1)+ # pft_info,c3c4
+  geom_hline( yintercept=0.0, size=0.5 )+
+  labs(x="", y="CO2 effects on Jmax25", size=expression(paste("Error"^{-1}))) +
   coord_flip() 
 ggsave(paste("~/data/output_gcme/colin/co2_2.jpg",sep=""))
 
-co2_Jmax25 %>%
-  ggplot( aes(x=exp_nam, y=logr,fill=pft_info)) + #ecm_type, c3c4, pft_info
-  geom_boxplot(outlier.shape = NA) +
-  geom_boxplot(aes(x=exp_nam, y=pred_response_ratio),color="red",outlier.shape = NA)+
-  geom_hline( yintercept=0.0, size=0.5 )+scale_fill_manual(values=c("yellow","purple","brown","green"))+
-  labs(x="", y="CO2 effects on Jmax25", size=expression(paste("Standard Error"))) +
-  coord_flip() 
-ggsave(paste("~/data/output_gcme/colin/co2_2a.jpg",sep=""))
-
-co2_Jmax25 %>%
-  ggplot( aes(x=exp_nam, y=logr,fill=c3c4)) + #ecm_type, c3c4, pft_info
-  geom_boxplot(outlier.shape = NA) +
-  geom_boxplot(aes(x=exp_nam, y=pred_response_ratio),color="red",outlier.shape = NA)+
-  geom_hline( yintercept=0.0, size=0.5 )+scale_fill_manual(values=c("yellow","purple","brown","green"))+
-  labs(x="", y="CO2 effects on Jmax25", size=expression(paste("Standard Error"))) +
-  coord_flip() 
-ggsave(paste("~/data/output_gcme/colin/co2_2b.jpg",sep=""))
-
 #fig.3 measured or predicted response ratio of vc25 vs. jmax25 at plot-level
+#here sensitivity coefficient doesn't account for uncertainty when 
 vcmax25_pred <- aggregate(co2_vcmax25,by=list(co2_vcmax25$exp_nam,co2_vcmax25$pft_info,co2_vcmax25$c3c4,co2_vcmax25$ecm_type), FUN=mean, na.rm=TRUE)
 vcmax25_pred_part <- vcmax25_pred[,c("Group.1","Group.2","Group.3","Group.4",
                                      "vcmax25_a_inst","vcmax25_e_inst",
@@ -949,10 +923,10 @@ names(Jmax25_pred_part) <- c("exp_nam","pft_final_j","c3c4_j","ecm_type_j",
                               "pred_jmax25_a","pred_jmax25_e","logr_pred_jmax25",
                               "co2_a_j","co2_e_j","Tg_j","PPFD_j","temp_j","vpd_j")
 
-vc25_data_sitemean_obs <- vc25_data_sitemean[,c("exp_nam","logr","n_plots","logr_se")]
-names(vc25_data_sitemean_obs) <- c("exp_nam","logr_obs_vcmax25","n_plots_vcmax25","logr_obs_vcmax25_se")
-Jmax25_data_sitemean_obs <- Jmax25_data_sitemean[,c("exp_nam","logr","n_plots","logr_se")]
-names(Jmax25_data_sitemean_obs) <- c("exp_nam","logr_obs_jmax25","n_plots_jmax25","logr_obs_jmax25_se")
+vc25_data_sitemean_obs <- vc25_data_sitemean[,c("exp_nam","middle","ymin","ymax")]
+names(vc25_data_sitemean_obs) <- c("exp_nam","logr_obs_vcmax25","ymin_logr_obs_vcmax25","ymax_logr_obs_vcmax25")
+Jmax25_data_sitemean_obs <- Jmax25_data_sitemean[,c("exp_nam","middle","ymin","ymax")]
+names(Jmax25_data_sitemean_obs) <- c("exp_nam","logr_obs_jmax25","ymin_logr_obs_jmax25","ymax_logr_obs_jmax25")
 
 photo_final <-Reduce(function(x,y) merge(x = x, y = y, by = c("exp_nam"),all.x=TRUE),
                  list(vcmax25_pred_part,Jmax25_pred_part,vc25_data_sitemean_obs,Jmax25_data_sitemean_obs))
@@ -962,14 +936,19 @@ ggplot(photo_final) +
   geom_smooth(aes(x=logr_obs_jmax25, y=logr_obs_vcmax25),color="black",method="lm")+
   geom_smooth(aes(x=logr_pred_jmax25, y=logr_pred_vcmax25),color="red",method="lm")+
   labs(x = "response ratio jmax25",y="response ratio vcmax25")  +theme_classic()+
-  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))#+geom_text(aes(logr_obs_jmax25, y=logr_obs_vcmax25,label=exp_nam))
 ggsave(paste("~/data/output_gcme/colin/co2_3.jpg",sep=""))
 
-#fig.3 sensitivity cofficient
+#fig.3 sensitivity cofficient - basing on logr_obs_vcmax25
 #just check - one plot only has one co2_a (co2_e) set!
 dim(co2_vcmax25 %>% group_by(exp_nam,co2_a,co2_e) %>% summarise(number=n()))
-photo_final$coef_r_vcmax25 <- (log(photo_final$vcmax25_e)-log(photo_final$vcmax25_a))/(log(photo_final$co2_e)-log(photo_final$co2_a))
-photo_final$coef_r_jmax25 <- (log(photo_final$jmax25_e)-log(photo_final$jmax25_a))/(log(photo_final$co2_e_j)-log(photo_final$co2_a_j))
+photo_final$coef_r_vcmax25 <- photo_final$logr_obs_vcmax25/(log(photo_final$co2_e/photo_final$co2_a))
+photo_final$coef_r_jmax25 <- photo_final$logr_obs_jmax25/(log(photo_final$co2_e_j/photo_final$co2_a_j))
+
+photo_final$coef_r_vcmax25_ymax <- photo_final$ymax_logr_obs_vcmax25/(log(photo_final$co2_e/photo_final$co2_a))
+photo_final$coef_r_jmax25_ymax <- photo_final$ymax_logr_obs_jmax25/(log(photo_final$co2_e_j/photo_final$co2_a_j))
+photo_final$coef_r_vcmax25_ymin <- photo_final$ymin_logr_obs_vcmax25/(log(photo_final$co2_e/photo_final$co2_a))
+photo_final$coef_r_jmax25_ymin <- photo_final$ymin_logr_obs_jmax25/(log(photo_final$co2_e_j/photo_final$co2_a_j))
 
 coef_r_vcmax25 <- photo_final$coef_r_vcmax25
 coef_r_jmax25 <- photo_final$coef_r_jmax25
@@ -983,24 +962,84 @@ t2 <- lm(coef_r_jmax25~logppfd+tg+logvpd)
 summary(t1)
 summary(t2)
 
+photo_final$coef_r_pred_vcmax25 <- log(photo_final$pred_vcmax25_e/photo_final$pred_vcmax25_a)/(log(photo_final$co2_e/photo_final$co2_a))
+photo_final$coef_r_pred_jmax25 <- log(photo_final$pred_jmax25_e/photo_final$pred_jmax25_a)/(log(photo_final$co2_e_j/photo_final$co2_a_j))
 
-#non-sensitive to environments - but how about different types?
+#direct comparison for response ratio and sensitivity coefficient of vcmax25 
+ggplot(photo_final) +
+  geom_point(aes(x=logr_obs_vcmax25, y=logr_pred_vcmax25,shape=pft_final,color=ecm_type,size=2))+
+  geom_smooth(aes(x=logr_obs_vcmax25, y=logr_pred_vcmax25),color="black",method="lm")+
+  labs(x = "logr vcmax25[obs]",y="logr vcmax25[pred]")  +theme_classic()+xlim(-0.2,0.2)+ylim(-0.2,0.2)+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))#+geom_text(aes(logr_obs_jmax25, y=logr_obs_vcmax25,label=exp_nam))
+
+ggplot(photo_final) +
+  geom_point(aes(x=coef_r_vcmax25, y=coef_r_pred_vcmax25,shape=pft_final,color=ecm_type,size=2))+
+  geom_smooth(aes(x=coef_r_vcmax25, y=coef_r_pred_vcmax25),color="black",method="lm")+
+  labs(x = "coef_r vcmax25[obs]",y="coef_r vcmax25[pred]")  +theme_classic()+xlim(-0.2,0.2)+ylim(-0.2,0.2)+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))#+geom_text(aes(logr_obs_jmax25, y=logr_obs_vcmax25,label=exp_nam))
+
+#compare coef_r_vcmax25 in observation and prediction
+# first - compute stanard deviation and then variance
+photo_final$logr_var_vcmax25 <- ((photo_final$ymax_logr_obs_vcmax25-photo_final$logr_obs_vcmax25)/1.96)^2
+photo_final$logr_var_jmax25 <- ((photo_final$ymax_logr_obs_jmax25-photo_final$logr_obs_jmax25)/1.96)^2
+#create a function to divide them into specific cateory
+#input:df, data_type, logr and logr_var
+agg_meta_plots <- function(df,type_name,logr,log_var){
+  explist <- unique(eval(parse(text=paste("df$", type_name, sep = ""))))
+  mylist <- list() #create an empty list
+  df$logr <- eval(parse(text=paste("df$", logr, sep = "")))
+  df$logr_var <- eval(parse(text=paste("df$", log_var, sep = "")))
+  for (i in 1:length(explist)){
+    out_meta <- metafor::rma.mv( logr, logr_var, method = "REML", control = list(stepadj=0.3),
+                                 data= subset(df,eval(parse(text=paste(type_name)))==explist[i]))
+    df_box <- tibble(
+    type_name=explist[i], middle = out_meta$b[1,1], ymin   = out_meta$ci.lb, ymax   = out_meta$ci.ub)
+    mylist[[i]] <- df_box
+    }
+  output <- do.call("rbind",mylist)
+  return(output)
+}
+
+meta_box_vc25_ecm <- agg_meta_plots(photo_final,"ecm_type","logr_obs_vcmax25","logr_var_vcmax25")
+
 photo_final %>%
   ggplot( aes(x=ecm_type, y=coef_r_vcmax25)) + #ecm_type, c3c4, pft_info
   geom_boxplot(outlier.shape = NA) +
+  geom_boxplot(aes(x=ecm_type, y=coef_r_pred_vcmax25),color="red",outlier.shape = NA) +
   labs(x="", y="Sensitivity coefficient of vcmax25 in response to co2") +
+  geom_hline( yintercept=0.0, size=0.5)+
   coord_flip() 
-ggsave(paste("~/data/output_gcme/colin/co2_4.jpg",sep=""))
+ggsave(paste("~/data/output_gcme/colin/co2_4a.jpg",sep=""))
 
 photo_final %>%
   ggplot( aes(x=ecm_type, y=coef_r_jmax25)) + #ecm_type, c3c4, pft_info
   geom_boxplot(outlier.shape = NA) +
+  geom_boxplot(aes(x=ecm_type, y=coef_r_pred_jmax25),color="red",outlier.shape = NA) +
   labs(x="", y="Sensitivity coefficient of jmax25 in response to co2") +
+  geom_hline( yintercept=0.0, size=0.5)+
   coord_flip() 
+ggsave(paste("~/data/output_gcme/colin/co2_4b.jpg",sep=""))
+
+#co2 on jmax25/vcmax25
+photo_final$jv_obs <- log((photo_final$jmax25_e/photo_final$vcmax25_e)/(photo_final$jmax25_a/photo_final$vcmax25_a))
+photo_final$jv_pred <- log((photo_final$pred_jmax25_e/photo_final$pred_vcmax25_e)/(photo_final$pred_jmax25_a/photo_final$pred_vcmax25_a))
+
+ggplot(photo_final) +
+  geom_point(aes(x=jv_obs, y=jv_pred,shape=pft_final,color=ecm_type,size=2))+
+  geom_smooth(aes(x=jv_obs, y=jv_pred),color="black",method="lm")+
+  geom_vline(xintercept = 0)+
+  labs(x = "logr_J/V[obs]",y="logr_J/V[pred]")  +theme_classic()+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))#+geom_text(aes(logr_obs_jmax25, y=logr_obs_vcmax25,label=exp_nam))
 ggsave(paste("~/data/output_gcme/colin/co2_5.jpg",sep=""))
 
-#photo_final$coef_r_pred_vcmax25 <- (log(photo_final$pred_vcmax25_e)-log(photo_final$pred_vcmax25_a))/(log(photo_final$co2_e)-log(photo_final$co2_a))
-#photo_final$coef_r_pred_jmax25 <- (log(photo_final$pred_jmax25_e)-log(photo_final$pred_jmax25_a))/(log(photo_final$co2_e_j)-log(photo_final$co2_a_j))
+photo_final %>%
+  ggplot( aes(x=ecm_type, y=jv_obs)) + #ecm_type, c3c4, pft_info
+  geom_boxplot(outlier.shape = NA) +
+  geom_boxplot(aes(x=ecm_type, y=jv_pred),color="red",outlier.shape = NA) +
+  labs(x="", y="Sensitivity coefficient of jmax25/vcmax25 in response to co2") +
+  geom_hline( yintercept=0.0, size=0.5)+
+  coord_flip() 
+ggsave(paste("~/data/output_gcme/colin/co2_4c.jpg",sep=""))
 
 #second part - warming
 temp_vcmax25 <- subset(vc25_data,treatment=="w")
