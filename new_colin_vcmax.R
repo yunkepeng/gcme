@@ -907,11 +907,11 @@ vcmax25_pred <- aggregate(co2_vcmax25,by=list(co2_vcmax25$exp_nam,co2_vcmax25$pf
 vcmax25_pred_part <- vcmax25_pred[,c("Group.1","Group.2","Group.3","Group.4",
                                      "vcmax25_a_inst","vcmax25_e_inst",
                                      "mean_vcmax25_ambient","mean_vcmax25_elevated","pred_response_ratio",
-                                     "co2_a","co2_e","Tg","PPFD","temp","vpd")]
+                                     "co2_a","co2_e","Tg","PPFD","temp","vpd","n_plots")]
 names(vcmax25_pred_part) <- c("exp_nam","pft_final","c3c4","ecm_type",
                               "vcmax25_a","vcmax25_e",
                               "pred_vcmax25_a","pred_vcmax25_e","logr_pred_vcmax25",
-                              "co2_a","co2_e","Tg","PPFD","temp","vpd")
+                              "co2_a","co2_e","Tg","PPFD","temp","vpd","n_plots")
 
 Jmax25_pred <- aggregate(co2_Jmax25,by=list(co2_Jmax25$exp_nam,co2_Jmax25$pft_info,co2_Jmax25$c3c4,co2_Jmax25$ecm_type), FUN=mean, na.rm=TRUE)
 Jmax25_pred_part <- Jmax25_pred[,c("Group.1","Group.2","Group.3","Group.4",
@@ -1001,22 +1001,25 @@ agg_meta_plots <- function(df,type_name,logr,log_var){
 }
 
 meta_box_vc25_ecm <- agg_meta_plots(photo_final,"ecm_type","logr_obs_vcmax25","logr_var_vcmax25")
+meta_box_j25_ecm <- agg_meta_plots(photo_final,"ecm_type","logr_obs_jmax25","logr_var_jmax25")
 
 photo_final %>%
-  ggplot( aes(x=ecm_type, y=coef_r_vcmax25)) + #ecm_type, c3c4, pft_info
-  geom_boxplot(outlier.shape = NA) +
-  geom_boxplot(aes(x=ecm_type, y=coef_r_pred_vcmax25),color="red",outlier.shape = NA) +
-  labs(x="", y="Sensitivity coefficient of vcmax25 in response to co2") +
-  geom_hline( yintercept=0.0, size=0.5)+
+  ggplot( aes(x=ecm_type, y=logr_obs_vcmax25)) +
+  geom_jitter(alpha=0.2, aes(size = 1/(sqrt(logr_var_vcmax25)/sqrt(n_plots)))) + # this is inverse to standard error
+  geom_crossbar( data = meta_box_vc25_ecm, aes(x=type_name, y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5 ) +
+  geom_boxplot(aes(x=ecm_type, y=logr_pred_vcmax25),color="red",size=1,outlier.shape = NA)+ # pft_info,c3c4
+  geom_hline( yintercept=0.0, size=0.5 )+
+  labs(x="", y="response ratio of vcmax25, ECM types", size=expression(paste("Error"^{-1}))) +
   coord_flip() 
 ggsave(paste("~/data/output_gcme/colin/co2_4a.jpg",sep=""))
 
 photo_final %>%
-  ggplot( aes(x=ecm_type, y=coef_r_jmax25)) + #ecm_type, c3c4, pft_info
-  geom_boxplot(outlier.shape = NA) +
-  geom_boxplot(aes(x=ecm_type, y=coef_r_pred_jmax25),color="red",outlier.shape = NA) +
-  labs(x="", y="Sensitivity coefficient of jmax25 in response to co2") +
-  geom_hline( yintercept=0.0, size=0.5)+
+  ggplot(aes(x=ecm_type, y=logr_obs_jmax25)) +
+  geom_jitter(alpha=0.2, aes(size = 1/(sqrt(logr_var_jmax25)/sqrt(n_plots)))) + # this is inverse to standard error
+  geom_crossbar( data = meta_box_j25_ecm, aes(x=type_name, y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5 ) +
+  geom_boxplot(aes(x=ecm_type, y=logr_pred_jmax25),color="red",size=1,outlier.shape = NA)+ # pft_info,c3c4
+  geom_hline( yintercept=0.0, size=0.5 )+
+  labs(x="", y="response ratio of jmax25, ECM types", size=expression(paste("Error"^{-1}))) +
   coord_flip() 
 ggsave(paste("~/data/output_gcme/colin/co2_4b.jpg",sep=""))
 
@@ -1040,6 +1043,9 @@ photo_final %>%
   geom_hline( yintercept=0.0, size=0.5)+
   coord_flip() 
 ggsave(paste("~/data/output_gcme/colin/co2_4c.jpg",sep=""))
+
+#model bias
+hist(co2_vcmax25$vcmax25_a)
 
 #second part - warming
 temp_vcmax25 <- subset(vc25_data,treatment=="w")
