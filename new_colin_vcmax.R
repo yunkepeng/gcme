@@ -851,6 +851,9 @@ Jmax25_warmingco2_siteinfo_ecm$c3c4[Jmax25_warmingco2_siteinfo_ecm$exp_nam=="Bio
 #now, it is time to apply 3 functions!
 #firstly, only working on vcmax25
 dim(vcmax25_warmingco2_siteinfo_ecm)
+plot(vcmax25_warmingco2_siteinfo_ecm$vcmax25_a~vcmax25_warmingco2_siteinfo_ecm$vcmax_a,
+     xlab="measured vcmax", ylab="measured vcmax25 by using Tg")
+
 dim(Jmax25_warmingco2_siteinfo_ecm)
 #not yet divided into co2 and warming...
 vc25_data <- response_ratio(vcmax25_warmingco2_siteinfo_ecm,"vcmax25")
@@ -880,7 +883,7 @@ co2_vcmax25 %>%
   geom_hline( yintercept=0.0, size=0.5 )+
   labs(x="", y="CO2 effects on vcmax25", size=expression(paste("Error"^{-1}))) +
   coord_flip() 
-ggsave(paste("~/data/output_gcme/colin/co2_1.jpg",sep=""))
+ggsave(paste("~/data/output_gcme/colin/co2_1.jpg",sep=""),width = 10, height = 5)
 
 #now, jmax25
 Jmax25_data <- response_ratio(Jmax25_warmingco2_siteinfo_ecm,"jmax25")
@@ -899,7 +902,7 @@ co2_Jmax25 %>%
   geom_hline( yintercept=0.0, size=0.5 )+
   labs(x="", y="CO2 effects on Jmax25", size=expression(paste("Error"^{-1}))) +
   coord_flip() 
-ggsave(paste("~/data/output_gcme/colin/co2_2.jpg",sep=""))
+ggsave(paste("~/data/output_gcme/colin/co2_2.jpg",sep=""),width = 10, height = 5)
 
 #fig.3 measured or predicted response ratio of vc25 vs. jmax25 at plot-level
 #here sensitivity coefficient doesn't account for uncertainty when 
@@ -965,6 +968,11 @@ summary(t2)
 photo_final$coef_r_pred_vcmax25 <- log(photo_final$pred_vcmax25_e/photo_final$pred_vcmax25_a)/(log(photo_final$co2_e/photo_final$co2_a))
 photo_final$coef_r_pred_jmax25 <- log(photo_final$pred_jmax25_e/photo_final$pred_jmax25_a)/(log(photo_final$co2_e_j/photo_final$co2_a_j))
 
+photo_final$coef_r_pred_JV <- log((photo_final$pred_jmax25_e/photo_final$pred_vcmax25_e)/
+                                    (photo_final$pred_jmax25_a/photo_final$pred_vcmax25_a))/(log(photo_final$co2_e/photo_final$co2_a))
+
+photo_final$coef_r_obs_JV <-photo_final$jv_obs/(log(photo_final$co2_e/photo_final$co2_a))
+
 #direct comparison for response ratio and sensitivity coefficient of vcmax25 
 ggplot(photo_final) +
   geom_point(aes(x=logr_obs_vcmax25, y=logr_pred_vcmax25,shape=pft_final,color=ecm_type,size=2))+
@@ -1003,25 +1011,23 @@ agg_meta_plots <- function(df,type_name,logr,log_var){
 meta_box_vc25_ecm <- agg_meta_plots(photo_final,"ecm_type","logr_obs_vcmax25","logr_var_vcmax25")
 meta_box_j25_ecm <- agg_meta_plots(photo_final,"ecm_type","logr_obs_jmax25","logr_var_jmax25")
 
-photo_final %>%
+fig4a <- photo_final %>%
   ggplot( aes(x=ecm_type, y=logr_obs_vcmax25)) +
   geom_jitter(alpha=0.2, aes(size = 1/(sqrt(logr_var_vcmax25)/sqrt(n_plots)))) + # this is inverse to standard error
   geom_crossbar( data = meta_box_vc25_ecm, aes(x=type_name, y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5 ) +
   geom_boxplot(aes(x=ecm_type, y=logr_pred_vcmax25),color="red",size=1,outlier.shape = NA)+ # pft_info,c3c4
   geom_hline( yintercept=0.0, size=0.5 )+
-  labs(x="", y="response ratio of vcmax25, ECM types", size=expression(paste("Error"^{-1}))) +
+  labs(x="", y="response ratio of vcmax25", size=expression(paste("Error"^{-1}))) +
   coord_flip() 
-ggsave(paste("~/data/output_gcme/colin/co2_4a.jpg",sep=""))
 
-photo_final %>%
+fig4b <- photo_final %>%
   ggplot(aes(x=ecm_type, y=logr_obs_jmax25)) +
   geom_jitter(alpha=0.2, aes(size = 1/(sqrt(logr_var_jmax25)/sqrt(n_plots)))) + # this is inverse to standard error
   geom_crossbar( data = meta_box_j25_ecm, aes(x=type_name, y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5 ) +
   geom_boxplot(aes(x=ecm_type, y=logr_pred_jmax25),color="red",size=1,outlier.shape = NA)+ # pft_info,c3c4
   geom_hline( yintercept=0.0, size=0.5 )+
-  labs(x="", y="response ratio of jmax25, ECM types", size=expression(paste("Error"^{-1}))) +
+  labs(x="", y="response ratio of jmax25", size=expression(paste("Error"^{-1}))) +
   coord_flip() 
-ggsave(paste("~/data/output_gcme/colin/co2_4b.jpg",sep=""))
 
 #co2 on jmax25/vcmax25
 photo_final$jv_obs <- log((photo_final$jmax25_e/photo_final$vcmax25_e)/(photo_final$jmax25_a/photo_final$vcmax25_a))
@@ -1033,19 +1039,146 @@ ggplot(photo_final) +
   geom_vline(xintercept = 0)+
   labs(x = "logr_J/V[obs]",y="logr_J/V[pred]")  +theme_classic()+
   theme(axis.text=element_text(size=20),axis.title =element_text(size=20))#+geom_text(aes(logr_obs_jmax25, y=logr_obs_vcmax25,label=exp_nam))
-ggsave(paste("~/data/output_gcme/colin/co2_5.jpg",sep=""))
+ggsave(paste("~/data/output_gcme/colin/co2_6.jpg",sep=""))
 
-photo_final %>%
+fig4c <- photo_final %>%
   ggplot( aes(x=ecm_type, y=jv_obs)) + #ecm_type, c3c4, pft_info
   geom_boxplot(outlier.shape = NA) +
   geom_boxplot(aes(x=ecm_type, y=jv_pred),color="red",outlier.shape = NA) +
-  labs(x="", y="Sensitivity coefficient of jmax25/vcmax25 in response to co2") +
+  labs(x="", y="response ratio of jmax25/vcmax25") +
   geom_hline( yintercept=0.0, size=0.5)+
   coord_flip() 
-ggsave(paste("~/data/output_gcme/colin/co2_4c.jpg",sep=""))
+plot_grid(fig4a,fig4b,fig4c,ncol=1,label_size = 15)
+ggsave(paste("~/data/output_gcme/colin/co2_4abc.jpg",sep=""))
+
+#sensitivity coefficient
+photo_final$var_coef_r_vcmax25 <- ((photo_final$coef_r_vcmax25_ymax-photo_final$coef_r_vcmax25)/1.96)^2
+photo_final$var_coef_r_jmax25 <- ((photo_final$coef_r_jmax25_ymax-photo_final$coef_r_jmax25)/1.96)^2
+
+meta_box_vc25_coef_ecm <- agg_meta_plots(photo_final,"ecm_type","coef_r_vcmax25","var_coef_r_vcmax25")
+meta_box_j25_coef_ecm <- agg_meta_plots(photo_final,"ecm_type","coef_r_jmax25","var_coef_r_jmax25")
+
+fig5a <- photo_final %>%
+  ggplot( aes(x=ecm_type, y=coef_r_vcmax25)) +
+  geom_jitter(alpha=0.2, aes(size = 1/(sqrt(var_coef_r_vcmax25)/sqrt(n_plots)))) + # this is inverse to standard error
+  geom_crossbar( data = meta_box_vc25_coef_ecm, aes(x=type_name, y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5 ) +
+  geom_boxplot(aes(x=ecm_type, y=coef_r_pred_vcmax25),color="red",size=1,outlier.shape = NA)+ # pft_info,c3c4
+  geom_hline( yintercept=0.0, size=0.5 )+
+  labs(x="", y="sensitivity coefficient of vcmax25", size=expression(paste("Error"^{-1}))) +
+  coord_flip() 
+
+fig5b <- photo_final %>%
+  ggplot( aes(x=ecm_type, y=coef_r_jmax25)) +
+  geom_jitter(alpha=0.2, aes(size = 1/(sqrt(var_coef_r_jmax25)/sqrt(n_plots)))) + # this is inverse to standard error
+  geom_crossbar( data = meta_box_j25_coef_ecm, aes(x=type_name, y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5 ) +
+  geom_boxplot(aes(x=ecm_type, y=coef_r_pred_jmax25),color="red",size=1,outlier.shape = NA)+ # pft_info,c3c4
+  geom_hline( yintercept=0.0, size=0.5 )+
+  labs(x="", y="sensitivity coefficient of jmax25", size=expression(paste("Error"^{-1}))) +
+  coord_flip() 
+
+fig5c <- photo_final %>%
+  ggplot( aes(x=ecm_type, y=coef_r_obs_JV)) + #ecm_type, c3c4, pft_info
+  geom_boxplot(outlier.shape = NA) +
+  geom_boxplot(aes(x=ecm_type, y=coef_r_pred_JV),color="red",outlier.shape = NA) +
+  labs(x="", y="sensitivity coefficient of jmax25/vcmax25") +
+  geom_hline( yintercept=0.0, size=0.5)+
+  coord_flip() 
+plot_grid(fig5a,fig5b,fig5c,ncol=1,label_size = 15)
+ggsave(paste("~/data/output_gcme/colin/co2_5abc.jpg",sep=""))
+
 
 #model bias
 hist(co2_vcmax25$vcmax25_a)
+
+#now, shifting to paralleled measurements of LMA, Narea, Nmass, soil N, ANPP, NPP, biomass
+df_c <- subset(df,treatment=="c")
+#now, shifting to paralleled measurements of LMA, Narea, Nmass, soil N, ANPP, NPP, biomass
+LMA <- subset(df_c,Data_type=="leaf_mass_per_area"|Data_type=="leaf_mass_per_unit_leaf_area"|Data_type=="LMA")
+SLA <- subset(df_c, Data_type=="specific_leaf_area"|Data_type=="SLA")
+LMA_a <- agg_plot(response_ratio(LMA,"LMA"),"LMA")
+#convert SLA to LMA format 
+SLA$ambient <- 1/SLA$ambient; SLA$ambient_Se <- 1/SLA$ambient_Se; SLA$ambient_Sd <- 1/SLA$ambient_Sd
+SLA$elevated <- 1/SLA$elevated;SLA$elevated_Se <- 1/SLA$elevated_Se;SLA$elevated_Sd <- 1/SLA$elevated_Sd;
+SLA_a <- agg_plot(response_ratio(SLA,"SLA"),"SLA")
+LMA_final <- rbind(LMA_a,SLA_a)
+LMA_final <- LMA_final[,c("exp_nam","logr")]
+names(LMA_final) <- c("exp_nam","logLMA")
+
+#Narea,Nmass
+leaf_N <- subset(df_c,Data_type=="leaf_N")
+leafNmass <-  subset(leaf_N,Unit=="%"|Unit=="g/g"|Unit=="g/kg"|Unit=="mg_/_g"|Unit=="mg/g"|Unit=="g/mg"|
+                       Unit=="mg/g_"|Unit=="mg/kg"|Unit=="mol/g"|Unit=="mmol/g")
+leafNarea <-  subset(leaf_N,Unit!="%" & Unit!="g/g" & Unit!="g/kg" & Unit!="mg_/_g" & Unit!="mg/g" & Unit!="g/mg" &
+                       Unit!="mg/g_" & Unit!="mg/kg" & Unit!="mol/g" & Unit!="mmol/g")
+Nmass_final <- agg_plot(response_ratio(leafNmass,"Nmass"),"Nmass")
+Narea_final <- agg_plot(response_ratio(leafNarea,"Narea"),"Narea")
+
+Nmass_final <- Nmass_final[,c("exp_nam","logr")]
+names(Nmass_final) <- c("exp_nam","logNmass")
+
+Narea_final <- Narea_final[,c("exp_nam","logr")]
+names(Narea_final) <- c("exp_nam","logNarea")
+
+
+#ANPP
+ANPP_all <- subset(df_c,Data_type=="ANPP")
+ANPP_final <- agg_plot(response_ratio(ANPP_all,"ANPP"),"ANPP")
+ANPP_final <- ANPP_final[,c("exp_nam","logr")]
+names(ANPP_final) <- c("exp_nam","logANPP")
+
+#soil N
+SoilN_all <- agg_plot(response_ratio(subset(df_c,Data_type=="soil_N"),"soil_N"),"soil_N")[,c("exp_nam","logr")]
+names(SoilN_all) <- c("exp_nam","logsoilN")
+
+Soil_mineral_N_all <- agg_plot(response_ratio(subset(df_c,Data_type=="soil_mineral_N"),"soil_mineral_N"),"soil_mineral_N")[,c("exp_nam","logr")]
+names(Soil_mineral_N_all) <- c("exp_nam","logsoil_mineral_N")
+
+Soil_NH4_N_all <- agg_plot(response_ratio(subset(df_c,Data_type=="soil_NH4-N"),"soil_NH4-N"),"soil_NH4-N")[,c("exp_nam","logr")]
+names(Soil_NH4_N_all) <- c("exp_nam","logsoil_NH4_N")
+
+Soil_NO3_N_all <- agg_plot(response_ratio(subset(df_c,Data_type=="soil_NO3-N"),"soil_NO3-N"),"soil_NO3-N")[,c("exp_nam","logr")]
+names(Soil_NO3_N_all) <- c("exp_nam","logsoil_NO3_N")
+
+Soil_mineral_CN_all <- agg_plot(response_ratio(subset(df_c,Data_type=="mineral_soil_C:N"),"mineral_soil_C:N"),"mineral_soil_C:N")[,c("exp_nam","logr")]
+names(Soil_mineral_CN_all) <- c("exp_nam","logsoil_mineral_CN")
+
+#now, merge them
+names(photo_final)
+
+photo_final_others <-Reduce(function(x,y) merge(x = x, y = y, by = c("exp_nam"),all.x=TRUE),
+                            list(photo_final,LMA_final,Narea_final,Nmass_final,ANPP_final,
+                                 SoilN_all,Soil_mineral_N_all,Soil_NH4_N_all,Soil_NO3_N_all,Soil_mineral_CN_all))
+summary(photo_final_others)
+#summary(subset(photo_final_others,is.na(logsoilN)==TRUE))
+#dim(subset(photo_final_others,is.na(logsoilN)==TRUE))
+a1 <- ggplot(photo_final_others) +
+  geom_point(aes(x=logLMA, y=logr_obs_vcmax25,shape=pft_final,color=ecm_type,size=2))+
+  labs(x = "logr LMA",y="logr vcmax25")  +theme_classic()+geom_hline(yintercept=0)+geom_vline(xintercept=0)+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))#+geom_text(aes(logr_obs_jmax25, y=logr_obs_vcmax25,label=exp_nam))
+
+a2 <- ggplot(photo_final_others) +
+  geom_point(aes(x=logNmass, y=logr_obs_vcmax25,shape=pft_final,color=ecm_type,size=2))+
+  labs(x = "logr Nmass",y="logr vcmax25")  +theme_classic()+geom_hline(yintercept=0)+geom_vline(xintercept=0)+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))#+geom_text(aes(logr_obs_jmax25, y=logr_obs_vcmax25,label=exp_nam))
+
+a3 <- ggplot(photo_final_others) +
+  geom_point(aes(x=logANPP, y=logr_obs_vcmax25,shape=pft_final,color=ecm_type,size=2))+
+  labs(x = "logr ANPP",y="logr vcmax25")  +theme_classic()+geom_hline(yintercept=0)+geom_vline(xintercept=0)+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))#+geom_text(aes(logr_obs_jmax25, y=logr_obs_vcmax25,label=exp_nam))
+
+a4 <- ggplot(photo_final_others) +
+  geom_point(aes(x=logsoilN, y=logr_obs_vcmax25,shape=pft_final,color=ecm_type,size=2))+
+  labs(x = "logr soil N",y="logr vcmax25")  +theme_classic()+geom_hline(yintercept=0)+geom_vline(xintercept=0)+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))#+geom_text(aes(logr_obs_jmax25, y=logr_obs_vcmax25,label=exp_nam))
+
+a5 <- ggplot(photo_final_others) +
+  geom_point(aes(x=logsoil_mineral_CN, y=logr_obs_vcmax25,shape=pft_final,color=ecm_type,size=2))+
+  labs(x = "logr soil C/N",y="logr vcmax25")  +theme_classic()+geom_hline(yintercept=0)+geom_vline(xintercept=0)+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))#+geom_text(aes(logr_obs_jmax25, y=logr_obs_vcmax25,label=exp_nam))
+white <- theme(plot.background=element_rect(fill="white", color="white"))
+
+plot_grid(a1,a2,a3,a4,a5,nrow=2,label_size = 15)+white
+ggsave(paste("~/data/output_gcme/colin/co2_new.jpg",sep=""),width = 20, height = 10)
 
 #second part - warming
 temp_vcmax25 <- subset(vc25_data,treatment=="w")
