@@ -1104,6 +1104,12 @@ LMA_final <- rbind(LMA_a,SLA_a)
 LMA_final <- LMA_final[,c("exp_nam","logr")]
 names(LMA_final) <- c("exp_nam","logLMA")
 
+#leaf C/N
+leafCN <- subset(df_c,Data_type=="leaf_C:N")
+leafCN_all <- agg_plot(response_ratio(leafCN,"leafCN"),"leafCN")
+leafCN_final <- leafCN_final[,c("exp_nam","logr")]
+names(leafCN_final) <- c("exp_nam","logleafCN")
+
 #Narea,Nmass
 leaf_N <- subset(df_c,Data_type=="leaf_N")
 leafNmass <-  subset(leaf_N,Unit=="%"|Unit=="g/g"|Unit=="g/kg"|Unit=="mg_/_g"|Unit=="mg/g"|Unit=="g/mg"|
@@ -1142,43 +1148,70 @@ names(Soil_NO3_N_all) <- c("exp_nam","logsoil_NO3_N")
 Soil_mineral_CN_all <- agg_plot(response_ratio(subset(df_c,Data_type=="mineral_soil_C:N"),"mineral_soil_C:N"),"mineral_soil_C:N")[,c("exp_nam","logr")]
 names(Soil_mineral_CN_all) <- c("exp_nam","logsoil_mineral_CN")
 
-#now, merge them
-names(photo_final)
+#LAI
+LAI_all <- subset(df_c,Data_type=="LAI"|Data_type=="max_LAI"|Data_type=="maximum_LAI")
+LAI_final <- agg_plot(response_ratio(LAI_all,"LAI"),"LAI")[,c("exp_nam","logr")]
+names(LAI_final) <- c("exp_nam","log_LAI")
 
+#now, merge them
 photo_final_others <-Reduce(function(x,y) merge(x = x, y = y, by = c("exp_nam"),all.x=TRUE),
-                            list(photo_final,LMA_final,Narea_final,Nmass_final,ANPP_final,
+                            list(photo_final,LMA_final,Narea_final,Nmass_final,ANPP_final,LAI_final,
                                  SoilN_all,Soil_mineral_N_all,Soil_NH4_N_all,Soil_NO3_N_all,Soil_mineral_CN_all))
 summary(photo_final_others)
 #summary(subset(photo_final_others,is.na(logsoilN)==TRUE))
 #dim(subset(photo_final_others,is.na(logsoilN)==TRUE))
-a1 <- ggplot(photo_final_others) +
-  geom_point(aes(x=logLMA, y=logr_obs_vcmax25,shape=pft_final,color=ecm_type,size=2))+
-  labs(x = "logr LMA",y="logr vcmax25")  +theme_classic()+geom_hline(yintercept=0)+geom_vline(xintercept=0)+
-  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))#+geom_text(aes(logr_obs_jmax25, y=logr_obs_vcmax25,label=exp_nam))
+#y data and its name change to vcmax25, jmax25, jv
+a1 <- ggplot(photo_final_others,aes(x=logLMA, y=jv_obs)) +
+  geom_point(aes(shape=pft_final,color=ecm_type,size=2))+
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
+  labs(x = "logr LMA",y="logr jmax25/vmax25")  +theme_classic()+geom_hline(yintercept=0)+geom_vline(xintercept=0)+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))#+geom_text(aes(jv_obs, y=logr_obs_vcmax25,label=exp_nam))
+a2 <- ggplot(photo_final_others,aes(x=logNmass, y=jv_obs)) +
+  geom_point(aes(shape=pft_final,color=ecm_type,size=2))+
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
+  labs(x = "logr Nmass",y="logr jmax25/vmax25")  +theme_classic()+geom_hline(yintercept=0)+geom_vline(xintercept=0)+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))#+geom_text(aes(jv_obs, y=logr_obs_vcmax25,label=exp_nam))
+a3 <- ggplot(photo_final_others,aes(x=logNarea, y=jv_obs)) +
+  geom_point(aes(shape=pft_final,color=ecm_type,size=2))+
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
+  labs(x = "logr Narea",y="logr jmax25/vmax25")  +theme_classic()+geom_hline(yintercept=0)+geom_vline(xintercept=0)+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))#+geom_text(aes(jv_obs, y=logr_obs_vcmax25,label=exp_nam))
+a4 <- ggplot(photo_final_others,aes(x=log_LAI, y=jv_obs)) +
+  geom_point(aes(shape=pft_final,color=ecm_type,size=2))+
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
+  labs(x = "logr LAI",y="logr jmax25/vmax25")  +theme_classic()+geom_hline(yintercept=0)+geom_vline(xintercept=0)+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))#+geom_text(aes(jv_obs, y=logr_obs_vcmax25,label=exp_nam))
+a5 <- ggplot(photo_final_others,aes(x=logANPP, y=jv_obs)) +
+  geom_point(aes(shape=pft_final,color=ecm_type,size=2))+geom_smooth(method="lm")+
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
+  labs(x = "logr ANPP",y="logr jmax25/vmax25")  +theme_classic()+geom_hline(yintercept=0)+geom_vline(xintercept=0)+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))#+geom_text(aes(jv_obs, y=logr_obs_vcmax25,label=exp_nam))
+a6 <- ggplot(photo_final_others,aes(x=logsoilN, y=jv_obs)) +
+  geom_point(aes(shape=pft_final,color=ecm_type,size=2))+
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
+  labs(x = "logr soilN",y="logr jmax25/vmax25")  +theme_classic()+geom_hline(yintercept=0)+geom_vline(xintercept=0)+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))#+geom_text(aes(jv_obs, y=logr_obs_vcmax25,label=exp_nam))
+a7 <- ggplot(photo_final_others,aes(x=logsoil_mineral_CN, y=jv_obs)) +
+  geom_point(aes(shape=pft_final,color=ecm_type,size=2))+
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
+  labs(x = "logr soil C/N",y="logr jmax25/vmax25")  +theme_classic()+geom_hline(yintercept=0)+geom_vline(xintercept=0)+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))#+geom_text(aes(jv_obs, y=logr_obs_vcmax25,label=exp_nam))
+a8 <- ggplot(photo_final_others,aes(x=logsoil_NO3_N, y=jv_obs)) +
+  geom_point(aes(shape=pft_final,color=ecm_type,size=2))+
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
+  labs(x = "logr soil_NO3_N",y="logr jmax25/vmax25")  +theme_classic()+geom_hline(yintercept=0)+geom_vline(xintercept=0)+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))#+geom_text(aes(jv_obs, y=logr_obs_vcmax25,label=exp_nam))
+a9 <- ggplot(photo_final_others,aes(x=logsoil_mineral_N, y=jv_obs)) +
+  geom_point(aes(shape=pft_final,color=ecm_type,size=2))+
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
+  labs(x = "logr soil_mineral_N",y="logr jmax25/vmax25")  +theme_classic()+geom_hline(yintercept=0)+geom_vline(xintercept=0)+
+  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))#+geom_text(aes(jv_obs, y=logr_obs_vcmax25,label=exp_nam))
 
-a2 <- ggplot(photo_final_others) +
-  geom_point(aes(x=logNmass, y=logr_obs_vcmax25,shape=pft_final,color=ecm_type,size=2))+
-  labs(x = "logr Nmass",y="logr vcmax25")  +theme_classic()+geom_hline(yintercept=0)+geom_vline(xintercept=0)+
-  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))#+geom_text(aes(logr_obs_jmax25, y=logr_obs_vcmax25,label=exp_nam))
-
-a3 <- ggplot(photo_final_others) +
-  geom_point(aes(x=logANPP, y=logr_obs_vcmax25,shape=pft_final,color=ecm_type,size=2))+
-  labs(x = "logr ANPP",y="logr vcmax25")  +theme_classic()+geom_hline(yintercept=0)+geom_vline(xintercept=0)+
-  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))#+geom_text(aes(logr_obs_jmax25, y=logr_obs_vcmax25,label=exp_nam))
-
-a4 <- ggplot(photo_final_others) +
-  geom_point(aes(x=logsoilN, y=logr_obs_vcmax25,shape=pft_final,color=ecm_type,size=2))+
-  labs(x = "logr soil N",y="logr vcmax25")  +theme_classic()+geom_hline(yintercept=0)+geom_vline(xintercept=0)+
-  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))#+geom_text(aes(logr_obs_jmax25, y=logr_obs_vcmax25,label=exp_nam))
-
-a5 <- ggplot(photo_final_others) +
-  geom_point(aes(x=logsoil_mineral_CN, y=logr_obs_vcmax25,shape=pft_final,color=ecm_type,size=2))+
-  labs(x = "logr soil C/N",y="logr vcmax25")  +theme_classic()+geom_hline(yintercept=0)+geom_vline(xintercept=0)+
-  theme(axis.text=element_text(size=20),axis.title =element_text(size=20))#+geom_text(aes(logr_obs_jmax25, y=logr_obs_vcmax25,label=exp_nam))
 white <- theme(plot.background=element_rect(fill="white", color="white"))
+plot_grid(a1,a2,a3,a4,a5,a6,a7,a8,a9,nrow=3,label_size = 15)+white
+ggsave(paste("~/data/output_gcme/colin/co2_new.jpg",sep=""),width = 20, height = 15)
 
-plot_grid(a1,a2,a3,a4,a5,nrow=2,label_size = 15)+white
-ggsave(paste("~/data/output_gcme/colin/co2_new.jpg",sep=""),width = 20, height = 10)
+#change logr_vcmax25 to logr_jmax25
 
 #second part - warming
 temp_vcmax25 <- subset(vc25_data,treatment=="w")
