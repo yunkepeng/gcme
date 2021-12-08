@@ -1107,7 +1107,7 @@ names(LMA_final) <- c("exp_nam","logLMA")
 #leaf C/N
 leafCN <- subset(df_c,Data_type=="leaf_C:N")
 leafCN_all <- agg_plot(response_ratio(leafCN,"leafCN"),"leafCN")
-leafCN_final <- leafCN_final[,c("exp_nam","logr")]
+leafCN_final <- leafCN_all[,c("exp_nam","logr")]
 names(leafCN_final) <- c("exp_nam","logleafCN")
 
 #Narea,Nmass
