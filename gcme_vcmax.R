@@ -89,6 +89,7 @@ summary(kevin_z$sampling_year) #all from 1992 to 2016 - good news!
 kevin_z$year_start <- kevin_z$start_year
 kevin_z$year_end <- kevin_z$sampling_year
 
+#above code copied to gcme_overvars.R (just for observations)
 
 response_ratio <- function(df){
   #-----------------------------------------------------------------------
@@ -126,14 +127,20 @@ kevin2$sen_coef <- kevin2$logr/log(kevin2$co2_e/kevin2$co2_a)
 kevin2$sen_coef_var <- kevin2$logr_var/log(kevin2$co2_e/kevin2$co2_a)
 kevin2$sen_coef_se <- kevin2$logr_se/log(kevin2$co2_e/kevin2$co2_a)
 
+
 #kevin2 - ecm type
 kevin2$ecm_type <- NA
 kevin2$ecm_type[kevin2$site=="biocon"] <- "AM";kevin2$ecm_type[kevin2$site=="brandbjerg"] <- "AM";
 kevin2$ecm_type[kevin2$site=="giface"] <- "AM";kevin2$ecm_type[kevin2$site=="nevada_desert_face"] <- "AM";kevin2$ecm_type[kevin2$site=="new_zealand_face"] <- "AM";
 kevin2$ecm_type[kevin2$site=="riceface_china_33n_120e"] <- "AM";kevin2$ecm_type[kevin2$exp_nam=="riceface_japan"] <- "AM";
-kevin2$ecm_type[kevin2$site=="soyface"] <- "AM";kevin2$ecm_type[kevin2$site=="swissface_trifolium"] <- "AM"
+kevin2$ecm_type[kevin2$site=="soyface"] <- "AM";kevin2$ecm_type[kevin2$site=="soyfaceb"] <- "AM";kevin2$ecm_type[kevin2$site=="swissface_trifolium"] <- "AM"
 kevin2$ecm_type[kevin2$site=="dukeface"] <- "ECM";kevin2$ecm_type[kevin2$site=="eucface"] <- "ECM";
 kevin2$ecm_type[kevin2$site=="euroface"] <- "ECM";kevin2$ecm_type[kevin2$site=="facts_ii_face"] <- "ECM";kevin2$ecm_type[kevin2$site=="popface"] <- "ECM";
+#temporaily saving ecm for further use
+df_ecm <- as.data.frame(kevin2 %>% group_by(site,exp,ecm_type,ecosystem) %>% summarise(number=n()))
+csvfile <- paste("/Users/yunpeng/data/gcme/kevin/orig_vcmax/new_ecm_types.csv")
+write.csv(df_ecm, csvfile, row.names = TRUE)
+
 #now, start p-model
 #combine with siteinfo
 #see forcing_kevin_nick.R

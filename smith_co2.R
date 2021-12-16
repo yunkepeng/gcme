@@ -173,6 +173,13 @@ for (i in 1:nrow(vcmax25_warmingco2_siteinfo)){
 
 smith_co2_final_removal <- subset(vcmax25_warmingco2_siteinfo,exp_nam!="BioCON" & exp_nam!="ChinaRiceFACE" & exp_nam!="DukeFACE" & exp_nam!="EUROPOPFACE" & exp_nam!="NevadaFACE" & exp_nam!="SwissFACE")
 
+#see number of samples within each site
+ggplot(smith_co2_final_removal,aes(x=exp_nam, y=ambient)) +
+  geom_point( size=2)+
+  geom_errorbar(aes(ymin=ambient-ambient_Se, ymax=ambient+ambient_Se), width=.2,color = "red",
+                position=position_dodge(0.05))+
+  labs(x = "Ambient condition: vcmax with SE at each plot",y=" ")+theme_classic()
+
 
 #now, aggregate
 pred_vc_plotmean_smith <- aggregate(smith_co2_final_removal,by=list(smith_co2_final_removal$exp_nam,smith_co2_final_removal$Nac), FUN=mean, na.rm=TRUE)[,c("Group.1","Group.2","pred_vcmax25_coef","sen_coef_v")]
