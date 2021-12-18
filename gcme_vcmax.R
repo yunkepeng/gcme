@@ -276,6 +276,10 @@ summary(vcmax25_warmingco2_siteinfo)
 #plot
 kevin2_final <- vcmax25_warmingco2_siteinfo
 
+csvfile <- paste("/Users/yunpeng/data/gcme/kevin/forcing/pred_vcmax.csv")
+write.csv(kevin2_final, csvfile, row.names = TRUE)
+
+
 #create a function to divide them into specific cateory: cw, cf
 #input:df, data_type, logr and logr_var
 kevin2_c_vcmax <- subset(kevin2_final, treatment=="c" & response =="vcmax")

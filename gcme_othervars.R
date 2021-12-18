@@ -614,8 +614,13 @@ for(i in c(1:9,11,12)){
     geom_point(aes(color=condition,shape=ecm_type),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
     geom_smooth(color="black",method="lm",se=F)+theme_classic()}
 # geom_text(aes(label=exp),hjust=1, vjust=0,check_overlap = T)
-plot_grid(p[[1]],p[[2]],p[[3]],p[[4]],p[[5]],p[[6]],p[[7]],p[[8]],p[[9]],p[[11]],p[[12]],nrow=4,label_size = 15)+ theme(plot.background=element_rect(fill="white", color="white"))
-ggsave(paste("~/data/output_gcme/colin/multi_new_vc_combination.jpg",sep=""),width = 15, height = 15)
+#plot_grid(p[[1]],p[[2]],p[[3]],p[[4]],p[[5]],p[[6]],p[[7]],p[[8]],p[[9]],p[[11]],p[[12]],nrow=4,label_size = 15)+ theme(plot.background=element_rect(fill="white", color="white"))
+#ggsave(paste("~/data/output_gcme/colin/multi_new_vc_combination.jpg",sep=""),width = 15, height = 15)
+
+#figure 2 - Jmax, Nmass, LMA, ANPP, BNPP, Nup/BNPP
+plot_grid(p[[1]],p[[3]],p[[6]],p[[7]],p[[8]],p[[11]],nrow=2,label_size = 15)+ theme(plot.background=element_rect(fill="white", color="white"))
+ggsave(paste("~/data/output_gcme/colin/final_fig2_vcmax.jpg",sep=""),width = 12, height = 6)
+
 
 #condition, ecosystem
 p <- list()
@@ -656,8 +661,12 @@ for(i in c(1:9,11,12)){
     geom_point(aes(color=condition,shape=ecm_type),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
     geom_smooth(color="black",method="lm",se=F)+theme_classic()}
 # geom_text(aes(label=exp),hjust=1, vjust=0,check_overlap = T)
-plot_grid(p[[1]],p[[2]],p[[3]],p[[4]],p[[5]],p[[6]],p[[7]],p[[8]],p[[9]],p[[11]],p[[12]],nrow=4,label_size = 15)+ theme(plot.background=element_rect(fill="white", color="white"))
-ggsave(paste("~/data/output_gcme/colin/multi_new_j_combination.jpg",sep=""),width = 15, height = 15)
+#plot_grid(p[[1]],p[[2]],p[[3]],p[[4]],p[[5]],p[[6]],p[[7]],p[[8]],p[[9]],p[[11]],p[[12]],nrow=4,label_size = 15)+ theme(plot.background=element_rect(fill="white", color="white"))
+#ggsave(paste("~/data/output_gcme/colin/multi_new_j_combination.jpg",sep=""),width = 15, height = 15)
+
+#figure 2_jmax - Narea, Nmass, LMA, ANPP, BNPP, Nup/BNPP
+plot_grid(p[[2]],p[[3]],p[[6]],p[[7]],p[[8]],p[[11]],nrow=2,label_size = 25)+ theme(plot.background=element_rect(fill="white", color="white"))
+ggsave(paste("~/data/output_gcme/colin/final_fig2_jmax.jpg",sep=""),width = 12, height = 6)
 
 
 #now, for jmax/vcmax
@@ -817,3 +826,106 @@ for(i in c(1:9,11,12)){
 # geom_text(aes(label=exp),hjust=1, vjust=0,check_overlap = T)
 plot_grid(p[[1]],p[[2]],p[[3]],p[[4]],p[[5]],p[[6]],p[[7]],p[[8]],p[[9]],p[[11]],p[[12]],nrow=4,label_size = 15)+ theme(plot.background=element_rect(fill="white", color="white"))
 ggsave(paste("~/data/output_gcme/colin/multi_new_lma_combination.jpg",sep=""),width = 15, height = 15)
+
+
+#combine to one results
+agg_meta_plots <- function(df,type_name,logr,log_var){
+  df$logr <- df$middle
+  df$logr_var <- ((df$middle-df$ymin)/1.96)^2
+  df$logr_var[df$logr_var==0] <- NA
+  
+  explist <- unique(eval(parse(text=paste("df$", type_name, sep = ""))))
+  mylist <- list() #create an empty list
+  df$logr <- eval(parse(text=paste("df$", logr, sep = "")))
+  df$logr_var <- eval(parse(text=paste("df$", log_var, sep = "")))
+  for (i in 1:length(explist)){
+    out_meta <- metafor::rma.mv( logr, logr_var, method = "REML", control = list(stepadj=0.3), 
+                                 data= subset(df,eval(parse(text=paste(type_name)))==explist[i]))
+    out_meta_quarter <- metafor::rma.mv( logr, logr_var, method = "REML",level=50,control = list(stepadj=0.3),
+                                         data = subset(df,eval(parse(text=paste(type_name)))==explist[i]))
+    n_plots <- nrow(subset(df,eval(parse(text=paste(type_name)))==explist[i]))
+    
+    df_box <- tibble(
+      type_name=explist[i], middle = out_meta$b[1,1], ymin   = out_meta$ci.lb, ymax   = out_meta$ci.ub,
+      ymin_quarter=out_meta_quarter$ci.lb, ymax_quarter = out_meta_quarter$ci.ub,
+       no_plots = n_plots)
+    mylist[[i]] <- df_box
+  }
+  output <- do.call("rbind",mylist)
+  return(output)
+}
+
+agg_meta_plots_ratio <- function(df,logr){
+  final_data <- eval(parse(text=paste("df$", logr, sep = "")))
+  df_box <- tibble(
+      type_name=logr, middle = mean(final_data,na.rm=TRUE), ymin   = quantile(final_data,probs=c(.025,.975),na.rm=TRUE)[1], ymax   = quantile(final_data,probs=c(.025,.975),na.rm=TRUE)[2],
+      ymin_quarter=quantile(final_data,probs=c(.25,.75),na.rm=TRUE)[1], ymax_quarter = quantile(final_data,probs=c(.25,.75),na.rm=TRUE)[2],
+      no_plots = sum(is.na(jv_ratio$jmax_vcmax)==FALSE))
+  return(df_box)
+}
+
+
+all_logr_c_vcmax <- agg_meta_sen_coef(logr_c_vcmax);all_logr_c_vcmax$response <- "vcmax"
+all_logr_c_jmax <- agg_meta_sen_coef(logr_c_jmax);all_logr_c_jmax$response <- "jmax"
+all_logr_c_LMA <- agg_meta_sen_coef(logr_c_LMA);all_logr_c_LMA$response <- "LMA"
+all_logr_c_narea <- agg_meta_sen_coef(logr_c_narea);all_logr_c_narea$response <- "narea"
+all_logr_c_nmass <- agg_meta_sen_coef(logr_c_nmass);all_logr_c_nmass$response <- "nmass"
+all_logr_c_leaf_cn <- agg_meta_sen_coef(logr_c_leaf_cn);all_logr_c_leaf_cn$response <- "leafcn"
+all_logr_c_anpp <- agg_meta_sen_coef(logr_c_anpp);all_logr_c_anpp$response <- "anpp"
+all_logr_c_lai <- agg_meta_sen_coef(logr_c_lai);all_logr_c_lai$response <- "LAI"
+all_old_logr_c_BNPP <- agg_meta_sen_coef(old_logr_c_BNPP);all_old_logr_c_BNPP$response <- "bnpp"
+all_old_logr_c_Nuptake <- agg_meta_sen_coef(old_logr_c_Nuptake);all_old_logr_c_Nuptake$response <- "Nuptake"
+all_old_logr_c_Asat <- agg_meta_sen_coef(old_logr_c_Asat);all_old_logr_c_Asat$response <- "Asat"
+#all_old_logr_c_Amax <- agg_meta_sen_coef(old_logr_c_Amax);all_old_logr_c_Amax$response <- "Amax"
+
+jv_ratio <-Reduce(function(x,y) merge(x = x, y = y, by = c("exp"),all.x=TRUE),
+                            list(all_logr_c_vcmax[,c("exp","middle")],all_logr_c_jmax[,c("exp","middle")]))
+jv_ratio$jmax_vcmax <- jv_ratio$middle.y/jv_ratio$middle.x
+all_logr_c_jvratio <- agg_meta_plots_ratio(jv_ratio,"jmax_vcmax")
+
+anpp_bnpp_ratio <-Reduce(function(x,y) merge(x = x, y = y, by = c("exp"),all.x=TRUE),
+                  list(all_logr_c_anpp[,c("exp","middle")],all_old_logr_c_BNPP[,c("exp","middle")]))
+anpp_bnpp_ratio$anpp_bnpp <- anpp_bnpp_ratio$middle.x/anpp_bnpp_ratio$middle.y
+#one outlier - exclude
+anpp_bnpp_ratio <- subset(anpp_bnpp_ratio,anpp_bnpp<10 & anpp_bnpp > -10)
+all_logr_c_anpp_bnpp_ratio <- agg_meta_plots_ratio(anpp_bnpp_ratio,"anpp_bnpp")
+
+nuptake_bnpp_ratio <-Reduce(function(x,y) merge(x = x, y = y, by = c("exp"),all.x=TRUE),
+                         list(all_old_logr_c_Nuptake[,c("exp","middle")],all_old_logr_c_BNPP[,c("exp","middle")]))
+nuptake_bnpp_ratio$nuptake_bnpp <- nuptake_bnpp_ratio$middle.x/nuptake_bnpp_ratio$middle.y
+all_logr_c_nuptake_bnpp_ratio <- agg_meta_plots_ratio(nuptake_bnpp_ratio,"nuptake_bnpp")
+
+all_variables <-  rbind(all_old_logr_c_Nuptake,all_old_logr_c_BNPP,all_logr_c_anpp,all_logr_c_lai,all_logr_c_leaf_cn,all_logr_c_LMA,all_logr_c_narea,all_logr_c_nmass,all_old_logr_c_Asat,all_logr_c_jmax,all_logr_c_vcmax)
+
+overall_response <- agg_meta_plots(all_variables,"response","logr","logr_var")
+
+overall_response_final <- dplyr::bind_rows(all_logr_c_jvratio,all_logr_c_anpp_bnpp_ratio,all_logr_c_nuptake_bnpp_ratio,overall_response)
+
+overall_response_final$type_name <- factor(overall_response_final$type_name, levels = overall_response_final$type_name)
+
+overall_response_final %>%
+  ggplot( aes(x=type_name, y=middle)) + 
+  geom_crossbar(aes(x=type_name, y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5) +
+  geom_crossbar(aes(x=type_name, y=middle, ymin=ymin_quarter, ymax=ymax_quarter),width = 0.5) +
+  geom_hline( yintercept=0.0, size=0.5)+ ylim(-2,2)+
+  labs(x="", y="CO2 - Sensitivity coefficient") + theme_classic()+coord_flip() +theme(axis.text=element_text(size=12))
+ggsave(paste("~/data/output_gcme/colin/final_fig1.jpg",sep=""),width = 10, height = 5)
+
+overall_response_final2 <- overall_response_final
+overall_response_final2$ymin[overall_response_final2$type_name=="jmax_vcmax"] <- NA;overall_response_final2$ymax[overall_response_final2$type_name=="jmax_vcmax"] <- NA;overall_response_final2$ymin_quarter[overall_response_final2$type_name=="jmax_vcmax"] <- NA;overall_response_final2$ymax_quarter[overall_response_final2$type_name=="jmax_vcmax"] <- NA
+overall_response_final2$ymin[overall_response_final2$type_name=="anpp_bnpp"] <- NA;overall_response_final2$ymax[overall_response_final2$type_name=="anpp_bnpp"] <- NA;overall_response_final2$ymin_quarter[overall_response_final2$type_name=="anpp_bnpp"] <- NA;overall_response_final2$ymax_quarter[overall_response_final2$type_name=="anpp_bnpp"] <- NA
+overall_response_final2$ymin[overall_response_final2$type_name=="nuptake_bnpp"] <- NA;overall_response_final2$ymax[overall_response_final2$type_name=="nuptake_bnpp"] <- NA;overall_response_final2$ymin_quarter[overall_response_final2$type_name=="nuptake_bnpp"] <- NA;overall_response_final2$ymax_quarter[overall_response_final2$type_name=="nuptake_bnpp"] <- NA
+
+overall_response_final2 %>%
+  ggplot( aes(x=type_name, y=middle)) + 
+  geom_crossbar(aes(x=type_name, y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5) +
+  geom_crossbar(aes(x=type_name, y=middle, ymin=ymin_quarter, ymax=ymax_quarter),width = 0.5) +
+  geom_hline( yintercept=0.0, size=0.5)+ ylim(-0.6,0.6)+
+  labs(x="", y="CO2 - Sensitivity coefficient") + theme_classic()+coord_flip()+theme(axis.text=element_text(size=12))
+ggsave(paste("~/data/output_gcme/colin/final_fig1_update.jpg",sep=""),width = 10, height = 5)
+
+
+#now, combined with prediction data from gcme_vcmax
+prediction <- read.csv("/Users/yunpeng/data/gcme/kevin/forcing/pred_vcmax.csv")
+pred_vcmax <- subset(prediction,response=="vcmax")
+pred_jmax <- subset(prediction,response=="vcmax")
