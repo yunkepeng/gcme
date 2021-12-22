@@ -682,152 +682,6 @@ for(i in c(1:10,12,13)){
 plot_grid(p[[1]],p[[2]],p[[3]],p[[4]],p[[5]],p[[6]],p[[7]],p[[8]],p[[9]],p[[10]],p[[12]],p[[13]],nrow=4,label_size = 15)+ theme(plot.background=element_rect(fill="white", color="white"))
 ggsave(paste("~/data/output_gcme/colin/multi_new_j_v_combination.jpg",sep=""),width = 15, height = 15)
 
-#now, for narea
-vcmax_all2_c <- merge_multi(logr_c_narea,logr_c_vcmax,logr_c_jmax,logr_c_nmass,logr_c_leaf_cn,logr_c_soil_n, logr_c_LMA,logr_c_anpp,old_logr_c_BNPP,old_logr_c_Nuptake) 
-vcmax_all2_c$condition <- "co2"
-vcmax_all2_cf <- merge_multi(logr_cf_narea,logr_cf_vcmax,logr_cf_jmax,logr_cf_nmass,logr_cf_leaf_cn,logr_cf_soil_n,logr_cf_LMA,logr_cf_anpp,old_logr_cf_BNPP,old_logr_cf_Nuptake) 
-vcmax_all2_cf$condition <- "co2+N"
-#one plot from cw_soil_n has weired varice - deleting them now
-vcmax_all2_cw <- merge_multi(logr_cw_narea,logr_cw_vcmax,logr_cw_jmax,logr_cw_nmass,logr_cw_leaf_cn,logr_cw_soil_n[c(1:3,8:10),], logr_cw_LMA,logr_cw_anpp,old_logr_cw_BNPP,old_logr_cw_Nuptake) 
-vcmax_all2_cw$condition <- "co2+T"
-
-vcmax_all2_final <- dplyr::bind_rows(vcmax_all2_c,vcmax_all2_cf,vcmax_all2_cw) 
-vcmax_all2_final$Nup_BNPP <- vcmax_all2_final$Nuptake/vcmax_all2_final$BNPP
-vcmax_all2_final$ANPP_BNPP <- vcmax_all2_final$anpp/vcmax_all2_final$BNPP
-dim(vcmax_all2_final)
-ecm_csv <- read.csv("/Users/yunpeng/data/gcme/kevin/orig_vcmax/new_ecm_types.csv")
-ecm_csv2 <- ecm_csv[,c("exp","ecm_type","ecosystem")]
-ecm_csv2$rep <- duplicated(ecm_csv2$exp)
-ecm_csv2 <- subset(ecm_csv2,rep==FALSE)
-ecm_csv2 <- ecm_csv2[,c("exp","ecm_type","ecosystem")]
-vcmax_all2_final_ecm <- merge(vcmax_all2_final,ecm_csv2,by=c("exp"),all.x=TRUE)
-
-vcmax_all2_final_ecm$ecosystem[vcmax_all2_final_ecm$ecosystem=="heathland"] <- "grassland"
-vcmax_all2_final_ecm$ecosystem[vcmax_all2_final_ecm$ecosystem=="temperate_forest"] <- "forest"
-vcmax_all2_final_ecm$ecosystem[vcmax_all2_final_ecm$ecosystem=="shrubland"] <- "forest"
-
-#one outlier has problem? - must something wrong with magnitude
-vcmax_all2_final_ecm$anpp[vcmax_all2_final_ecm$anpp< -5 ] <- NA
-vcmax_all2_final_ecm$ANPP_BNPP[vcmax_all2_final_ecm$ANPP_BNPP< -10 ] <- NA
-
-vcmax_all2_final_ecm[grep("facts", vcmax_all2_final_ecm$exp),]$ecm_type <- "ECM"
-vcmax_all2_final_ecm[grep("biocon", vcmax_all2_final_ecm$exp),]$ecm_type <- "AM"
-vcmax_all2_final_ecm[grep("horsham", vcmax_all2_final_ecm$exp),]$ecm_type <- "AM"
-vcmax_all2_final_ecm[grep("rice", vcmax_all2_final_ecm$exp),]$ecm_type <- "AM"
-
-obj <- vcmax_all2_final_ecm
-
-#obj <- subset(vcmax_all2_final_ecm,condition!="co2+T")
-#obj <- subset(vcmax_all2_final_ecm,condition=="co2")
-
-#condition, ecm
-p <- list()
-for(i in c(1:9,11,12)){
-  p[[i]] <- ggplot(obj,aes_string(x=names(obj)[i+2], y="narea")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+
-    geom_point(aes(color=condition,shape=ecm_type),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
-    geom_smooth(color="black",method="lm",se=F)+theme_classic()}
-# geom_text(aes(label=exp),hjust=1, vjust=0,check_overlap = T)
-plot_grid(p[[1]],p[[2]],p[[3]],p[[4]],p[[5]],p[[6]],p[[7]],p[[8]],p[[9]],p[[11]],p[[12]],nrow=4,label_size = 15)+ theme(plot.background=element_rect(fill="white", color="white"))
-ggsave(paste("~/data/output_gcme/colin/multi_new_narea_combination.jpg",sep=""),width = 15, height = 15)
-
-#now, for nmass
-vcmax_all2_c <- merge_multi(logr_c_nmass,logr_c_narea,logr_c_vcmax,logr_c_jmax,logr_c_leaf_cn,logr_c_soil_n, logr_c_LMA,logr_c_anpp,old_logr_c_BNPP,old_logr_c_Nuptake) 
-vcmax_all2_c$condition <- "co2"
-vcmax_all2_cf <- merge_multi(logr_cf_nmass,logr_cf_narea,logr_cf_vcmax,logr_cf_jmax,logr_cf_leaf_cn,logr_cf_soil_n,logr_cf_LMA,logr_cf_anpp,old_logr_cf_BNPP,old_logr_cf_Nuptake) 
-vcmax_all2_cf$condition <- "co2+N"
-#one plot from cw_soil_n has weired varice - deleting them now
-vcmax_all2_cw <- merge_multi(logr_cw_nmass,logr_cw_narea,logr_cw_vcmax,logr_cw_jmax,logr_cw_leaf_cn,logr_cw_soil_n[c(1:3,8:10),], logr_cw_LMA,logr_cw_anpp,old_logr_cw_BNPP,old_logr_cw_Nuptake) 
-vcmax_all2_cw$condition <- "co2+T"
-
-vcmax_all2_final <- dplyr::bind_rows(vcmax_all2_c,vcmax_all2_cf,vcmax_all2_cw) 
-vcmax_all2_final$Nup_BNPP <- vcmax_all2_final$Nuptake/vcmax_all2_final$BNPP
-vcmax_all2_final$ANPP_BNPP <- vcmax_all2_final$anpp/vcmax_all2_final$BNPP
-dim(vcmax_all2_final)
-ecm_csv <- read.csv("/Users/yunpeng/data/gcme/kevin/orig_vcmax/new_ecm_types.csv")
-ecm_csv2 <- ecm_csv[,c("exp","ecm_type","ecosystem")]
-ecm_csv2$rep <- duplicated(ecm_csv2$exp)
-ecm_csv2 <- subset(ecm_csv2,rep==FALSE)
-ecm_csv2 <- ecm_csv2[,c("exp","ecm_type","ecosystem")]
-vcmax_all2_final_ecm <- merge(vcmax_all2_final,ecm_csv2,by=c("exp"),all.x=TRUE)
-
-vcmax_all2_final_ecm$ecosystem[vcmax_all2_final_ecm$ecosystem=="heathland"] <- "grassland"
-vcmax_all2_final_ecm$ecosystem[vcmax_all2_final_ecm$ecosystem=="temperate_forest"] <- "forest"
-vcmax_all2_final_ecm$ecosystem[vcmax_all2_final_ecm$ecosystem=="shrubland"] <- "forest"
-
-#one outlier has problem? - must something wrong with magnitude
-vcmax_all2_final_ecm$anpp[vcmax_all2_final_ecm$anpp< -5 ] <- NA
-vcmax_all2_final_ecm$ANPP_BNPP[vcmax_all2_final_ecm$ANPP_BNPP< -10 ] <- NA
-
-vcmax_all2_final_ecm[grep("facts", vcmax_all2_final_ecm$exp),]$ecm_type <- "ECM"
-vcmax_all2_final_ecm[grep("biocon", vcmax_all2_final_ecm$exp),]$ecm_type <- "AM"
-vcmax_all2_final_ecm[grep("horsham", vcmax_all2_final_ecm$exp),]$ecm_type <- "AM"
-vcmax_all2_final_ecm[grep("rice", vcmax_all2_final_ecm$exp),]$ecm_type <- "AM"
-
-obj <- vcmax_all2_final_ecm
-
-#obj <- subset(vcmax_all2_final_ecm,condition!="co2+T")
-#obj <- subset(vcmax_all2_final_ecm,condition=="co2")
-
-#condition, ecm
-p <- list()
-for(i in c(1:9,11,12)){
-  p[[i]] <- ggplot(obj,aes_string(x=names(obj)[i+2], y="nmass")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+
-    geom_point(aes(color=condition,shape=ecm_type),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
-    geom_smooth(color="black",method="lm",se=F)+theme_classic()}
-# geom_text(aes(label=exp),hjust=1, vjust=0,check_overlap = T)
-plot_grid(p[[1]],p[[2]],p[[3]],p[[4]],p[[5]],p[[6]],p[[7]],p[[8]],p[[9]],p[[11]],p[[12]],nrow=4,label_size = 15)+ theme(plot.background=element_rect(fill="white", color="white"))
-ggsave(paste("~/data/output_gcme/colin/multi_new_nmass_combination.jpg",sep=""),width = 15, height = 15)
-
-
-#now, for nmass
-vcmax_all2_c <- merge_multi( logr_c_LMA,logr_c_nmass,logr_c_narea,logr_c_vcmax,logr_c_jmax,logr_c_leaf_cn,logr_c_soil_n,logr_c_anpp,old_logr_c_BNPP,old_logr_c_Nuptake) 
-vcmax_all2_c$condition <- "co2"
-vcmax_all2_cf <- merge_multi( logr_c_LMA,logr_cf_nmass,logr_cf_narea,logr_cf_vcmax,logr_cf_jmax,logr_cf_leaf_cn,logr_cf_soil_n,logr_cf_LMA,logr_cf_anpp,old_logr_cf_BNPP,old_logr_cf_Nuptake) 
-vcmax_all2_cf$condition <- "co2+N"
-#one plot from cw_soil_n has weired varice - deleting them now
-vcmax_all2_cw <- merge_multi( logr_c_LMA,logr_cw_nmass,logr_cw_narea,logr_cw_vcmax,logr_cw_jmax,logr_cw_leaf_cn,logr_cw_soil_n[c(1:3,8:10),], logr_cw_LMA,logr_cw_anpp,old_logr_cw_BNPP,old_logr_cw_Nuptake) 
-vcmax_all2_cw$condition <- "co2+T"
-
-vcmax_all2_final <- dplyr::bind_rows(vcmax_all2_c,vcmax_all2_cf,vcmax_all2_cw) 
-vcmax_all2_final$Nup_BNPP <- vcmax_all2_final$Nuptake/vcmax_all2_final$BNPP
-vcmax_all2_final$ANPP_BNPP <- vcmax_all2_final$anpp/vcmax_all2_final$BNPP
-dim(vcmax_all2_final)
-ecm_csv <- read.csv("/Users/yunpeng/data/gcme/kevin/orig_vcmax/new_ecm_types.csv")
-ecm_csv2 <- ecm_csv[,c("exp","ecm_type","ecosystem")]
-ecm_csv2$rep <- duplicated(ecm_csv2$exp)
-ecm_csv2 <- subset(ecm_csv2,rep==FALSE)
-ecm_csv2 <- ecm_csv2[,c("exp","ecm_type","ecosystem")]
-vcmax_all2_final_ecm <- merge(vcmax_all2_final,ecm_csv2,by=c("exp"),all.x=TRUE)
-
-vcmax_all2_final_ecm$ecosystem[vcmax_all2_final_ecm$ecosystem=="heathland"] <- "grassland"
-vcmax_all2_final_ecm$ecosystem[vcmax_all2_final_ecm$ecosystem=="temperate_forest"] <- "forest"
-vcmax_all2_final_ecm$ecosystem[vcmax_all2_final_ecm$ecosystem=="shrubland"] <- "forest"
-
-#one outlier has problem? - must something wrong with magnitude
-vcmax_all2_final_ecm$anpp[vcmax_all2_final_ecm$anpp< -5 ] <- NA
-vcmax_all2_final_ecm$ANPP_BNPP[vcmax_all2_final_ecm$ANPP_BNPP< -10 ] <- NA
-
-vcmax_all2_final_ecm[grep("facts", vcmax_all2_final_ecm$exp),]$ecm_type <- "ECM"
-vcmax_all2_final_ecm[grep("biocon", vcmax_all2_final_ecm$exp),]$ecm_type <- "AM"
-vcmax_all2_final_ecm[grep("horsham", vcmax_all2_final_ecm$exp),]$ecm_type <- "AM"
-vcmax_all2_final_ecm[grep("rice", vcmax_all2_final_ecm$exp),]$ecm_type <- "AM"
-
-obj <- vcmax_all2_final_ecm
-
-#obj <- subset(vcmax_all2_final_ecm,condition!="co2+T")
-#obj <- subset(vcmax_all2_final_ecm,condition=="co2")
-
-#condition, ecm
-p <- list()
-for(i in c(1:9,11,12)){
-  p[[i]] <- ggplot(obj,aes_string(x=names(obj)[i+2], y="LMA")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+
-    geom_point(aes(color=condition,shape=ecm_type),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
-    geom_smooth(color="black",method="lm",se=F)+theme_classic()}
-# geom_text(aes(label=exp),hjust=1, vjust=0,check_overlap = T)
-plot_grid(p[[1]],p[[2]],p[[3]],p[[4]],p[[5]],p[[6]],p[[7]],p[[8]],p[[9]],p[[11]],p[[12]],nrow=4,label_size = 15)+ theme(plot.background=element_rect(fill="white", color="white"))
-ggsave(paste("~/data/output_gcme/colin/multi_new_lma_combination.jpg",sep=""),width = 15, height = 15)
-
-
 #combine to one results
 agg_meta_plots <- function(df,type_name,logr,log_var){
   df$logr <- df$middle
@@ -863,7 +717,6 @@ agg_meta_plots_ratio <- function(df,logr){
       no_plots = sum(is.na(jv_ratio$jmax_vcmax)==FALSE))
   return(df_box)
 }
-
 
 all_logr_c_vcmax <- agg_meta_sen_coef(logr_c_vcmax);all_logr_c_vcmax$response <- "vcmax"
 all_logr_c_jmax <- agg_meta_sen_coef(logr_c_jmax);all_logr_c_jmax$response <- "jmax"
@@ -926,6 +779,111 @@ ggsave(paste("~/data/output_gcme/colin/final_fig1_update.jpg",sep=""),width = 10
 
 
 #now, combined with prediction data from gcme_vcmax
+#the prediction of vcmax only includes c, w and cw - but having same value in cf
 prediction <- read.csv("/Users/yunpeng/data/gcme/kevin/forcing/pred_vcmax.csv")
 pred_vcmax <- subset(prediction,response=="vcmax")
-pred_jmax <- subset(prediction,response=="vcmax")
+vcmax_plotmean <- aggregate(pred_vcmax,by=list(pred_vcmax$exp), FUN=mean, na.rm=TRUE)[,c("Group.1","pred_vcmax25_coef")]
+names(vcmax_plotmean) <- c("exp","pred_vcmax"); vcmax_plotmean <- na.omit(vcmax_plotmean)
+
+#
+final_prediction <- Reduce(function(x,y) merge(x = x, y = y, by = c("exp"),all.x=TRUE),list(vcmax_all2_final_ecm,vcmax_plotmean))
+
+a1 <- ggplot(subset(final_prediction,condition=="co2"),aes(x=vcmax, y=pred_vcmax)) + 
+  geom_point(aes(color=ecm_type,shape=ecosystem),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
+  geom_text(aes(label=exp),hjust=1, vjust=0,check_overlap = T)+labs(x="Observation vcmax", y="Prediction vcmax")+
+  geom_smooth(color="black",method="lm",se=T)+theme_classic()
+
+logr_c_vcmax2 <- Reduce(function(x,y) merge(x = x, y = y, by = c("exp"),all.x=TRUE),list(logr_c_vcmax,final_prediction[,c("exp","ecm_type","ecosystem","pred_vcmax")]))
+#remove setres_cf as no prediction available
+logr_c_vcmax2 <- subset(logr_c_vcmax2,exp!="setres_cf") # but already not included
+
+vcmax_ecm <- agg_meta_sen_coef(subset(logr_c_vcmax2,ecm_type=="ECM")); vcmax_ecm$response <- "ECM"
+vcmax_am <- agg_meta_sen_coef(subset(logr_c_vcmax2,ecm_type=="AM")); vcmax_am$response <- "AM"
+vcmax_grassland <- agg_meta_sen_coef(subset(logr_c_vcmax2,ecosystem.y=="grassland")); vcmax_grassland$response <- "grassland"
+vcmax_forest <- agg_meta_sen_coef(subset(logr_c_vcmax2,ecosystem.y=="forest")); vcmax_forest$response <- "forest"
+vcmax_cropland <- agg_meta_sen_coef(subset(logr_c_vcmax2,ecosystem.y=="cropland")); vcmax_cropland$response <- "cropland"
+vcmax_alltypes <- dplyr::bind_rows(vcmax_ecm,vcmax_am,vcmax_grassland,vcmax_cropland,vcmax_forest)
+
+final_vcmax_prediction <- agg_meta_plots(vcmax_alltypes,"response","logr","logr_var")
+final_vcmax_prediction$prediction <- NA
+final_vcmax_prediction$prediction[final_vcmax_prediction$type_name=="ECM"] <- mean(final_prediction$pred_vcmax[final_prediction$ecm_type=="ECM"],na.rm=TRUE)
+final_vcmax_prediction$prediction[final_vcmax_prediction$type_name=="AM"] <- mean(final_prediction$pred_vcmax[final_prediction$ecm_type=="AM"],na.rm=TRUE)
+final_vcmax_prediction$prediction[final_vcmax_prediction$type_name=="grassland"] <- mean(final_prediction$pred_vcmax[final_prediction$ecosystem=="grassland"],na.rm=TRUE)
+final_vcmax_prediction$prediction[final_vcmax_prediction$type_name=="forest"] <- mean(final_prediction$pred_vcmax[final_prediction$ecosystem=="forest"],na.rm=TRUE)
+final_vcmax_prediction$prediction[final_vcmax_prediction$type_name=="cropland"] <- mean(final_prediction$pred_vcmax[final_prediction$ecosystem=="cropland"],na.rm=TRUE)
+
+final_vcmax_prediction$type_name <- factor(final_vcmax_prediction$type_name, levels = final_vcmax_prediction$type_name)
+
+a2 <- final_vcmax_prediction %>%
+  ggplot( aes(x=type_name, y=middle)) + 
+  geom_crossbar(aes(x=type_name, y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5) +
+  geom_boxplot(aes(x=type_name, y=prediction),color="red",size=1)+ 
+  geom_hline( yintercept=0.0, size=0.5)+ ylim(-0.6,0.6)+
+  labs(x="", y="vcmax") + theme_classic()+coord_flip()+theme(axis.text=element_text(size=12))
+
+
+#jmax
+pred_jmax <- subset(prediction,response=="jmax")
+jmax_plotmean <- aggregate(pred_jmax,by=list(pred_jmax$exp), FUN=mean, na.rm=TRUE)[,c("Group.1","pred_jmax25_coef")]
+names(jmax_plotmean) <- c("exp","pred_jmax"); jmax_plotmean <- na.omit(jmax_plotmean)
+
+#
+final_prediction2 <- Reduce(function(x,y) merge(x = x, y = y, by = c("exp"),all.x=TRUE),list(jmax_all2_final_ecm,jmax_plotmean))
+final_prediction2$ecosystem[final_prediction2$ecosystem=="rice_paddies"] <- "cropland"
+a3 <- ggplot(subset(final_prediction2,condition=="co2"),aes(x=jmax, y=pred_jmax)) + 
+  geom_point(aes(color=ecm_type,shape=ecosystem),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
+  geom_text(aes(label=exp),hjust=1, vjust=0,check_overlap = T)+labs(x="Observation jmax", y="Prediction jmax")+
+  geom_smooth(color="black",method="lm",se=T)+theme_classic()
+
+logr_c_jmax2 <- Reduce(function(x,y) merge(x = x, y = y, by = c("exp"),all.x=TRUE),list(logr_c_jmax,final_prediction2[,c("exp","ecm_type","ecosystem","pred_jmax")]))
+#remove setres_cf as no prediction available
+logr_c_jmax2 <- subset(logr_c_jmax2,exp!="setres_cf") # but already not included
+
+jmax_ecm <- agg_meta_sen_coef(subset(logr_c_jmax2,ecm_type=="ECM")); jmax_ecm$response <- "ECM"
+jmax_am <- agg_meta_sen_coef(subset(logr_c_jmax2,ecm_type=="AM")); jmax_am$response <- "AM"
+jmax_grassland <- agg_meta_sen_coef(subset(logr_c_jmax2,ecosystem.y=="grassland")); jmax_grassland$response <- "grassland"
+jmax_forest <- agg_meta_sen_coef(subset(logr_c_jmax2,ecosystem.y=="forest")); jmax_forest$response <- "forest"
+jmax_cropland <- agg_meta_sen_coef(subset(logr_c_jmax2,ecosystem.y=="cropland")); jmax_cropland$response <- "cropland"
+jmax_alltypes <- dplyr::bind_rows(jmax_ecm,jmax_am,jmax_grassland,jmax_cropland,jmax_forest)
+
+final_jmax_prediction <- agg_meta_plots(jmax_alltypes,"response","logr","logr_var")
+final_jmax_prediction$prediction <- NA
+final_jmax_prediction$prediction[final_jmax_prediction$type_name=="ECM"] <- mean(final_prediction2$pred_jmax[final_prediction2$ecm_type=="ECM"],na.rm=TRUE)
+final_jmax_prediction$prediction[final_jmax_prediction$type_name=="AM"] <- mean(final_prediction2$pred_jmax[final_prediction2$ecm_type=="AM"],na.rm=TRUE)
+final_jmax_prediction$prediction[final_jmax_prediction$type_name=="grassland"] <- mean(final_prediction2$pred_jmax[final_prediction2$ecosystem=="grassland"],na.rm=TRUE)
+final_jmax_prediction$prediction[final_jmax_prediction$type_name=="forest"] <- mean(final_prediction2$pred_jmax[final_prediction2$ecosystem=="forest"],na.rm=TRUE)
+final_jmax_prediction$prediction[final_jmax_prediction$type_name=="cropland"] <- mean(final_prediction2$pred_jmax[final_prediction2$ecosystem=="cropland"],na.rm=TRUE)
+
+final_jmax_prediction$type_name <- factor(final_jmax_prediction$type_name, levels = final_jmax_prediction$type_name)
+
+a4 <- final_jmax_prediction %>%
+  ggplot( aes(x=type_name, y=middle)) + 
+  geom_crossbar(aes(x=type_name, y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5) +
+  geom_boxplot(aes(x=type_name, y=prediction),color="red",size=1)+ 
+  geom_hline( yintercept=0.0, size=0.5)+ ylim(-0.6,0.6)+
+  labs(x="", y="jmax") + theme_classic()+coord_flip()+theme(axis.text=element_text(size=12))
+
+#jmax/vcmax
+final_prediction3 <- Reduce(function(x,y) merge(x = x, y = y, by = c("exp"),all.x=TRUE),
+                       list(subset(final_prediction2,condition=="co2"),
+                            subset(final_prediction,condition=="co2")[,c("exp","pred_vcmax")]))
+final_prediction3$pred_jmax_vcmax <- final_prediction3$pred_jmax/final_prediction3$pred_vcmax
+
+a5 <- ggplot(final_prediction3,aes(x=jmax_vcmax, y=pred_jmax_vcmax)) + 
+  geom_point(aes(color=ecm_type,shape=ecosystem),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
+  geom_text(aes(label=exp),hjust=1, vjust=0,check_overlap = T)+labs(x="Observation jmax/vcmax", y="Prediction jmax/vcmax")+
+  geom_smooth(color="black",method="lm",se=T)+theme_classic()
+a5
+
+a6 <- final_prediction3 %>%
+  ggplot( aes(x=ecm_type, y=jmax_vcmax)) + 
+  geom_boxplot(aes(x=ecm_type, y=jmax_vcmax),size=1)+ 
+  geom_boxplot(aes(x=ecm_type, y=pred_jmax_vcmax),color="red",size=1)+ 
+  geom_boxplot(aes(x=ecosystem, y=jmax_vcmax),size=1)+ 
+  geom_boxplot(aes(x=ecosystem, y=pred_jmax_vcmax),color="red",size=1)+ 
+  geom_hline( yintercept=0.0, size=0.5)+ ylim(-3,3)+
+  labs(x="", y="jmax/vcmax") + theme_classic()+coord_flip()+theme(axis.text=element_text(size=12))
+a6
+
+plot_grid(a1,a2,a3,a4,a5,a6,nrow=3,label_size = 15)+ theme(plot.background=element_rect(fill="white", color="white"))
+ggsave(paste("~/data/output_gcme/colin/final_fig3.jpg",sep=""),width = 15, height = 20)
