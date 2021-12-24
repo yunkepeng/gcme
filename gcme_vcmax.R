@@ -138,8 +138,8 @@ kevin2$ecm_type[kevin2$site=="dukeface"] <- "ECM";kevin2$ecm_type[kevin2$site=="
 kevin2$ecm_type[kevin2$site=="euroface"] <- "ECM";kevin2$ecm_type[kevin2$site=="facts_ii_face"] <- "ECM";kevin2$ecm_type[kevin2$site=="popface"] <- "ECM";
 #temporaily saving ecm for further use
 df_ecm <- as.data.frame(kevin2 %>% group_by(site,exp,ecm_type,ecosystem) %>% summarise(number=n()))
-csvfile <- paste("/Users/yunpeng/data/gcme/kevin/orig_vcmax/new_ecm_types.csv")
-write.csv(df_ecm, csvfile, row.names = TRUE)
+#csvfile <- paste("/Users/yunpeng/data/gcme/kevin/orig_vcmax/new_ecm_types.csv")
+#write.csv(df_ecm, csvfile, row.names = TRUE)
 
 #now, start p-model
 #combine with siteinfo

@@ -111,6 +111,7 @@ kevin_LMA$Year[is.na(kevin_LMA$Year)==TRUE] <- 2
 
 kevin_soil <- read.csv("/Users/yunpeng/data/gcme/kevin/orig_leaf/pleco_soil.csv")
 
+
 sitename <- kevin_othervars%>% group_by(site)  %>% summarise(number = n())
 varname <- kevin_othervars%>% group_by(response)  %>% summarise(number = n())
 varname
@@ -158,7 +159,9 @@ for (i in 1:nrow(varname)) {
     assign(paste("logr_cfw_", varname1,sep=""), as_tibble(response_ratio(df_cfw)))
   }, error=function(e){})} 
 
-
+#newly added
+logr_c_anpp <-  logr_c_anpp %>% filter(Unit %in% c("g_m2d","g_m2gs","g_m2y","gc_m2y","kg_ha_y","kg_m2y","kgc_m2y","mg_ha_y","t_ha_y"))
+logr_c_anpp%>% group_by(site)  %>% summarise(number = n())
 
 #lma, sla
 sla <- subset(kevin_LMA,response=="sla")
@@ -357,6 +360,26 @@ merge_multi <- function(var_y,var_x1,var_x2,var_x3,var_x4,var_x5,var_x6,var_x7,v
                                    plot_mean_x6,plot_mean_x7,plot_mean_x8,plot_mean_x9))
   return(photo_final_others)
 }
+
+#merge_multi for sensitivity coefficient
+merge_multi_logr <- function(var_y,var_x1,var_x2,var_x3,var_x4,var_x5,var_x6,var_x7,var_x8,var_x9){
+  plot_mean_y <- agg_meta(var_y)[,c("exp","middle")];names(plot_mean_y) <- c("exp",var_y$response[1])
+  plot_mean_x1 <- agg_meta(var_x1)[,c("exp","middle")];names(plot_mean_x1) <- c("exp",var_x1$response[1])
+  plot_mean_x2 <- agg_meta(var_x2)[,c("exp","middle")];names(plot_mean_x2) <- c("exp",var_x2$response[1])
+  plot_mean_x3 <- agg_meta(var_x3)[,c("exp","middle")];names(plot_mean_x3) <- c("exp",var_x3$response[1])
+  plot_mean_x4 <- agg_meta(var_x4)[,c("exp","middle")];names(plot_mean_x4) <- c("exp",var_x4$response[1])
+  plot_mean_x5 <- agg_meta(var_x5)[,c("exp","middle")];names(plot_mean_x5) <- c("exp",var_x5$response[1])
+  plot_mean_x6 <- agg_meta(var_x6)[,c("exp","middle")];names(plot_mean_x6) <- c("exp",var_x6$response[1])
+  plot_mean_x7 <- agg_meta(var_x7)[,c("exp","middle")];names(plot_mean_x7) <- c("exp",var_x7$response[1])
+  plot_mean_x8 <- agg_meta(var_x8)[,c("exp","middle")];names(plot_mean_x8) <- c("exp",var_x8$response[1])
+  plot_mean_x9 <- agg_meta(var_x9)[,c("exp","middle")];names(plot_mean_x9) <- c("exp",var_x9$response[1])
+  photo_final_others <-Reduce(function(x,y) merge(x = x, y = y, by = c("exp"),all.x=TRUE),
+                              list(plot_mean_y,plot_mean_x1,plot_mean_x2,plot_mean_x3,plot_mean_x4,plot_mean_x5,
+                                   plot_mean_x6,plot_mean_x7,plot_mean_x8,plot_mean_x9))
+  return(photo_final_others)
+}
+
+
 #a function to plot output from merge_multi
 plot_multi <- function(obj){
   p <- list()
@@ -502,7 +525,7 @@ ggplot(vcmax_all_ecm_soilN,aes(x=nmass, y=vcmax)) +geom_hline(yintercept=0)+geom
   geom_smooth(color="red",method="lm",se=F)+geom_text(aes(label=exp),hjust=1, vjust=0,check_overlap = T)+theme_classic()+scale_color_gradientn(colours = rainbow(5))
 summary(lm(vcmax~anpp,vcmax_all_ecm))
 
-#now, newly adding anpp, bnpp and Asat
+#now, newly adding bnpp and Asat
 df <- read_csv("~/data/gcme/data_received_190325/NewData_wide_CORRECTED2.csv") %>%
   mutate( ambient_Sd  = as.numeric(ambient_Sd),  ambient_Se  = as.numeric(ambient_Se), 
           elevated_Sd = as.numeric(elevated_Sd), elevated_Se = as.numeric(elevated_Se) )
@@ -580,15 +603,36 @@ for (i in 1:nrow(varname)) {
 vcmax_all2_c <- merge_multi(logr_c_vcmax,logr_c_jmax,logr_c_narea,logr_c_nmass,logr_c_leaf_cn,logr_c_soil_n, logr_c_LMA,logr_c_anpp,old_logr_c_BNPP,old_logr_c_Nuptake) 
 vcmax_all2_c$condition <- "co2"
 vcmax_all2_cf <- merge_multi(logr_cf_vcmax,logr_cf_jmax,logr_cf_narea,logr_cf_nmass,logr_cf_leaf_cn,logr_cf_soil_n,logr_cf_LMA,logr_cf_anpp,old_logr_cf_BNPP,old_logr_cf_Nuptake) 
-vcmax_all2_cf$condition <- "co2+N"
+vcmax_all2_cf$condition <- "co2+low_N"
 #one plot from cw_soil_n has weired varice - deleting them now
 vcmax_all2_cw <- merge_multi(logr_cw_vcmax,logr_cw_jmax,logr_cw_narea,logr_cw_nmass,logr_cw_leaf_cn,logr_cw_soil_n[c(1:3,8:10),], logr_cw_LMA,logr_cw_anpp,old_logr_cw_BNPP,old_logr_cw_Nuptake) 
 vcmax_all2_cw$condition <- "co2+T"
 
-vcmax_all2_final <- dplyr::bind_rows(vcmax_all2_c,vcmax_all2_cf,vcmax_all2_cw) 
+#now, looking at additional plots - but just logr
+vcmax_all2_f_logr <- merge_multi_logr(logr_f_vcmax,logr_f_jmax,logr_f_narea,logr_c_nmass,logr_f_leaf_cn,logr_f_soil_n, logr_f_LMA,logr_f_anpp,old_logr_f_BNPP,old_logr_f_Nuptake) 
+vcmax_all2_f_logr <- subset(vcmax_all2_f_logr,exp!="itatinga_fk")
+vcmax_all2_cf_logr <- merge_multi_logr(logr_cf_vcmax,logr_cf_jmax,logr_cf_narea,logr_cf_nmass,logr_cf_leaf_cn,logr_cf_soil_n,logr_cf_LMA,logr_cf_anpp,old_logr_cf_BNPP,old_logr_cf_Nuptake) 
+# this two are equal and could be obtained completely! = cf -f 
+vcmax_all2_f_logr[,2:ncol(vcmax_all2_f_logr)] <- vcmax_all2_cf_logr[,2:ncol(vcmax_all2_cf_logr)] - vcmax_all2_f_logr[,2:ncol(vcmax_all2_f_logr)]
+#now calculating sensitivity coefficient 
+vcmax_all2_f_logr$exp # duke2,euroface4_pa,pe,pn, new_zealand_face
+#first - show them
+subset(logr_cf_vcmax,exp=="duke2_cf")$co2_e-subset(logr_cf_vcmax,exp=="duke2_cf")$co2_a
+subset(logr_cf_vcmax,exp=="euroface4_pa_cf")$co2_e-subset(logr_cf_vcmax,exp=="euroface4_pa_cf")$co2_a
+subset(logr_cf_vcmax,exp=="euroface4_pe_cf")$co2_e-subset(logr_cf_vcmax,exp=="euroface4_pe_cf")$co2_a
+subset(logr_cf_vcmax,exp=="euroface4_pn_cf")$co2_e-subset(logr_cf_vcmax,exp=="euroface4_pn_cf")$co2_a
+subset(logr_cf_vcmax,exp=="new_zealand_face_cf")$co2_e-subset(logr_cf_vcmax,exp=="new_zealand_face_cf")$co2_a
+subset(logr_cf_vcmax,exp=="setres_cf")$co2_e-subset(logr_cf_vcmax,exp=="setres_cf")$co2_a
+aco2list <- c(200,182,182,182,111,NA)
+#now, divide them to calculate final sensitivity coefficient!
+vcmax_all2_f_logr[,2:ncol(vcmax_all2_f_logr)] <- vcmax_all2_f_logr[,2:ncol(vcmax_all2_f_logr)] / log(aco2list)
+vcmax_all2_f_logr$condition <- "co2+high_N"
+
+vcmax_all2_final <- dplyr::bind_rows(vcmax_all2_c,vcmax_all2_cf,vcmax_all2_cw,vcmax_all2_f_logr) 
 vcmax_all2_final$Nup_BNPP <- vcmax_all2_final$Nuptake/vcmax_all2_final$BNPP
 vcmax_all2_final$ANPP_BNPP <- vcmax_all2_final$anpp/vcmax_all2_final$BNPP
 dim(vcmax_all2_final)
+
 ecm_csv <- read.csv("/Users/yunpeng/data/gcme/kevin/orig_vcmax/new_ecm_types.csv")
 ecm_csv2 <- ecm_csv[,c("exp","ecm_type","ecosystem")]
 ecm_csv2$rep <- duplicated(ecm_csv2$exp)
@@ -603,8 +647,7 @@ vcmax_all2_final_ecm$ecosystem[vcmax_all2_final_ecm$ecosystem=="shrubland"] <- "
 #one outlier has problem? - must something wrong with magnitude
 vcmax_all2_final_ecm$anpp[vcmax_all2_final_ecm$anpp< -5 ] <- NA
 
-obj <- vcmax_all2_final_ecm
-#obj <- subset(vcmax_all2_final_ecm,condition!="co2+T")
+obj <- subset(vcmax_all2_final_ecm,condition!="co2+T")
 #obj <- subset(vcmax_all2_final_ecm,condition=="co2")
 
 #condition, ecm
@@ -614,7 +657,7 @@ for(i in c(1:9,11,12)){
     geom_point(aes(color=condition,shape=ecm_type),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
     geom_smooth(color="black",method="lm",se=F)+theme_classic()}
 # geom_text(aes(label=exp),hjust=1, vjust=0,check_overlap = T)
-#plot_grid(p[[1]],p[[2]],p[[3]],p[[4]],p[[5]],p[[6]],p[[7]],p[[8]],p[[9]],p[[11]],p[[12]],nrow=4,label_size = 15)+ theme(plot.background=element_rect(fill="white", color="white"))
+plot_grid(p[[1]],p[[2]],p[[3]],p[[4]],p[[5]],p[[6]],p[[7]],p[[8]],p[[9]],p[[11]],p[[12]],nrow=4,label_size = 15)+ theme(plot.background=element_rect(fill="white", color="white"))
 #ggsave(paste("~/data/output_gcme/colin/multi_new_vc_combination.jpg",sep=""),width = 15, height = 15)
 
 #figure 2 - Jmax, Nmass, LMA, ANPP, BNPP, Nup/BNPP
@@ -634,12 +677,30 @@ plot_grid(p[[1]],p[[2]],p[[3]],p[[4]],p[[5]],p[[6]],p[[7]],p[[8]],p[[9]],p[[11]]
 jmax_all2_c <- merge_multi(logr_c_jmax,logr_c_vcmax,logr_c_narea,logr_c_nmass,logr_c_leaf_cn,logr_c_soil_n, logr_c_LMA,logr_c_anpp,old_logr_c_BNPP,old_logr_c_Nuptake) 
 jmax_all2_c$condition <- "co2"
 jmax_all2_cf <- merge_multi(logr_cf_jmax,logr_cf_vcmax,logr_cf_narea,logr_cf_nmass,logr_cf_leaf_cn,logr_cf_soil_n,logr_cf_LMA,logr_cf_anpp,old_logr_cf_BNPP,old_logr_cf_Nuptake) 
-jmax_all2_cf$condition <- "co2+N"
+jmax_all2_cf$condition <- "co2+low_N"
 #one plot from cw_soil_n has weired varice - deleting them now
 jmax_all2_cw <- merge_multi(logr_cw_jmax,logr_cw_vcmax,logr_cw_narea,logr_cw_nmass,logr_cw_leaf_cn,logr_cw_soil_n[c(1:3,8:10),], logr_cw_LMA,logr_cw_anpp,old_logr_cw_BNPP,old_logr_cw_Nuptake) 
 jmax_all2_cw$condition <- "co2+T"
 
-jmax_all2_final <- dplyr::bind_rows(jmax_all2_c,jmax_all2_cf,jmax_all2_cw) 
+#now, looking at additional plots - but just logr
+jmax_all2_f_logr <- merge_multi_logr(logr_f_jmax,logr_f_vcmax,logr_f_narea,logr_c_nmass,logr_f_leaf_cn,logr_f_soil_n, logr_f_LMA,logr_f_anpp,old_logr_f_BNPP,old_logr_f_Nuptake) 
+jmax_all2_cf_logr <- merge_multi_logr(logr_cf_jmax,logr_cf_vcmax,logr_cf_narea,logr_cf_nmass,logr_cf_leaf_cn,logr_cf_soil_n,logr_cf_LMA,logr_cf_anpp,old_logr_cf_BNPP,old_logr_cf_Nuptake) 
+# this two are equal and could be obtained completely! = cf -f 
+jmax_all2_f_logr[,2:ncol(jmax_all2_f_logr)] <- jmax_all2_cf_logr[,2:ncol(jmax_all2_cf_logr)] - jmax_all2_f_logr[,2:ncol(jmax_all2_f_logr)]
+#now calculating sensitivity coefficient 
+jmax_all2_f_logr$exp # duke2,euroface4_pa,pe,pn, new_zealand_face
+#first - show them
+subset(logr_cf_jmax,exp=="duke2_cf")$co2_e-subset(logr_cf_jmax,exp=="duke2_cf")$co2_a
+subset(logr_cf_jmax,exp=="euroface4_pa_cf")$co2_e-subset(logr_cf_jmax,exp=="euroface4_pa_cf")$co2_a
+subset(logr_cf_jmax,exp=="euroface4_pe_cf")$co2_e-subset(logr_cf_jmax,exp=="euroface4_pe_cf")$co2_a
+subset(logr_cf_jmax,exp=="euroface4_pn_cf")$co2_e-subset(logr_cf_jmax,exp=="euroface4_pn_cf")$co2_a
+subset(logr_cf_jmax,exp=="setres_cf")$co2_e-subset(logr_cf_jmax,exp=="setres_cf")$co2_a
+bco2list <- c(200,182,182,182,NA)
+#now, divide them to calculate final sensitivity coefficient!
+jmax_all2_f_logr[,2:ncol(jmax_all2_f_logr)] <- jmax_all2_f_logr[,2:ncol(jmax_all2_f_logr)] / log(bco2list)
+jmax_all2_f_logr$condition <- "co2+high_N"
+
+jmax_all2_final <- dplyr::bind_rows(jmax_all2_c,jmax_all2_cf,jmax_all2_cw,jmax_all2_f_logr) 
 jmax_all2_final$Nup_BNPP <- jmax_all2_final$Nuptake/jmax_all2_final$BNPP
 jmax_all2_final$ANPP_BNPP <- jmax_all2_final$anpp/jmax_all2_final$BNPP
 
@@ -651,8 +712,8 @@ jmax_all2_final_ecm$ecosystem[jmax_all2_final_ecm$ecosystem=="shrubland"] <- "fo
 #one outlier has problem? - must something wrong with magnitude
 jmax_all2_final_ecm$anpp[jmax_all2_final_ecm$anpp< -5 ] <- NA
 
-obj <- jmax_all2_final_ecm
-#obj <- subset(jmax_all2_final_ecm,condition!="co2+T")
+#obj <- jmax_all2_final_ecm
+obj <- subset(jmax_all2_final_ecm,condition!="co2+T")
 
 #condition, ecm
 p <- list()
