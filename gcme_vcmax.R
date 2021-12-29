@@ -377,7 +377,7 @@ agg_meta_sen_coef <- function(df){
   df$logr_se <- df$sen_coef_se
   #some are just all NA for original data's standard deviation - needs division -> in this way just calculate normal mean, lower and upper band
   for (i in 1:length(explist)){ # if over half of samples doens't have variance then we should not rely on this anyways.
-    if (sum(is.na(subset(df,exp_nam==explist[i])$logr_var),na.rm=TRUE)/length(is.na(subset(df,exp_nam==explist[i])$logr_var)) >0.5){
+    if (sum(is.na(subset(df,exp_nam==explist[i])$logr_var),na.rm=TRUE)/length(is.na(subset(df,exp_nam==explist[i])$logr_var)) >0.4){
       #uncertainty <- 1.96*sd(as.vector(subset(df,exp_nam==explist[i])$logr))
       #uncertainty_50 <- 0.67449*sd(as.vector(subset(df,exp_nam==explist[i])$logr))
       uncertainty <- 0 # calculating sd directly from plots is horrible..
@@ -426,6 +426,7 @@ agg_meta_sen_coef <- function(df){
 plotmean_c_coefvcmax <- agg_meta_sen_coef(kevin2_c_vcmax)
 plotmean_c_coefjmax <- agg_meta_sen_coef(kevin2_c_jmax)
 
+#now, make 
 
 #now, shows the shift
 look2_combination <- look2 %>%  filter(exp_nam %in% c("riceface_japan","brandbjerg","new_zealand_face","setres","dukeface","euroface"))

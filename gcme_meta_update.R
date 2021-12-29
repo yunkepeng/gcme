@@ -268,6 +268,7 @@ output_fig <- function(y_var,x_var){
   return(figure1)
 }
 
+
 #read Kevin - other vars
 kevin_othervars <- read.csv("/Users/yunpeng/data/gcme/kevin/orig_leaf/YunkePeng_othervars.csv")
 kevin_othervars <- rename(kevin_othervars, c(ambient = x_c, elevated=x_t, ambient_Sd=sd_c, elevated_Sd=sd_t,ambient_Se=se_c,elevated_Se=se_t,n_plots=rep_c,
@@ -308,15 +309,29 @@ varname <- kevin_othervars%>% group_by(response)  %>% summarise(number = n())
 nmass <- subset(kevin_othervars,response=="leaf_n") %>%         
   filter(Unit %in% c("g","g_100g","g_g","g_kg","mg_g","mg_kg","mmol_g","ug_mg","umol_g"))
 nmass$response <- "nmass"
-logr_c_nmass <- as_tibble(response_ratio(subset(nmass,treatment=="c")));logr_w_nmass <- as_tibble(response_ratio(subset(nmass,treatment=="w")));logr_f_nmass <- as_tibble(response_ratio(subset(nmass,treatment=="f")));
-logr_cw_nmass <- as_tibble(response_ratio(subset(nmass,treatment=="cw")));logr_cf_nmass <- as_tibble(response_ratio(subset(nmass,treatment=="cf")))
+logr_c_nmass <- as_tibble(response_ratio(subset(nmass,treatment=="c")));
+logr_w_nmass <- as_tibble(response_ratio(subset(nmass,treatment=="w")));
+logr_f_nmass <- as_tibble(response_ratio(subset(nmass,treatment=="f")));
+logr_d_nmass <- as_tibble(response_ratio(subset(nmass,treatment=="d")));
+logr_cw_nmass <- as_tibble(response_ratio(subset(nmass,treatment=="cw")));
+logr_cf_nmass <- as_tibble(response_ratio(subset(nmass,treatment=="cf")));
+logr_cd_nmass <- as_tibble(response_ratio(subset(nmass,treatment=="cd")));
+logr_df_nmass <- as_tibble(response_ratio(subset(nmass,treatment=="df")));
+logr_dw_nmass <- as_tibble(response_ratio(subset(nmass,treatment=="dw")))
 
 narea <- subset(kevin_othervars,response=="leaf_n") %>%         
   filter(Unit %in% c("g_m2","g_m3","g_pot","mg_cm2","mg_m2","mmol_m2","ug_cm2","ug_cm3","umol_m2"))
 narea$response <- "narea"
 
-logr_c_narea <- as_tibble(response_ratio(subset(narea,treatment=="c")));logr_w_narea <- as_tibble(response_ratio(subset(narea,treatment=="w")));logr_f_narea <- as_tibble(response_ratio(subset(narea,treatment=="f")));
-logr_cw_narea <- as_tibble(response_ratio(subset(narea,treatment=="cw")));logr_cf_narea <- as_tibble(response_ratio(subset(narea,treatment=="cf")))
+logr_c_narea <- as_tibble(response_ratio(subset(narea,treatment=="c")));
+logr_w_narea <- as_tibble(response_ratio(subset(narea,treatment=="w")));
+logr_f_narea <- as_tibble(response_ratio(subset(narea,treatment=="f")));
+logr_d_narea <- as_tibble(response_ratio(subset(narea,treatment=="d")));
+logr_cw_narea <- as_tibble(response_ratio(subset(narea,treatment=="cw")));
+logr_cf_narea <- as_tibble(response_ratio(subset(narea,treatment=="cf")));
+logr_cd_narea <- as_tibble(response_ratio(subset(narea,treatment=="cd")));
+logr_df_narea <- as_tibble(response_ratio(subset(narea,treatment=="df")));
+logr_dw_narea <- as_tibble(response_ratio(subset(narea,treatment=="dw")))
 
 #other vars - all created now
 for (i in 1:nrow(varname)) {
@@ -331,6 +346,9 @@ for (i in 1:nrow(varname)) {
     df_w <- subset(kevin_othervars,treatment=="w"& response==varname1)
     assign(paste("logr_w_", varname1,sep=""), as_tibble(response_ratio(df_w)))
     
+    df_d <- subset(kevin_othervars,treatment=="d"& response==varname1)
+    assign(paste("logr_d_", varname1,sep=""), as_tibble(response_ratio(df_d)))
+    
     df_cf <- subset(kevin_othervars,treatment=="cf" & response==varname1)
     assign(paste("logr_cf_", varname1,sep=""), as_tibble(response_ratio(df_cf)))
     
@@ -340,6 +358,15 @@ for (i in 1:nrow(varname)) {
     df_fw <- subset(kevin_othervars,treatment=="fw" & response==varname1)
     assign(paste("logr_fw_", varname1,sep=""), as_tibble(response_ratio(df_fw)))
     
+    df_cd <- subset(kevin_othervars,treatment=="cd" & response==varname1)
+    assign(paste("logr_cd_", varname1,sep=""), as_tibble(response_ratio(df_cd)))
+    
+    df_df <- subset(kevin_othervars,treatment=="df" & response==varname1)
+    assign(paste("logr_df_", varname1,sep=""), as_tibble(response_ratio(df_df)))
+    
+    df_dw <- subset(kevin_othervars,treatment=="dw" & response==varname1)
+    assign(paste("logr_dw_", varname1,sep=""), as_tibble(response_ratio(df_dw)))
+    
     df_cfw <- subset(kevin_othervars,treatment=="cfw" & response==varname1)
     assign(paste("logr_cfw_", varname1,sep=""), as_tibble(response_ratio(df_cfw)))
   }, error=function(e){})} 
@@ -347,15 +374,24 @@ for (i in 1:nrow(varname)) {
 #anpp filtering with unit
 logr_c_anpp <-  logr_c_anpp %>% filter(Unit %in% c("g_m2d","g_m2gs","g_m2y","gc_m2y","kg_ha_y","kg_m2y","kgc_m2y","mg_ha_y","t_ha_y"))
 logr_f_anpp <-  logr_f_anpp %>% filter(Unit %in% c("g_m2d","g_m2gs","g_m2y","gc_m2y","kg_ha_y","kg_m2y","kgc_m2y","mg_ha_y","t_ha_y"))
+logr_d_anpp <-  logr_d_anpp %>% filter(Unit %in% c("g_m2d","g_m2gs","g_m2y","gc_m2y","kg_ha_y","kg_m2y","kgc_m2y","mg_ha_y","t_ha_y"))
 logr_w_anpp <-  logr_w_anpp %>% filter(Unit %in% c("g_m2d","g_m2gs","g_m2y","gc_m2y","kg_ha_y","kg_m2y","kgc_m2y","mg_ha_y","t_ha_y"))
 logr_cw_anpp <-  logr_cw_anpp %>% filter(Unit %in% c("g_m2d","g_m2gs","g_m2y","gc_m2y","kg_ha_y","kg_m2y","kgc_m2y","mg_ha_y","t_ha_y"))
 logr_cf_anpp <-  logr_cf_anpp %>% filter(Unit %in% c("g_m2d","g_m2gs","g_m2y","gc_m2y","kg_ha_y","kg_m2y","kgc_m2y","mg_ha_y","t_ha_y"))
+logr_cd_anpp <-  logr_cd_anpp %>% filter(Unit %in% c("g_m2d","g_m2gs","g_m2y","gc_m2y","kg_ha_y","kg_m2y","kgc_m2y","mg_ha_y","t_ha_y"))
 logr_fw_anpp <-  logr_fw_anpp %>% filter(Unit %in% c("g_m2d","g_m2gs","g_m2y","gc_m2y","kg_ha_y","kg_m2y","kgc_m2y","mg_ha_y","t_ha_y"))
+logr_df_anpp <-  logr_df_anpp %>% filter(Unit %in% c("g_m2d","g_m2gs","g_m2y","gc_m2y","kg_ha_y","kg_m2y","kgc_m2y","mg_ha_y","t_ha_y"))
+logr_dw_anpp <-  logr_dw_anpp %>% filter(Unit %in% c("g_m2d","g_m2gs","g_m2y","gc_m2y","kg_ha_y","kg_m2y","kgc_m2y","mg_ha_y","t_ha_y"))
 logr_cfw_anpp <-  logr_cfw_anpp %>% filter(Unit %in% c("g_m2d","g_m2gs","g_m2y","gc_m2y","kg_ha_y","kg_m2y","kgc_m2y","mg_ha_y","t_ha_y"))
 
 #how about combing soil N and soil total N?
-logr_c_soil_n_combined <-  rbind(logr_c_soil_n,logr_c_soil_total_n)
-logr_c_soil_n_combined$response <- "soil_N"
+#logr_c_soil_n_combined <-  rbind(logr_c_soil_n,logr_c_soil_total_n)
+#logr_c_soil_n_combined <-  logr_c_soil_total_n
+#logr_c_soil_n_combined$response <- "soil_N"
+
+#something wrong with soil N - just convert
+logr_cw_soil_n$logr_var[(logr_cw_soil_n$exp)=="ua2007_cw"] <- NA
+
 
 #LMA.
 kevin_LMA <- read.csv("/Users/yunpeng/data/gcme/kevin/orig_leaf/LMA.csv")
@@ -381,9 +417,15 @@ sla$ambient <- 1/sla$ambient; sla$elevated <- 1/sla$elevated; sla$ambient_Sd <- 
 sla$elevated_Sd <- 1/sla$elevated_Sd;sla$ambient_Se <- 1/sla$ambient_Se;sla$elevated_Se <- 1/sla$elevated_Se
 LMA <- dplyr::bind_rows(lma,sla)
 LMA$response <- "LMA"
-logr_c_LMA <- as_tibble(response_ratio(subset(LMA,treatment=="c")));logr_w_LMA <-  as_tibble(response_ratio(subset(LMA,treatment=="w")));logr_f_LMA <-  as_tibble(response_ratio(subset(LMA,treatment=="f")));
-logr_cw_LMA <-  as_tibble(response_ratio(subset(LMA,treatment=="cw")));logr_cf_LMA <-  as_tibble(response_ratio(subset(LMA,treatment=="cf")))
-
+logr_c_LMA <- as_tibble(response_ratio(subset(LMA,treatment=="c")));
+logr_w_LMA <-  as_tibble(response_ratio(subset(LMA,treatment=="w")));
+logr_d_LMA <-  as_tibble(response_ratio(subset(LMA,treatment=="d")));
+logr_f_LMA <-  as_tibble(response_ratio(subset(LMA,treatment=="f")));
+logr_cw_LMA <-  as_tibble(response_ratio(subset(LMA,treatment=="cw")));
+logr_cd_LMA <-  as_tibble(response_ratio(subset(LMA,treatment=="cd")));
+logr_cf_LMA <-  as_tibble(response_ratio(subset(LMA,treatment=="cf")));
+logr_df_LMA <-  as_tibble(response_ratio(subset(LMA,treatment=="df")));
+logr_dw_LMA <-  as_tibble(response_ratio(subset(LMA,treatment=="dw")))
 
 #final, vcmax, jmax and jmax/vcmax
 kevin <- read.csv("/Users/yunpeng/data/gcme/kevin/orig_vcmax/JunkePeng_11252021.csv")
@@ -427,11 +469,25 @@ kevin_z <- kevin_z[, !(colnames(kevin_z) %in% c("elv"))]
 kevin_z$year_start <- kevin_z$start_year
 kevin_z$year_end <- kevin_z$sampling_year
 
-logr_c_vcmax <- as_tibble(response_ratio(subset(kevin_z,treatment=="c"&response=="vcmax")));logr_w_vcmax <-  as_tibble(response_ratio(subset(kevin_z,treatment=="w"&response=="vcmax")));logr_f_vcmax <-  as_tibble(response_ratio(subset(kevin_z,treatment=="f"&response=="vcmax")));
-logr_cw_vcmax <-  as_tibble(response_ratio(subset(kevin_z,treatment=="cw"&response=="vcmax")));logr_cf_vcmax <-  as_tibble(response_ratio(subset(kevin_z,treatment=="cf"&response=="vcmax")));
+logr_c_vcmax <- as_tibble(response_ratio(subset(kevin_z,treatment=="c"&response=="vcmax")));
+logr_w_vcmax <-  as_tibble(response_ratio(subset(kevin_z,treatment=="w"&response=="vcmax")));
+logr_f_vcmax <-  as_tibble(response_ratio(subset(kevin_z,treatment=="f"&response=="vcmax")));
+logr_d_vcmax <- as_tibble(response_ratio(subset(kevin_z,treatment=="d"&response=="vcmax")));
+logr_cw_vcmax <-  as_tibble(response_ratio(subset(kevin_z,treatment=="cw"&response=="vcmax")));
+logr_cf_vcmax <-  as_tibble(response_ratio(subset(kevin_z,treatment=="cf"&response=="vcmax")));
+logr_cd_vcmax <-  as_tibble(response_ratio(subset(kevin_z,treatment=="cd"&response=="vcmax")));
+logr_df_vcmax <-  as_tibble(response_ratio(subset(kevin_z,treatment=="df"&response=="vcmax")));
+logr_dw_vcmax <-  as_tibble(response_ratio(subset(kevin_z,treatment=="dw"&response=="vcmax")))
 
-logr_c_jmax <- as_tibble(response_ratio(subset(kevin_z,treatment=="c"&response=="jmax")));logr_w_jmax <-  as_tibble(response_ratio(subset(kevin_z,treatment=="w"&response=="jmax")));logr_f_jmax <-  as_tibble(response_ratio(subset(kevin_z,treatment=="f"&response=="jmax")));
-logr_cw_jmax <-  as_tibble(response_ratio(subset(kevin_z,treatment=="cw"&response=="jmax")));logr_cf_jmax <-  as_tibble(response_ratio(subset(kevin_z,treatment=="cf"&response=="jmax")))
+logr_c_jmax <- as_tibble(response_ratio(subset(kevin_z,treatment=="c"&response=="jmax")));
+logr_w_jmax <-  as_tibble(response_ratio(subset(kevin_z,treatment=="w"&response=="jmax")));
+logr_f_jmax <-  as_tibble(response_ratio(subset(kevin_z,treatment=="f"&response=="jmax")));
+logr_d_jmax <-  as_tibble(response_ratio(subset(kevin_z,treatment=="d"&response=="jmax")));
+logr_cw_jmax <-  as_tibble(response_ratio(subset(kevin_z,treatment=="cw"&response=="jmax")));
+logr_cf_jmax <-  as_tibble(response_ratio(subset(kevin_z,treatment=="cf"&response=="jmax")));
+logr_cd_jmax <-  as_tibble(response_ratio(subset(kevin_z,treatment=="cd"&response=="jmax")));
+logr_df_jmax <-  as_tibble(response_ratio(subset(kevin_z,treatment=="df"&response=="jmax")));
+logr_dw_jmax <-  as_tibble(response_ratio(subset(kevin_z,treatment=="dw"&response=="jmax")))
 
 
 #now, newly adding bnpp, Nuptake, Asat and npp
@@ -506,15 +562,27 @@ for (i in 1:nrow(varname)) {
     
     df_w <- subset(df_only,treatment=="w"& response==varname1)
     assign(paste("old_logr_w_", varname1,sep=""), as_tibble(response_ratio(df_w)))
+
+    df_d <- subset(df_only,treatment=="d"& response==varname1)
+    assign(paste("old_logr_d_", varname1,sep=""), as_tibble(response_ratio(df_d)))
     
     df_cf <- subset(df_only,treatment=="cf" & response==varname1)
     assign(paste("old_logr_cf_", varname1,sep=""), as_tibble(response_ratio(df_cf)))
     
     df_cw <- subset(df_only,treatment=="cw" &response==varname1)
     assign(paste("old_logr_cw_", varname1,sep=""), as_tibble(response_ratio(df_cw)))
-    
+
+    df_cd <- subset(df_only,treatment=="cd" &response==varname1)
+    assign(paste("old_logr_cd_", varname1,sep=""), as_tibble(response_ratio(df_cd)))
+        
     df_fw <- subset(df_only,treatment=="fw" & response==varname1)
     assign(paste("old_logr_fw_", varname1,sep=""), as_tibble(response_ratio(df_fw)))
+    
+    df_df <- subset(df_only,treatment=="df" &response==varname1)
+    assign(paste("old_logr_df_", varname1,sep=""), as_tibble(response_ratio(df_df)))
+    
+    df_dw <- subset(df_only,treatment=="dw" & response==varname1)
+    assign(paste("old_logr_dw_", varname1,sep=""), as_tibble(response_ratio(df_dw)))
     
     df_cfw <- subset(df_only,treatment=="cfw" & response==varname1)
     assign(paste("old_logr_cfw_", varname1,sep=""), as_tibble(response_ratio(df_cfw)))
@@ -523,9 +591,14 @@ for (i in 1:nrow(varname)) {
 
 #now, revising figures
 #this function creates to combine cf plots (high-N) into c-only plot
-combine_cf <- function(logr_c_var,logr_f_var,logr_cf_var,name){
+# log (cf/a) - log(f/a) = log(cf/f)
+# log (cw/a) - log(w/a) = log(cw/w)
+# log (cd/a) - log(d/a) = log(cd/d)
+#below is cfwd
+combine_co2 <- function(logr_c_var,logr_f_var,logr_w_var,logr_d_var,logr_cf_var,logr_cw_var,logr_cd_var,name){
   all_logr_c_lma <- agg_meta_sen_coef(logr_c_var)[,c("exp","middle")]
   all_logr_c_lma$condition <- "co2"
+  #co2 + fer / fer
   all_logr_f_lma <- agg_meta(logr_f_var)[,c("exp","middle")]
   all_logr_cf_lma <- agg_meta(logr_cf_var)[,c("exp","middle")]
   all_logr_cf_lma$exp_old <- all_logr_cf_lma$exp 
@@ -539,275 +612,191 @@ combine_cf <- function(logr_c_var,logr_f_var,logr_cf_var,name){
   } 
   new_df$middle <- (new_df$middle.y - new_df$middle.x)/log(new_df$co2)
   new_df$exp <- new_df$exp_old
-  new_df$condition <- "co2+high_N"
+  new_df$condition <- "(co2 + Nfer)/Nfer"
+  #co2 + warming / warming
+  if (nrow(logr_w_var)==0 |nrow(logr_cw_var)==0 ){
+  new_df2 <- as.data.frame(tibble(exp="NA",middle=NA,condition="NA")) 
+  } else {
+    
+  #co2 + warming / warming
+  all_logr_w_lma <- agg_meta(logr_w_var)[,c("exp","middle")]
+  all_logr_cw_lma <- agg_meta(logr_cw_var)[,c("exp","middle")]
+  all_logr_cw_lma$exp_old <- all_logr_cw_lma$exp 
+  all_logr_cw_lma$exp <-  paste(substr(all_logr_cw_lma$exp,1,nchar(all_logr_cw_lma$exp)-2),"w",sep="")
+  all_logr_w_lma$exp;all_logr_cw_lma$exp
+  all_logr_w_lma2 <- all_logr_w_lma %>% filter(exp %in%all_logr_cw_lma$exp)
+  new_df2 <- merge(all_logr_w_lma2,all_logr_cw_lma,by=c("exp"),all.x=TRUE)
+  for (i in 1:nrow(new_df2)) {
+    new_df2$co2[i] <- subset(logr_cw_var,exp==new_df2$exp_old[i])$co2_e[1]-
+      subset(logr_cw_var,exp==new_df2$exp_old[i])$co2_a[1]
+  } 
+  new_df2$middle <- (new_df2$middle.y - new_df2$middle.x)/log(new_df2$co2)
+  new_df2$exp <- new_df2$exp_old
+  new_df2$condition <- "(co2 + warming)/warming"}
+
+  #co2 + drought / drought
+  if (nrow(logr_d_var)==0 |nrow(logr_cd_var)==0){
+    new_df3 <- as.data.frame(tibble(exp="NA",middle=NA,condition="NA"))   
+  } else {
+  all_logr_d_lma <- agg_meta(logr_d_var)[,c("exp","middle")]
+  all_logr_cd_lma <- agg_meta(logr_cd_var)[,c("exp","middle")]
+  all_logr_cd_lma$exp_old <- all_logr_cd_lma$exp 
+  all_logr_cd_lma$exp <-  paste(substr(all_logr_cd_lma$exp,1,nchar(all_logr_cd_lma$exp)-2),"d",sep="")
+  all_logr_d_lma$exp;all_logr_cd_lma$exp
+  all_logr_d_lma2 <- all_logr_d_lma %>% filter(exp %in%all_logr_cd_lma$exp)
+  new_df3 <- merge(all_logr_d_lma2,all_logr_cd_lma,by=c("exp"),all.x=TRUE)
+  for (i in 1:nrow(new_df3)) {
+    new_df3$co2[i] <- subset(logr_cd_var,exp==new_df3$exp_old[i])$co2_e[1]-
+      subset(logr_cd_var,exp==new_df3$exp_old[i])$co2_a[1]
+  } 
+  new_df3$middle <- (new_df3$middle.y - new_df3$middle.x)/log(new_df3$co2) # log (cd/a) - log(d/a) = log(cd/d)
+  new_df3$exp <- new_df3$exp_old
+  new_df3$condition <- "(co2 + drought)/drought"}
+  
+  lma_plot <- dplyr::bind_rows(all_logr_c_lma,new_df[,c("exp","middle","condition")],new_df2[,c("exp","middle","condition")],new_df3[,c("exp","middle","condition")]) 
+  names(lma_plot) <- c("exp",name,"condition")
+  return(lma_plot)
+}
+
+#below is cfw
+combine_co2_cfw <- function(logr_c_var,logr_f_var,logr_w_var,logr_d_var,logr_cf_var,logr_cw_var,logr_cd_var,name){
+  all_logr_c_lma <- agg_meta_sen_coef(logr_c_var)[,c("exp","middle")]
+  all_logr_c_lma$condition <- "co2"
+  #co2 + fer / fer
+  all_logr_f_lma <- agg_meta(logr_f_var)[,c("exp","middle")]
+  all_logr_cf_lma <- agg_meta(logr_cf_var)[,c("exp","middle")]
+  all_logr_cf_lma$exp_old <- all_logr_cf_lma$exp 
+  all_logr_cf_lma$exp <-  paste(substr(all_logr_cf_lma$exp,1,nchar(all_logr_cf_lma$exp)-2),"f",sep="")
+  all_logr_f_lma$exp;all_logr_cf_lma$exp
+  all_logr_f_lma2 <- all_logr_f_lma %>% filter(exp %in%all_logr_cf_lma$exp)
+  new_df <- merge(all_logr_f_lma2,all_logr_cf_lma,by=c("exp"),all.x=TRUE)
+  for (i in 1:nrow(new_df)) {
+    new_df$co2[i] <- subset(logr_cf_var,exp==new_df$exp_old[i])$co2_e[1]-
+      subset(logr_cf_var,exp==new_df$exp_old[i])$co2_a[1]
+  } 
+  new_df$middle <- (new_df$middle.y - new_df$middle.x)/log(new_df$co2)
+  new_df$exp <- new_df$exp_old
+  new_df$condition <- "(co2 + Nfer)/Nfer"
+  #co2 + warming / warming
+  if (nrow(logr_w_var)==0 |nrow(logr_cw_var)==0){
+    new_df2 <- as.data.frame(tibble(exp="NA",middle=NA,condition="NA")) 
+  } else {
+    
+    all_logr_w_lma <- agg_meta(logr_w_var)[,c("exp","middle")]
+    all_logr_cw_lma <- agg_meta(logr_cw_var)[,c("exp","middle")]
+    all_logr_cw_lma$exp_old <- all_logr_cw_lma$exp 
+    all_logr_cw_lma$exp <-  paste(substr(all_logr_cw_lma$exp,1,nchar(all_logr_cw_lma$exp)-2),"w",sep="")
+    all_logr_w_lma$exp;all_logr_cw_lma$exp
+    all_logr_w_lma2 <- all_logr_w_lma %>% filter(exp %in%all_logr_cw_lma$exp)
+    new_df2 <- merge(all_logr_w_lma2,all_logr_cw_lma,by=c("exp"),all.x=TRUE)
+    for (i in 1:nrow(new_df2)) {
+      new_df2$co2[i] <- subset(logr_cw_var,exp==new_df2$exp_old[i])$co2_e[1]-
+        subset(logr_cw_var,exp==new_df2$exp_old[i])$co2_a[1]
+    } 
+    new_df2$middle <- (new_df2$middle.y - new_df2$middle.x)/log(new_df2$co2)
+    new_df2$exp <- new_df2$exp_old
+    new_df2$condition <- "(co2 + warming)/warming"}
+  
+  lma_plot <- dplyr::bind_rows(all_logr_c_lma,new_df[,c("exp","middle","condition")],new_df2[,c("exp","middle","condition")]) 
+  names(lma_plot) <- c("exp",name,"condition")
+  return(lma_plot)
+}
+
+#below is cf
+combine_co2_cf <- function(logr_c_var,logr_f_var,logr_w_var,logr_d_var,logr_cf_var,logr_cw_var,logr_cd_var,name){
+  all_logr_c_lma <- agg_meta_sen_coef(logr_c_var)[,c("exp","middle")]
+  all_logr_c_lma$condition <- "co2"
+  #co2 + fer / fer
+  all_logr_f_lma <- agg_meta(logr_f_var)[,c("exp","middle")]
+  all_logr_cf_lma <- agg_meta(logr_cf_var)[,c("exp","middle")]
+  all_logr_cf_lma$exp_old <- all_logr_cf_lma$exp 
+  all_logr_cf_lma$exp <-  paste(substr(all_logr_cf_lma$exp,1,nchar(all_logr_cf_lma$exp)-2),"f",sep="")
+  all_logr_f_lma$exp;all_logr_cf_lma$exp
+  all_logr_f_lma2 <- all_logr_f_lma %>% filter(exp %in%all_logr_cf_lma$exp)
+  new_df <- merge(all_logr_f_lma2,all_logr_cf_lma,by=c("exp"),all.x=TRUE)
+  for (i in 1:nrow(new_df)) {
+    new_df$co2[i] <- subset(logr_cf_var,exp==new_df$exp_old[i])$co2_e[1]-
+      subset(logr_cf_var,exp==new_df$exp_old[i])$co2_a[1]
+  } 
+  new_df$middle <- (new_df$middle.y - new_df$middle.x)/log(new_df$co2)
+  new_df$exp <- new_df$exp_old
+  new_df$condition <- "(co2 + Nfer)/Nfer"
+  
   lma_plot <- dplyr::bind_rows(all_logr_c_lma,new_df[,c("exp","middle","condition")]) 
   names(lma_plot) <- c("exp",name,"condition")
   return(lma_plot)
 }
-lma_plot <- combine_cf(logr_c_LMA,logr_f_LMA,logr_cf_LMA,"LMA")
-vcmax_plot <- combine_cf(logr_c_vcmax,logr_f_vcmax,logr_cf_vcmax,"vcmax")
-jmax_plot <- combine_cf(logr_c_jmax,logr_f_jmax,logr_cf_jmax,"jmax")
-narea_plot <- combine_cf(logr_c_narea,logr_f_narea,logr_cf_narea,"narea")
-nmass_plot <- combine_cf(logr_c_nmass,logr_f_nmass,logr_cf_nmass,"nmass")
-leaf_cn_plot <- combine_cf(logr_c_leaf_cn,logr_f_leaf_cn,logr_cf_leaf_cn,"leafcn")
-anpp_plot <- combine_cf(logr_c_anpp,logr_f_anpp,logr_cf_anpp,"anpp")
-lai_plot <- combine_cf(logr_c_lai,logr_f_lai,logr_cf_lai,"LAI")
-bnpp_plot <- combine_cf(old_logr_c_BNPP,old_logr_f_BNPP,old_logr_cf_BNPP,"bnpp")
-Nuptake_plot <- combine_cf(old_logr_c_Nuptake,old_logr_f_Nuptake,old_logr_cf_Nuptake,"Nuptake")
-npp_plot <- combine_cf(old_logr_c_NPP,old_logr_f_NPP,old_logr_cf_NPP,"npp")
-Asat_plot <- combine_cf(old_logr_c_Asat,old_logr_f_Asat,old_logr_cf_Asat,"Asat")
 
-#produce panels of figure for leaf-level correlation
-#vcmax_plot, jmax_plot_plot, narea_plot, nmass_plot, lma_plot, leafcn_plot
+combine_co2_c <- function(logr_c_var,logr_f_var,logr_w_var,logr_d_var,logr_cf_var,logr_cw_var,logr_cd_var,name){
+  all_logr_c_lma <- agg_meta_sen_coef(logr_c_var)[,c("exp","middle")]
+  all_logr_c_lma$condition <- "co2"
+  lma_plot <- all_logr_c_lma
+  names(lma_plot) <- c("exp",name,"condition")
+  return(lma_plot)
+}
 
-a1 <- output_fig(vcmax_plot,jmax_plot);
-#a2 <- output_fig(vcmax_plot,narea_plot);
-a3 <- output_fig(vcmax_plot,nmass_plot);
-#a4 <- output_fig(vcmax_plot,lma_plot);
-#a5 <- output_fig(vcmax_plot,leaf_cn_plot);
-a6 <- output_fig(jmax_plot,narea_plot);
-a7 <- output_fig(jmax_plot,nmass_plot);
-#a8 <- output_fig(jmax_plot,lma_plot);
-#a9 <- output_fig(jmax_plot,leaf_cn_plot);
-#a10 <- output_fig(narea_plot,nmass_plot);
-a11 <- output_fig(narea_plot,lma_plot);
-#a12 <- output_fig(narea_plot,leaf_cn_plot);
-#a13 <- output_fig(nmass_plot,lma_plot);
-a14 <- output_fig(nmass_plot,leaf_cn_plot);
-#a15 <- output_fig(lma_plot,leaf_cn_plot);
 
-plot_grid(a1,a3,a7,a14,a6,a11,nrow=2,label_size = 15)+ theme(plot.background=element_rect(fill="white", color="white"))
-ggsave(paste("~/data/output_gcme/colin/egu_fig1.jpg",sep=""),width = 12, height = 6)
+lma_plot <- combine_co2(logr_c_LMA,logr_f_LMA,logr_w_LMA,logr_d_LMA,logr_cf_LMA,logr_cw_LMA,logr_cd_LMA,"LMA")
+vcmax_plot <- combine_co2(logr_c_vcmax,logr_f_vcmax,logr_w_vcmax,logr_d_vcmax,logr_cf_vcmax,logr_cw_vcmax,logr_cd_vcmax,"vcmax")
+jmax_plot <- combine_co2(logr_c_jmax,logr_f_jmax,logr_w_jmax,logr_d_jmax,logr_cf_jmax,logr_cw_jmax,logr_cd_jmax,"jmax")
+narea_plot <- combine_co2(logr_c_narea,logr_f_narea,logr_w_narea,logr_d_narea,logr_cf_narea,logr_cw_narea,logr_cd_narea,"narea")
+nmass_plot <- combine_co2(logr_c_nmass,logr_f_nmass,logr_w_nmass,logr_d_nmass,logr_cf_nmass,logr_cw_nmass,logr_cd_nmass,"nmass")
+leaf_cn_plot <- combine_co2(logr_c_leaf_cn,logr_f_leaf_cn,logr_w_leaf_cn,logr_d_leaf_cn,logr_cf_leaf_cn,logr_cw_leaf_cn,logr_cd_leaf_cn,"leaf_cn")
+anpp_plot <- combine_co2(logr_c_anpp,logr_f_anpp,logr_w_anpp,logr_d_anpp,logr_cf_anpp,logr_cw_anpp,logr_cd_anpp,"anpp")
+lai_plot <- combine_co2(logr_c_lai,logr_f_lai,logr_w_lai,logr_d_lai,logr_cf_lai,logr_cw_lai,logr_cd_lai,"lai")
+bnpp_plot <- combine_co2_c(old_logr_c_BNPP,old_logr_f_BNPP,old_logr_w_BNPP,old_logr_d_BNPP,old_logr_cf_BNPP,old_logr_cw_BNPP,old_logr_cd_BNPP,"bnpp")
+Nuptake_plot <- combine_co2(old_logr_c_Nuptake,old_logr_f_Nuptake,old_logr_w_Nuptake,old_logr_d_Nuptake,old_logr_cf_Nuptake,old_logr_cw_Nuptake,old_logr_cd_Nuptake,"Nuptake")
+npp_plot <- combine_co2_cf(old_logr_c_NPP,old_logr_f_NPP,old_logr_w_NPP,old_logr_d_NPP,old_logr_cf_NPP,old_logr_cw_NPP,old_logr_cd_NPP,"npp")
+soilN_plot <- combine_co2(logr_c_soil_n,logr_f_soil_n,logr_w_soil_n,logr_d_soil_n,logr_cf_soil_n,logr_cw_soil_n,logr_cd_soil_n,"soilN")
+soil_total_N_plot <- combine_co2_cfw(logr_c_soil_total_n,logr_f_soil_total_n,logr_w_soil_total_n,logr_d_soil_total_n,logr_cf_soil_total_n,logr_cw_soil_total_n,logr_cd_soil_total_n,"soil_totalN")
 
-#fig.2 meta-analysis (not including npp yet)
-#vcmax_plot, jmax_plot, narea_plot, nmass_plot, lma_plot
-#replaved by rest of them and shown as fig2b,c,d..
 vcmax_main <-Reduce(function(x,y) merge(x = x, y = y, by = c("exp","condition"),all.x=TRUE),
-                            list(vcmax_plot,anpp_plot,bnpp_plot,npp_plot,Nuptake_plot))
-vcmax_main$nuptake_bnpp <-vcmax_main$Nuptake/vcmax_main$bnpp;vcmax_main$anpp_bnpp <-vcmax_main$anpp/vcmax_main$bnpp
-ecm_csv <- read.csv("/Users/yunpeng/data/gcme/kevin/orig_vcmax/new_ecm_types_updated.csv");df_merged_ecm <- merge(vcmax_main,ecm_csv,by=c("exp"),all.x=TRUE);df_merged_ecm$ecosystem[df_merged_ecm$ecosystem=="heathland"] <- "grassland";df_merged_ecm$ecosystem[df_merged_ecm$ecosystem=="temperate_forest"] <- "forest";df_merged_ecm$ecosystem[df_merged_ecm$ecosystem=="shrubland"] <- "forest"
-for(i in c(1:6)){
-  p[[i]] <- ggplot(df_merged_ecm,aes_string(x=names(df_merged_ecm)[i+3], y=names(df_merged_ecm)[3])) +
+                    list(vcmax_plot,jmax_plot,anpp_plot,lma_plot,narea_plot,nmass_plot,
+                         leaf_cn_plot,lai_plot,bnpp_plot,Nuptake_plot,npp_plot,soilN_plot,soil_total_N_plot))
+vcmax_main$soilN[vcmax_main$soilN==0] <- NA
+vcmax_main$soilN[vcmax_main$soilN< -4] <- NA
+
+vcmax_main$combined_soilN <- vcmax_main$soilN
+vcmax_main$combined_soilN[is.na(vcmax_main$soil_totalN)==FALSE] <- vcmax_main$soil_totalN[is.na(vcmax_main$soil_totalN)==FALSE]
+vcmax_main$nuptake_bnpp <-vcmax_main$Nuptake/vcmax_main$bnpp
+
+p <- list()
+for(i in c(1:(ncol(vcmax_main)-4))){
+  p[[i]] <- ggplot(vcmax_main,aes_string(x=names(vcmax_main)[i+4],
+                                         y=names(vcmax_main)[3])) +
     geom_hline(yintercept=0)+geom_vline(xintercept=0)+
-    geom_point(aes(color=condition,shape=ecm_type),size=3)+
+    geom_point(aes(color=condition),size=3)+
     stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
     geom_smooth(color="black",method="lm",se=F)+
     theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"))}
-plot_grid(p[[1]],p[[2]],p[[5]],nrow=1,label_size = 30)+ theme(plot.background=element_rect(fill="white", color="white"))
-ggsave(paste("~/data/output_gcme/colin/egu_fig2a.jpg",sep=""),width = 20, height = 5)
 
+plot_grid(p[[4]],p[[3]],p[[1]],p[[8]],p[[13]],p[[7]],p[[6]],p[[12]],p[[9]],nrow=3,label_size = 15)+
+  theme(plot.background=element_rect(fill="white", color="white"))
 
-#now, combined with prediction data from gcme_vcmax
-#the prediction of vcmax only includes c, w and cw - but having same value in cf
-prediction <- read.csv("/Users/yunpeng/data/gcme/kevin/forcing/pred_vcmax.csv")
-pred_vcmax <- subset(prediction,response=="vcmax")
-vcmax_plotmean <- aggregate(pred_vcmax,by=list(pred_vcmax$exp), FUN=mean, na.rm=TRUE)[,c("Group.1","pred_vcmax25_coef")]
-names(vcmax_plotmean) <- c("exp","pred_vcmax"); vcmax_plotmean <- na.omit(vcmax_plotmean)
+ggsave(paste("~/data/output_gcme/colin/egu_update_v.jpg",sep=""),width = 20, height = 10)
 
-#
-vcmax_main <-Reduce(function(x,y) merge(x = x, y = y, by = c("exp","condition"),all.x=TRUE),
-                    list(vcmax_plot,anpp_plot,bnpp_plot,npp_plot,Nuptake_plot))
-vcmax_main$nuptake_bnpp <-vcmax_main$Nuptake/vcmax_main$bnpp;vcmax_main$anpp_bnpp <-vcmax_main$anpp/vcmax_main$bnpp
-ecm_csv <- read.csv("/Users/yunpeng/data/gcme/kevin/orig_vcmax/new_ecm_types_updated.csv");df_merged_ecm <- merge(vcmax_main,ecm_csv,by=c("exp"),all.x=TRUE);df_merged_ecm$ecosystem[df_merged_ecm$ecosystem=="heathland"] <- "grassland";df_merged_ecm$ecosystem[df_merged_ecm$ecosystem=="temperate_forest"] <- "forest";df_merged_ecm$ecosystem[df_merged_ecm$ecosystem=="shrubland"] <- "forest"
-
-final_prediction <- Reduce(function(x,y) merge(x = x, y = y, by = c("exp"),all.x=TRUE),
-                           list(df_merged_ecm,vcmax_plotmean))
-
-a1 <- ggplot(subset(final_prediction,condition=="co2"),aes(x=vcmax, y=pred_vcmax)) + 
-  geom_point(aes(color=ecm_type,shape=ecosystem),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
-  geom_text(aes(label=exp),hjust=1, vjust=0,check_overlap = T)+labs(x="Observation vcmax", y="Prediction vcmax")+
-  geom_smooth(color="black",method="lm",se=T)+theme_classic()
-
-logr_c_vcmax2 <- Reduce(function(x,y) merge(x = x, y = y, by = c("exp"),all.x=TRUE),
-                        list(logr_c_vcmax,final_prediction[,c("exp","ecm_type","ecosystem","pred_vcmax")]))
-#remove setres_cf as no prediction available
-logr_c_vcmax2 <- subset(logr_c_vcmax2,exp!="setres_cf") # but already not included
-
-vcmax_ecm <- agg_meta_sen_coef(subset(logr_c_vcmax2,ecm_type=="ECM")); vcmax_ecm$response <- "ECM"
-vcmax_am <- agg_meta_sen_coef(subset(logr_c_vcmax2,ecm_type=="AM")); vcmax_am$response <- "AM"
-vcmax_grassland <- agg_meta_sen_coef(subset(logr_c_vcmax2,ecosystem.y=="grassland")); vcmax_grassland$response <- "grassland"
-vcmax_forest <- agg_meta_sen_coef(subset(logr_c_vcmax2,ecosystem.y=="forest")); vcmax_forest$response <- "forest"
-vcmax_cropland <- agg_meta_sen_coef(subset(logr_c_vcmax2,ecosystem.y=="cropland")); vcmax_cropland$response <- "cropland"
-vcmax_alltypes <- dplyr::bind_rows(vcmax_ecm,vcmax_am,vcmax_grassland,vcmax_cropland,vcmax_forest)
-
-final_vcmax_prediction <- agg_meta_plots(vcmax_alltypes,"response","logr","logr_var")
-final_vcmax_prediction$prediction <- NA
-final_vcmax_prediction$prediction[final_vcmax_prediction$type_name=="ECM"] <- mean(final_prediction$pred_vcmax[final_prediction$ecm_type=="ECM"],na.rm=TRUE)
-final_vcmax_prediction$prediction[final_vcmax_prediction$type_name=="AM"] <- mean(final_prediction$pred_vcmax[final_prediction$ecm_type=="AM"],na.rm=TRUE)
-final_vcmax_prediction$prediction[final_vcmax_prediction$type_name=="grassland"] <- mean(final_prediction$pred_vcmax[final_prediction$ecosystem=="grassland"],na.rm=TRUE)
-final_vcmax_prediction$prediction[final_vcmax_prediction$type_name=="forest"] <- mean(final_prediction$pred_vcmax[final_prediction$ecosystem=="forest"],na.rm=TRUE)
-final_vcmax_prediction$prediction[final_vcmax_prediction$type_name=="cropland"] <- mean(final_prediction$pred_vcmax[final_prediction$ecosystem=="cropland"],na.rm=TRUE)
-
-final_vcmax_prediction$type_name <- factor(final_vcmax_prediction$type_name, levels = final_vcmax_prediction$type_name)
-
-a2 <- final_vcmax_prediction %>%
-  ggplot( aes(x=type_name, y=middle)) + 
-  geom_crossbar(aes(x=type_name, y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5) +
-  geom_boxplot(aes(x=type_name, y=prediction),color="red",size=1)+ 
-  geom_hline( yintercept=0.0, size=0.5)+ ylim(-0.6,0.6)+
-  labs(x="", y="vcmax") + theme_classic()+coord_flip()+theme(axis.text=element_text(size=12))
-
-
-#jmax
-pred_jmax <- subset(prediction,response=="jmax")
-jmax_plotmean <- aggregate(pred_jmax,by=list(pred_jmax$exp), FUN=mean, na.rm=TRUE)[,c("Group.1","pred_jmax25_coef")]
-names(jmax_plotmean) <- c("exp","pred_jmax"); jmax_plotmean <- na.omit(jmax_plotmean)
 
 vcmax_main <-Reduce(function(x,y) merge(x = x, y = y, by = c("exp","condition"),all.x=TRUE),
-                    list(jmax_plot,anpp_plot,bnpp_plot,npp_plot,Nuptake_plot))
-vcmax_main$nuptake_bnpp <-vcmax_main$Nuptake/vcmax_main$bnpp;vcmax_main$anpp_bnpp <-vcmax_main$anpp/vcmax_main$bnpp
-ecm_csv <- read.csv("/Users/yunpeng/data/gcme/kevin/orig_vcmax/new_ecm_types_updated.csv");df_merged_ecm <- merge(vcmax_main,ecm_csv,by=c("exp"),all.x=TRUE);df_merged_ecm$ecosystem[df_merged_ecm$ecosystem=="heathland"] <- "grassland";df_merged_ecm$ecosystem[df_merged_ecm$ecosystem=="temperate_forest"] <- "forest";df_merged_ecm$ecosystem[df_merged_ecm$ecosystem=="shrubland"] <- "forest"
+                    list(jmax_plot,vcmax_plot,anpp_plot,lma_plot,narea_plot,nmass_plot,
+                         leaf_cn_plot,lai_plot,bnpp_plot,Nuptake_plot,npp_plot,soilN_plot,soil_total_N_plot))
+vcmax_main$soilN[vcmax_main$soilN==0] <- NA
+vcmax_main$soilN[vcmax_main$soilN< -4] <- NA
 
-#
-final_prediction2 <- Reduce(function(x,y) merge(x = x, y = y, by = c("exp"),all.x=TRUE),
-                            list(df_merged_ecm,jmax_plotmean))
-final_prediction2$ecosystem[final_prediction2$ecosystem=="rice_paddies"] <- "cropland"
-a3 <- ggplot(subset(final_prediction2,condition=="co2"),aes(x=jmax, y=pred_jmax)) + 
-  geom_point(aes(color=ecm_type,shape=ecosystem),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
-  geom_text(aes(label=exp),hjust=1, vjust=0,check_overlap = T)+labs(x="Observation jmax", y="Prediction jmax")+
-  geom_smooth(color="black",method="lm",se=T)+theme_classic()
+vcmax_main$combined_soilN <- vcmax_main$soilN
+vcmax_main$combined_soilN[is.na(vcmax_main$soil_totalN)==FALSE] <- vcmax_main$soil_totalN[is.na(vcmax_main$soil_totalN)==FALSE]
+vcmax_main$nuptake_bnpp <-vcmax_main$Nuptake/vcmax_main$bnpp
 
-logr_c_jmax2 <- Reduce(function(x,y) merge(x = x, y = y, by = c("exp"),all.x=TRUE),list(logr_c_jmax,final_prediction2[,c("exp","ecm_type","ecosystem","pred_jmax")]))
-#remove setres_cf as no prediction available
-logr_c_jmax2 <- subset(logr_c_jmax2,exp!="setres_cf") # but already not included
+p <- list()
+for(i in c(1:(ncol(vcmax_main)-4))){
+  p[[i]] <- ggplot(vcmax_main,aes_string(x=names(vcmax_main)[i+4],
+                                         y=names(vcmax_main)[3])) +
+    geom_hline(yintercept=0)+geom_vline(xintercept=0)+
+    geom_point(aes(color=condition),size=3)+
+    stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
+    geom_smooth(color="black",method="lm",se=F)+
+    theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"))}
 
-jmax_ecm <- agg_meta_sen_coef(subset(logr_c_jmax2,ecm_type=="ECM")); jmax_ecm$response <- "ECM"
-jmax_am <- agg_meta_sen_coef(subset(logr_c_jmax2,ecm_type=="AM")); jmax_am$response <- "AM"
-jmax_grassland <- agg_meta_sen_coef(subset(logr_c_jmax2,ecosystem.y=="grassland")); jmax_grassland$response <- "grassland"
-jmax_forest <- agg_meta_sen_coef(subset(logr_c_jmax2,ecosystem.y=="forest")); jmax_forest$response <- "forest"
-jmax_cropland <- agg_meta_sen_coef(subset(logr_c_jmax2,ecosystem.y=="cropland")); jmax_cropland$response <- "cropland"
-jmax_alltypes <- dplyr::bind_rows(jmax_ecm,jmax_am,jmax_grassland,jmax_cropland,jmax_forest)
+plot_grid(p[[4]],p[[3]],p[[1]],p[[8]],p[[13]],p[[7]],p[[6]],p[[12]],p[[9]],nrow=3,label_size = 15)+
+  theme(plot.background=element_rect(fill="white", color="white"))
 
-final_jmax_prediction <- agg_meta_plots(jmax_alltypes,"response","logr","logr_var")
-final_jmax_prediction$prediction <- NA
-final_jmax_prediction$prediction[final_jmax_prediction$type_name=="ECM"] <- mean(final_prediction2$pred_jmax[final_prediction2$ecm_type=="ECM"],na.rm=TRUE)
-final_jmax_prediction$prediction[final_jmax_prediction$type_name=="AM"] <- mean(final_prediction2$pred_jmax[final_prediction2$ecm_type=="AM"],na.rm=TRUE)
-final_jmax_prediction$prediction[final_jmax_prediction$type_name=="grassland"] <- mean(final_prediction2$pred_jmax[final_prediction2$ecosystem=="grassland"],na.rm=TRUE)
-final_jmax_prediction$prediction[final_jmax_prediction$type_name=="forest"] <- mean(final_prediction2$pred_jmax[final_prediction2$ecosystem=="forest"],na.rm=TRUE)
-final_jmax_prediction$prediction[final_jmax_prediction$type_name=="cropland"] <- mean(final_prediction2$pred_jmax[final_prediction2$ecosystem=="cropland"],na.rm=TRUE)
-
-final_jmax_prediction$type_name <- factor(final_jmax_prediction$type_name, levels = final_jmax_prediction$type_name)
-
-a4 <- final_jmax_prediction %>%
-  ggplot( aes(x=type_name, y=middle)) + 
-  geom_crossbar(aes(x=type_name, y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5) +
-  geom_boxplot(aes(x=type_name, y=prediction),color="red",size=1)+ 
-  geom_hline( yintercept=0.0, size=0.5)+ ylim(-0.6,0.6)+
-  labs(x="", y="jmax") + theme_classic()+coord_flip()+theme(axis.text=element_text(size=12))
-
-#jmax/vcmax = sentivitiy coef j - v
-vcmax_main <-Reduce(function(x,y) merge(x = x, y = y, by = c("exp","condition"),all.x=TRUE),
-                    list(vcmax_plot,jmax_plot))
-ecm_csv <- read.csv("/Users/yunpeng/data/gcme/kevin/orig_vcmax/new_ecm_types_updated.csv");df_merged_ecm <- merge(vcmax_main,ecm_csv,by=c("exp"),all.x=TRUE);df_merged_ecm$ecosystem[df_merged_ecm$ecosystem=="heathland"] <- "grassland";df_merged_ecm$ecosystem[df_merged_ecm$ecosystem=="temperate_forest"] <- "forest";df_merged_ecm$ecosystem[df_merged_ecm$ecosystem=="shrubland"] <- "forest"
-
-final_prediction3 <- Reduce(function(x,y) merge(x = x, y = y, by = c("exp"),all.x=TRUE),
-                            list(df_merged_ecm,vcmax_plotmean,jmax_plotmean))
-final_prediction3$pred_jmax_vcmax <- final_prediction3$pred_jmax - final_prediction3$pred_vcmax
-final_prediction3$jmax_vcmax <- final_prediction3$jmax - final_prediction3$vcmax
-
-a5 <- ggplot(subset(final_prediction3,jmax_vcmax> -10),aes(x=jmax_vcmax, y=pred_jmax_vcmax)) + 
-  geom_point(aes(color=ecm_type,shape=ecosystem),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
-  geom_text(aes(label=exp),hjust=1, vjust=0,check_overlap = T)+labs(x="Observation jmax/vcmax", y="Prediction jmax/vcmax")+
-  geom_smooth(color="black",method="lm",se=T)+theme_classic()
-a5
-
-a6 <- final_prediction3 %>%
-  ggplot( aes(x=ecm_type, y=jmax_vcmax)) + 
-  geom_boxplot(aes(x=ecm_type, y=jmax_vcmax),size=1)+ 
-  geom_boxplot(aes(x=ecm_type, y=pred_jmax_vcmax),color="red",size=1)+ 
-  geom_boxplot(aes(x=ecosystem, y=jmax_vcmax),size=1)+ 
-  geom_boxplot(aes(x=ecosystem, y=pred_jmax_vcmax),color="red",size=1)+ 
-  geom_hline( yintercept=0.0, size=0.5)+ ylim(-3,3)+
-  labs(x="", y="jmax/vcmax") + theme_classic()+coord_flip()+theme(axis.text=element_text(size=12))
-a6
-
-plot_grid(a1,a2,a3,a4,a5,a6,nrow=3,label_size = 15)+ theme(plot.background=element_rect(fill="white", color="white"))
-ggsave(paste("~/data/output_gcme/colin/final_fig3.jpg",sep=""),width = 15, height = 20)
-
-#now, further calculate w, f
-w_vcmax <- merge(agg_meta(logr_w_vcmax)[,c("exp","middle")],agg_meta(logr_w_jmax)[,c("exp","middle")],by=c("exp"),all.x=TRUE)
-f_vcmax <- merge(agg_meta(logr_f_vcmax)[,c("exp","middle")],agg_meta(logr_f_jmax)[,c("exp","middle")],by=c("exp"),all.x=TRUE)
-
-ggplot(w_vcmax,aes(x=middle.x, y= middle.y)) +geom_hline(yintercept=0)+
-  geom_vline(xintercept=0)+xlab("vcmax to warming")+ylab("jmax to warming")+
-  geom_point()+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
-  geom_smooth(color="red",method="lm",se=F)+theme_classic()
-
-ggplot(f_vcmax,aes(x=middle.x, y= middle.y)) +geom_hline(yintercept=0)+
-  geom_vline(xintercept=0)+xlab("vcmax to Nfer")+ylab("jmax to Nfer")+
-  geom_point()+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
-  geom_smooth(color="red",method="lm",se=F)+theme_classic()
-
-#do Nmass ~ Vcmax25 + LMA
-nmass_final <-Reduce(function(x,y) merge(x = x, y = y, by = c("exp","condition"),all.x=TRUE),
-                    list(nmass_plot,vcmax_plot,lma_plot))
-nmass_linear <- (lm(nmass~vcmax+LMA,data=nmass_final))
-summary(nmass_linear)
-library(visreg)
-visreg(nmass_linear,"vcmax")
-visreg(nmass_linear,"LMA")
-
-nmass_final$vc_lma <- nmass_final$vcmax/nmass_final$LMA
-summary(lm(nmass~vc_lma,data=nmass_final))
-
-narea_final <-Reduce(function(x,y) merge(x = x, y = y, by = c("exp","condition"),all.x=TRUE),
-                     list(narea_plot,vcmax_plot,lma_plot))
-narea_linear <- (lm(narea~vcmax+LMA,data=narea_final))
-summary(narea_linear)
-library(visreg)
-visreg(narea_linear,"vcmax")
-visreg(narea_linear,"LMA")
-
-#for vpd
-vcmax_anpp <-Reduce(function(x,y) merge(x = x, y = y, by = c("exp","condition"),all.x=TRUE),
-                     list(vcmax_plot,jmax_plot,anpp_plot))
-prediction <- read.csv("/Users/yunpeng/data/gcme/kevin/forcing/pred_vcmax.csv")
-prediction2 <- aggregate(prediction,by=list(prediction$exp), FUN=mean, na.rm=TRUE)
-prediction2<- prediction2[,c("Group.1","vpd")]
-names(prediction2) <- c("exp","vpd")
-vcmax_anpp_vpd <- merge(vcmax_anpp,prediction2,by=c("exp"),all.x=TRUE)
-
-vcmax_anpp_vpd$vpd <-  format(round(vcmax_anpp_vpd$vpd, 3), nsmall = 3)
-
-ggplot(vcmax_anpp_vpd,aes(x=anpp, y=vcmax)) +
-  geom_hline(yintercept=0)+geom_vline(xintercept=0)+
-  geom_point(size=3)+
-  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
-  geom_smooth(color="black",method="lm",se=F)+
-  theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"))+
-  geom_text(aes(label=vpd),hjust=1, vjust=0,check_overlap = T)
-
-# a brief check of jmax/vcmax
-kevin2_final <- read.csv("/Users/yunpeng/data/gcme/kevin/forcing/pred_vcmax.csv")
-names(kevin2_final)
-kevin2_c_vcmax <- subset(kevin2_final, treatment=="c" & response =="vcmax")[,c("exp","co2_a","co2_e","ambient","elevated","mean_vcmax_ambient","mean_vcmax_elevated")]
-kevin2_c_jmax <- subset(kevin2_final, treatment=="c" & response =="jmax")[,c("exp","co2_a","co2_e","ambient","elevated","mean_jmax_ambient","mean_jmax_elevated")]
-
-kevin2_c_vcmax_plotmean <- aggregate(kevin2_c_vcmax,by=list(kevin2_c_vcmax$exp), FUN=mean, na.rm=TRUE)
-kevin2_c_jmax_plotmean <- aggregate(kevin2_c_jmax,by=list(kevin2_c_jmax$exp), FUN=mean, na.rm=TRUE)
-
-jv_final <-Reduce(function(x,y) merge(x = x, y = y, by = c("Group.1"),all.x=TRUE),
-                     list(kevin2_c_vcmax_plotmean,kevin2_c_jmax_plotmean))
-jv_final$jv_obs <- log( (jv_final$elevated.y/jv_final$elevated.x) / (jv_final$ambient.y/jv_final$ambient.x))/log(jv_final$co2_e.x-jv_final$co2_a.x)
-
-jv_final$jv_pred <- log( (jv_final$mean_jmax_elevated/jv_final$mean_vcmax_elevated) /
-                          (jv_final$mean_jmax_ambient/jv_final$mean_vcmax_ambient) )/log(jv_final$co2_e.x-jv_final$co2_a.x)
-
-log(jv_final$mean_jmax_elevated/jv_final$mean_jmax_ambient)
-jv_final$exp <- jv_final$Group.1
-
-ecm_csv <- read.csv("/Users/yunpeng/data/gcme/kevin/orig_vcmax/new_ecm_types_updated.csv")
-df_merged_ecm <- merge(jv_final,ecm_csv,by=c("exp"),all.x=TRUE)
-
-df_merged_ecm$ecosystem[df_merged_ecm$ecosystem=="heathland"] <- "grassland"
-df_merged_ecm$ecosystem[df_merged_ecm$ecosystem=="temperate_forest"] <- "forest"
-df_merged_ecm$ecosystem[df_merged_ecm$ecosystem=="shrubland"] <- "forest"
-
-df_merged_ecm %>%
-  ggplot( aes(x=ecm_type, y=jv_obs)) + 
-  geom_boxplot(aes(x=ecm_type, y=jv_obs),size=1)+ 
-  geom_boxplot(aes(x=ecm_type, y=jv_pred),color="red",size=1)+ 
-  geom_boxplot(aes(x=ecosystem, y=jv_obs),size=1)+ 
-  geom_boxplot(aes(x=ecosystem, y=jv_pred),color="red",size=1)+ 
-  geom_hline( yintercept=0.0, size=0.5)+ ylim(-0.5,0.5)+
-  labs(x="", y="jmax/vcmax") + theme_classic()+coord_flip()+theme(axis.text=element_text(size=12))
+ggsave(paste("~/data/output_gcme/colin/egu_update_j.jpg",sep=""),width = 20, height = 10)
