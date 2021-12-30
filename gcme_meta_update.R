@@ -613,10 +613,6 @@ combine_co2 <- function(logr_c_var,logr_f_var,logr_w_var,logr_d_var,logr_cf_var,
   new_df$middle <- (new_df$middle.y - new_df$middle.x)/log(new_df$co2)
   new_df$exp <- new_df$exp_old
   new_df$condition <- "(co2 + Nfer)/Nfer"
-  #co2 + warming / warming
-  if (nrow(logr_w_var)==0 |nrow(logr_cw_var)==0 ){
-  new_df2 <- as.data.frame(tibble(exp="NA",middle=NA,condition="NA")) 
-  } else {
     
   #co2 + warming / warming
   all_logr_w_lma <- agg_meta(logr_w_var)[,c("exp","middle")]
@@ -632,12 +628,9 @@ combine_co2 <- function(logr_c_var,logr_f_var,logr_w_var,logr_d_var,logr_cf_var,
   } 
   new_df2$middle <- (new_df2$middle.y - new_df2$middle.x)/log(new_df2$co2)
   new_df2$exp <- new_df2$exp_old
-  new_df2$condition <- "(co2 + warming)/warming"}
+  new_df2$condition <- "(co2 + warming)/warming"
 
   #co2 + drought / drought
-  if (nrow(logr_d_var)==0 |nrow(logr_cd_var)==0){
-    new_df3 <- as.data.frame(tibble(exp="NA",middle=NA,condition="NA"))   
-  } else {
   all_logr_d_lma <- agg_meta(logr_d_var)[,c("exp","middle")]
   all_logr_cd_lma <- agg_meta(logr_cd_var)[,c("exp","middle")]
   all_logr_cd_lma$exp_old <- all_logr_cd_lma$exp 
@@ -651,9 +644,50 @@ combine_co2 <- function(logr_c_var,logr_f_var,logr_w_var,logr_d_var,logr_cf_var,
   } 
   new_df3$middle <- (new_df3$middle.y - new_df3$middle.x)/log(new_df3$co2) # log (cd/a) - log(d/a) = log(cd/d)
   new_df3$exp <- new_df3$exp_old
-  new_df3$condition <- "(co2 + drought)/drought"}
+  new_df3$condition <- "(co2 + drought)/drought"
   
   lma_plot <- dplyr::bind_rows(all_logr_c_lma,new_df[,c("exp","middle","condition")],new_df2[,c("exp","middle","condition")],new_df3[,c("exp","middle","condition")]) 
+  names(lma_plot) <- c("exp",name,"condition")
+  return(lma_plot)
+}
+
+#below is cfd
+combine_co2_cfd <- function(logr_c_var,logr_f_var,logr_w_var,logr_d_var,logr_cf_var,logr_cw_var,logr_cd_var,name){
+  all_logr_c_lma <- agg_meta_sen_coef(logr_c_var)[,c("exp","middle")]
+  all_logr_c_lma$condition <- "co2"
+  #co2 + fer / fer
+  all_logr_f_lma <- agg_meta(logr_f_var)[,c("exp","middle")]
+  all_logr_cf_lma <- agg_meta(logr_cf_var)[,c("exp","middle")]
+  all_logr_cf_lma$exp_old <- all_logr_cf_lma$exp 
+  all_logr_cf_lma$exp <-  paste(substr(all_logr_cf_lma$exp,1,nchar(all_logr_cf_lma$exp)-2),"f",sep="")
+  all_logr_f_lma$exp;all_logr_cf_lma$exp
+  all_logr_f_lma2 <- all_logr_f_lma %>% filter(exp %in%all_logr_cf_lma$exp)
+  new_df <- merge(all_logr_f_lma2,all_logr_cf_lma,by=c("exp"),all.x=TRUE)
+  for (i in 1:nrow(new_df)) {
+    new_df$co2[i] <- subset(logr_cf_var,exp==new_df$exp_old[i])$co2_e[1]-
+      subset(logr_cf_var,exp==new_df$exp_old[i])$co2_a[1]
+  } 
+  new_df$middle <- (new_df$middle.y - new_df$middle.x)/log(new_df$co2)
+  new_df$exp <- new_df$exp_old
+  new_df$condition <- "(co2 + Nfer)/Nfer"
+  
+  #co2 + drought / drought
+  all_logr_d_lma <- agg_meta(logr_d_var)[,c("exp","middle")]
+  all_logr_cd_lma <- agg_meta(logr_cd_var)[,c("exp","middle")]
+  all_logr_cd_lma$exp_old <- all_logr_cd_lma$exp 
+  all_logr_cd_lma$exp <-  paste(substr(all_logr_cd_lma$exp,1,nchar(all_logr_cd_lma$exp)-2),"d",sep="")
+  all_logr_d_lma$exp;all_logr_cd_lma$exp
+  all_logr_d_lma2 <- all_logr_d_lma %>% filter(exp %in%all_logr_cd_lma$exp)
+  new_df3 <- merge(all_logr_d_lma2,all_logr_cd_lma,by=c("exp"),all.x=TRUE)
+  for (i in 1:nrow(new_df3)) {
+    new_df3$co2[i] <- subset(logr_cd_var,exp==new_df3$exp_old[i])$co2_e[1]-
+      subset(logr_cd_var,exp==new_df3$exp_old[i])$co2_a[1]
+  } 
+  new_df3$middle <- (new_df3$middle.y - new_df3$middle.x)/log(new_df3$co2) # log (cd/a) - log(d/a) = log(cd/d)
+  new_df3$exp <- new_df3$exp_old
+  new_df3$condition <- "(co2 + drought)/drought"
+  
+  lma_plot <- dplyr::bind_rows(all_logr_c_lma,new_df[,c("exp","middle","condition")],new_df3[,c("exp","middle","condition")]) 
   names(lma_plot) <- c("exp",name,"condition")
   return(lma_plot)
 }
@@ -678,24 +712,20 @@ combine_co2_cfw <- function(logr_c_var,logr_f_var,logr_w_var,logr_d_var,logr_cf_
   new_df$exp <- new_df$exp_old
   new_df$condition <- "(co2 + Nfer)/Nfer"
   #co2 + warming / warming
-  if (nrow(logr_w_var)==0 |nrow(logr_cw_var)==0){
-    new_df2 <- as.data.frame(tibble(exp="NA",middle=NA,condition="NA")) 
-  } else {
-    
-    all_logr_w_lma <- agg_meta(logr_w_var)[,c("exp","middle")]
-    all_logr_cw_lma <- agg_meta(logr_cw_var)[,c("exp","middle")]
-    all_logr_cw_lma$exp_old <- all_logr_cw_lma$exp 
-    all_logr_cw_lma$exp <-  paste(substr(all_logr_cw_lma$exp,1,nchar(all_logr_cw_lma$exp)-2),"w",sep="")
-    all_logr_w_lma$exp;all_logr_cw_lma$exp
-    all_logr_w_lma2 <- all_logr_w_lma %>% filter(exp %in%all_logr_cw_lma$exp)
-    new_df2 <- merge(all_logr_w_lma2,all_logr_cw_lma,by=c("exp"),all.x=TRUE)
+  all_logr_w_lma <- agg_meta(logr_w_var)[,c("exp","middle")]
+  all_logr_cw_lma <- agg_meta(logr_cw_var)[,c("exp","middle")]
+  all_logr_cw_lma$exp_old <- all_logr_cw_lma$exp 
+  all_logr_cw_lma$exp <-  paste(substr(all_logr_cw_lma$exp,1,nchar(all_logr_cw_lma$exp)-2),"w",sep="")
+  all_logr_w_lma$exp;all_logr_cw_lma$exp
+  all_logr_w_lma2 <- all_logr_w_lma %>% filter(exp %in%all_logr_cw_lma$exp)
+  new_df2 <- merge(all_logr_w_lma2,all_logr_cw_lma,by=c("exp"),all.x=TRUE)
     for (i in 1:nrow(new_df2)) {
       new_df2$co2[i] <- subset(logr_cw_var,exp==new_df2$exp_old[i])$co2_e[1]-
         subset(logr_cw_var,exp==new_df2$exp_old[i])$co2_a[1]
     } 
     new_df2$middle <- (new_df2$middle.y - new_df2$middle.x)/log(new_df2$co2)
     new_df2$exp <- new_df2$exp_old
-    new_df2$condition <- "(co2 + warming)/warming"}
+    new_df2$condition <- "(co2 + warming)/warming"
   
   lma_plot <- dplyr::bind_rows(all_logr_c_lma,new_df[,c("exp","middle","condition")],new_df2[,c("exp","middle","condition")]) 
   names(lma_plot) <- c("exp",name,"condition")
@@ -742,7 +772,8 @@ jmax_plot <- combine_co2(logr_c_jmax,logr_f_jmax,logr_w_jmax,logr_d_jmax,logr_cf
 narea_plot <- combine_co2(logr_c_narea,logr_f_narea,logr_w_narea,logr_d_narea,logr_cf_narea,logr_cw_narea,logr_cd_narea,"narea")
 nmass_plot <- combine_co2(logr_c_nmass,logr_f_nmass,logr_w_nmass,logr_d_nmass,logr_cf_nmass,logr_cw_nmass,logr_cd_nmass,"nmass")
 leaf_cn_plot <- combine_co2(logr_c_leaf_cn,logr_f_leaf_cn,logr_w_leaf_cn,logr_d_leaf_cn,logr_cf_leaf_cn,logr_cw_leaf_cn,logr_cd_leaf_cn,"leaf_cn")
-anpp_plot <- combine_co2(logr_c_anpp,logr_f_anpp,logr_w_anpp,logr_d_anpp,logr_cf_anpp,logr_cw_anpp,logr_cd_anpp,"anpp")
+rm(logr_cw_anpp) #it is nothing available here but affects function
+anpp_plot <- combine_co2_cfd(logr_c_anpp,logr_f_anpp,logr_w_anpp,logr_d_anpp,logr_cf_anpp,logr_cw_anpp,logr_cd_anpp,"anpp")
 lai_plot <- combine_co2(logr_c_lai,logr_f_lai,logr_w_lai,logr_d_lai,logr_cf_lai,logr_cw_lai,logr_cd_lai,"lai")
 bnpp_plot <- combine_co2_c(old_logr_c_BNPP,old_logr_f_BNPP,old_logr_w_BNPP,old_logr_d_BNPP,old_logr_cf_BNPP,old_logr_cw_BNPP,old_logr_cd_BNPP,"bnpp")
 Nuptake_plot <- combine_co2(old_logr_c_Nuptake,old_logr_f_Nuptake,old_logr_w_Nuptake,old_logr_d_Nuptake,old_logr_cf_Nuptake,old_logr_cw_Nuptake,old_logr_cd_Nuptake,"Nuptake")
@@ -758,7 +789,7 @@ vcmax_main$soilN[vcmax_main$soilN< -4] <- NA
 
 vcmax_main$combined_soilN <- vcmax_main$soilN
 vcmax_main$combined_soilN[is.na(vcmax_main$soil_totalN)==FALSE] <- vcmax_main$soil_totalN[is.na(vcmax_main$soil_totalN)==FALSE]
-vcmax_main$nuptake_bnpp <-vcmax_main$Nuptake/vcmax_main$bnpp
+vcmax_main$nuptake_bnpp <-vcmax_main$Nuptake - vcmax_main$bnpp
 
 p <- list()
 for(i in c(1:(ncol(vcmax_main)-4))){
@@ -784,7 +815,7 @@ vcmax_main$soilN[vcmax_main$soilN< -4] <- NA
 
 vcmax_main$combined_soilN <- vcmax_main$soilN
 vcmax_main$combined_soilN[is.na(vcmax_main$soil_totalN)==FALSE] <- vcmax_main$soil_totalN[is.na(vcmax_main$soil_totalN)==FALSE]
-vcmax_main$nuptake_bnpp <-vcmax_main$Nuptake/vcmax_main$bnpp
+vcmax_main$nuptake_bnpp <-vcmax_main$Nuptake - vcmax_main$bnpp
 
 p <- list()
 for(i in c(1:(ncol(vcmax_main)-4))){
@@ -800,3 +831,253 @@ plot_grid(p[[4]],p[[3]],p[[1]],p[[8]],p[[13]],p[[7]],p[[6]],p[[12]],p[[9]],nrow=
   theme(plot.background=element_rect(fill="white", color="white"))
 
 ggsave(paste("~/data/output_gcme/colin/egu_update_j.jpg",sep=""),width = 20, height = 10)
+
+#now, warming
+# a look
+aa <- kevin_z %>% group_by(treatment,exp)  %>% summarise(number = n())
+
+#w, cw, dw
+combine_warming <- function(logr_c_var,logr_w_var,logr_d_var,logr_cw_var,logr_dw_var,name){
+  all_logr_w_lma <- agg_meta(logr_w_var)[,c("exp","middle")]
+  all_logr_w_lma$condition <- "warming"
+  
+  #cw / c
+  all_logr_c_lma <- agg_meta(logr_c_var)[,c("exp","middle")]
+  all_logr_cw_lma <- agg_meta(logr_cw_var)[,c("exp","middle")]
+  all_logr_cw_lma$exp_old <- all_logr_cw_lma$exp 
+  all_logr_cw_lma$exp <-  paste(substr(all_logr_cw_lma$exp,1,nchar(all_logr_cw_lma$exp)-2),"c",sep="")
+  all_logr_c_lma$exp;all_logr_cw_lma$exp
+  all_logr_c_lma2 <- all_logr_c_lma %>% filter(exp %in%all_logr_cw_lma$exp)
+  new_df <- merge(all_logr_c_lma2,all_logr_cw_lma,by=c("exp"),all.x=TRUE)
+  new_df$middle <- (new_df$middle.y - new_df$middle.x)
+  new_df$exp <- new_df$exp_old
+  new_df$condition <- "(warming + co2)/co2"
+  
+  #dw / d
+  all_logr_d_lma <- agg_meta(logr_d_var)[,c("exp","middle")]
+  all_logr_dw_lma <- agg_meta(logr_dw_var)[,c("exp","middle")]
+  all_logr_dw_lma$exp_old <- all_logr_dw_lma$exp 
+  all_logr_dw_lma$exp <-  paste(substr(all_logr_dw_lma$exp,1,nchar(all_logr_dw_lma$exp)-2),"d",sep="")
+  all_logr_d_lma$exp;all_logr_dw_lma$exp
+  all_logr_d_lma2 <- all_logr_d_lma %>% filter(exp %in%all_logr_dw_lma$exp)
+  new_df2 <- merge(all_logr_d_lma2,all_logr_dw_lma,by=c("exp"),all.x=TRUE)
+  new_df2$middle <- (new_df2$middle.y - new_df2$middle.x)
+  new_df2$exp <- new_df2$exp_old
+  new_df2$condition <- "(warming + drought)/drought"
+    
+  lma_plot <- dplyr::bind_rows(all_logr_w_lma,new_df[,c("exp","middle","condition")],new_df2[,c("exp","middle","condition")]) 
+  names(lma_plot) <- c("exp",name,"condition")
+  return(lma_plot)
+}
+
+combine_warming_wd <- function(logr_c_var,logr_w_var,logr_d_var,logr_cw_var,logr_dw_var,name){
+  all_logr_w_lma <- agg_meta(logr_w_var)[,c("exp","middle")]
+  all_logr_w_lma$condition <- "warming"
+  
+  #dw / d
+  all_logr_d_lma <- agg_meta(logr_d_var)[,c("exp","middle")]
+  all_logr_dw_lma <- agg_meta(logr_dw_var)[,c("exp","middle")]
+  all_logr_dw_lma$exp_old <- all_logr_dw_lma$exp 
+  all_logr_dw_lma$exp <-  paste(substr(all_logr_dw_lma$exp,1,nchar(all_logr_dw_lma$exp)-2),"d",sep="")
+  all_logr_d_lma$exp;all_logr_dw_lma$exp
+  all_logr_d_lma2 <- all_logr_d_lma %>% filter(exp %in%all_logr_dw_lma$exp)
+  new_df2 <- merge(all_logr_d_lma2,all_logr_dw_lma,by=c("exp"),all.x=TRUE)
+  new_df2$middle <- (new_df2$middle.y - new_df2$middle.x)
+  new_df2$exp <- new_df2$exp_old
+  new_df2$condition <- "(warming + drought)/drought"
+  
+  lma_plot <- dplyr::bind_rows(all_logr_w_lma,new_df2[,c("exp","middle","condition")]) 
+  names(lma_plot) <- c("exp",name,"condition")
+  return(lma_plot)
+}
+
+combine_warming_wc <- function(logr_c_var,logr_w_var,logr_d_var,logr_cw_var,logr_dw_var,name){
+  all_logr_w_lma <- agg_meta(logr_w_var)[,c("exp","middle")]
+  all_logr_w_lma$condition <- "warming"
+  
+  #cw / c
+  all_logr_c_lma <- agg_meta(logr_c_var)[,c("exp","middle")]
+  all_logr_cw_lma <- agg_meta(logr_cw_var)[,c("exp","middle")]
+  all_logr_cw_lma$exp_old <- all_logr_cw_lma$exp 
+  all_logr_cw_lma$exp <-  paste(substr(all_logr_cw_lma$exp,1,nchar(all_logr_cw_lma$exp)-2),"c",sep="")
+  all_logr_c_lma$exp;all_logr_cw_lma$exp
+  all_logr_c_lma2 <- all_logr_c_lma %>% filter(exp %in%all_logr_cw_lma$exp)
+  new_df <- merge(all_logr_c_lma2,all_logr_cw_lma,by=c("exp"),all.x=TRUE)
+  new_df$middle <- (new_df$middle.y - new_df$middle.x)
+  new_df$exp <- new_df$exp_old
+  new_df$condition <- "(warming + co2)/co2"
+  
+  
+  lma_plot <- dplyr::bind_rows(all_logr_w_lma,new_df[,c("exp","middle","condition")]) 
+  names(lma_plot) <- c("exp",name,"condition")
+  return(lma_plot)
+}
+
+combine_warming_w <- function(logr_c_var,logr_w_var,logr_d_var,logr_cw_var,logr_dw_var,name){
+  all_logr_w_lma <- agg_meta(logr_w_var)[,c("exp","middle")]
+  all_logr_w_lma$condition <- "warming"
+  
+  lma_plot <- all_logr_w_lma
+  names(lma_plot) <- c("exp",name,"condition")
+  return(lma_plot)
+}
+
+vcmax_plot_w <- combine_warming(logr_c_vcmax,logr_w_vcmax,logr_d_vcmax,logr_cw_vcmax,logr_dw_vcmax,"vcmax")
+jmax_plot_w <- combine_warming(logr_c_jmax,logr_w_jmax,logr_d_jmax,logr_cw_jmax,logr_dw_jmax,"jmax")
+lma_plot_w <- combine_warming(logr_c_LMA,logr_w_LMA,logr_d_LMA,logr_cw_LMA,logr_dw_LMA,"LMA")
+narea_plot_w <- combine_warming(logr_c_narea,logr_w_narea,logr_d_narea,logr_cw_narea,logr_dw_narea,"narea")
+nmass_plot_w <- combine_warming(logr_c_nmass,logr_w_nmass,logr_d_nmass,logr_cw_nmass,logr_dw_nmass,"nmass")
+leaf_cn_plot_w <- combine_warming(logr_c_leaf_cn,logr_w_leaf_cn,logr_d_leaf_cn,logr_cw_leaf_cn,logr_dw_leaf_cn,"leaf_cn")
+anpp_plot_w <- combine_warming_wd(logr_c_anpp,logr_w_anpp,logr_d_anpp,logr_cw_anpp,logr_dw_anpp,"anpp")
+lai_plot_w <- combine_warming_wc(logr_c_lai,logr_w_lai,logr_d_lai,logr_cw_lai,logr_dw_lai,"lai")
+bnpp_plot_w <- combine_warming_w(old_logr_c_BNPP,old_logr_w_BNPP,old_logr_d_BNPP,old_logr_cw_BNPP,old_logr_dw_BNPP,"bnpp")
+Nuptake_plot_w <- combine_warming_w(old_logr_c_Nuptake,old_logr_w_Nuptake,old_logr_d_Nuptake,old_logr_cw_Nuptake,old_logr_dw_Nuptake,"Nuptake")
+npp_plot_w <- combine_warming_w(old_logr_c_NPP,old_logr_w_NPP,old_logr_d_NPP,old_logr_cw_NPP,old_logr_dw_NPP,"npp")
+soilN_plot_w <- combine_warming(logr_c_soil_n,logr_w_soil_n,logr_d_soil_n,logr_cw_soil_n,logr_dw_soil_n,"soilN")
+soil_total_N_plot_w <- combine_warming_w(logr_c_soil_total_n,logr_w_soil_total_n,logr_d_soil_total_n,logr_cw_soil_total_n,logr_dw_soil_total_n,"soil_totalN")
+
+vcmax_warming <-Reduce(function(x,y) merge(x = x, y = y, by = c("exp","condition"),all.x=TRUE),
+                    list(vcmax_plot_w,jmax_plot_w,anpp_plot_w,lma_plot_w,narea_plot_w,nmass_plot_w,
+                         leaf_cn_plot_w,lai_plot_w,bnpp_plot_w,Nuptake_plot_w,npp_plot_w,soilN_plot_w,soil_total_N_plot_w))
+
+for(i in c(1:(ncol(vcmax_warming)-4))){
+  p[[i]] <- ggplot(vcmax_warming,aes_string(x=names(vcmax_warming)[i+4],
+                                         y="vcmax")) +
+    geom_hline(yintercept=0)+geom_vline(xintercept=0)+
+    geom_point(aes(color=condition),size=3)+
+    stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
+    geom_smooth(color="black",method="lm",se=F)+geom_text(aes(label=exp),hjust=1, vjust=0,check_overlap = T)+
+    theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"))}
+
+plot_grid(p[[4]],p[[3]],p[[2]],p[[5]],p[[8]],p[[10]],nrow=2,label_size = 15)+
+  theme(plot.background=element_rect(fill="white", color="white"))
+
+ggsave(paste("~/data/output_gcme/colin/egu_update_v_warming.jpg",sep=""),width = 20, height = 10)
+
+for(i in c(1:(ncol(vcmax_warming)-4))){
+  p[[i]] <- ggplot(vcmax_warming,aes_string(x=names(vcmax_warming)[i+4],
+                                            y="jmax")) +
+    geom_hline(yintercept=0)+geom_vline(xintercept=0)+
+    geom_point(aes(color=condition),size=3)+
+    stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
+    geom_smooth(color="black",method="lm",se=F)+geom_text(aes(label=exp),hjust=1, vjust=0,check_overlap = T)+
+    theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"))}
+
+plot_grid(p[[4]],p[[3]],p[[2]],p[[5]],p[[8]],p[[10]],nrow=2,label_size = 15)+
+  theme(plot.background=element_rect(fill="white", color="white"))
+
+ggsave(paste("~/data/output_gcme/colin/egu_update_j_warming.jpg",sep=""),width = 20, height = 10)
+
+
+#now, fertilization
+#f, cf, df
+
+combine_fertilization <- function(logr_c_var,logr_f_var,logr_d_var,logr_cf_var,logr_df_var,name){
+  all_logr_f_lma <- agg_meta(logr_f_var)[,c("exp","middle")]
+  all_logr_f_lma$condition <- "fertilization"
+  
+  #cf / c
+  all_logr_c_lma <- agg_meta(logr_c_var)[,c("exp","middle")]
+  all_logr_cf_lma <- agg_meta(logr_cf_var)[,c("exp","middle")]
+  all_logr_cf_lma$exp_old <- all_logr_cf_lma$exp 
+  all_logr_cf_lma$exp <-  paste(substr(all_logr_cf_lma$exp,1,nchar(all_logr_cf_lma$exp)-2),"c",sep="")
+  all_logr_c_lma$exp;all_logr_cf_lma$exp
+  all_logr_c_lma2 <- all_logr_c_lma %>% filter(exp %in%all_logr_cf_lma$exp)
+  new_df <- merge(all_logr_c_lma2,all_logr_cf_lma,by=c("exp"),all.x=TRUE)
+  new_df$middle <- (new_df$middle.y - new_df$middle.x)
+  new_df$exp <- new_df$exp_old
+  new_df$condition <- "(fertilization + co2)/co2"
+  
+  #df / d
+  all_logr_d_lma <- agg_meta(logr_d_var)[,c("exp","middle")]
+  all_logr_df_lma <- agg_meta(logr_df_var)[,c("exp","middle")]
+  all_logr_df_lma$exp_old <- all_logr_df_lma$exp 
+  all_logr_df_lma$exp <-  paste(substr(all_logr_df_lma$exp,1,nchar(all_logr_df_lma$exp)-2),"d",sep="")
+  all_logr_d_lma$exp;all_logr_df_lma$exp
+  all_logr_d_lma2 <- all_logr_d_lma %>% filter(exp %in%all_logr_df_lma$exp)
+  new_df2 <- merge(all_logr_d_lma2,all_logr_df_lma,by=c("exp"),all.x=TRUE)
+  new_df2$middle <- (new_df2$middle.y - new_df2$middle.x)
+  new_df2$exp <- new_df2$exp_old
+  new_df2$condition <- "(fertilization + drought)/drought"
+  
+  lma_plot <- dplyr::bind_rows(all_logr_f_lma,new_df[,c("exp","middle","condition")],new_df2[,c("exp","middle","condition")]) 
+  names(lma_plot) <- c("exp",name,"condition")
+  return(lma_plot)
+}
+#above is not possible for either vcmax and jmax (not combination effect of drought + fer), so ignore them
+combine_fertilization_fc <- function(logr_c_var,logr_f_var,logr_d_var,logr_cf_var,logr_df_var,name){
+  all_logr_f_lma <- agg_meta(logr_f_var)[,c("exp","middle")]
+  all_logr_f_lma$condition <- "fertilization"
+  
+  #cf / c
+  all_logr_c_lma <- agg_meta(logr_c_var)[,c("exp","middle")]
+  all_logr_cf_lma <- agg_meta(logr_cf_var)[,c("exp","middle")]
+  all_logr_cf_lma$exp_old <- all_logr_cf_lma$exp 
+  all_logr_cf_lma$exp <-  paste(substr(all_logr_cf_lma$exp,1,nchar(all_logr_cf_lma$exp)-2),"c",sep="")
+  all_logr_c_lma$exp;all_logr_cf_lma$exp
+  all_logr_c_lma2 <- all_logr_c_lma %>% filter(exp %in%all_logr_cf_lma$exp)
+  new_df <- merge(all_logr_c_lma2,all_logr_cf_lma,by=c("exp"),all.x=TRUE)
+  new_df$middle <- (new_df$middle.y - new_df$middle.x)
+  new_df$exp <- new_df$exp_old
+  new_df$condition <- "(fertilization + co2)/co2"
+
+  lma_plot <- dplyr::bind_rows(all_logr_f_lma,new_df[,c("exp","middle","condition")]) 
+  names(lma_plot) <- c("exp",name,"condition")
+  return(lma_plot)
+}
+
+combine_fertilization_f <- function(logr_c_var,logr_f_var,logr_d_var,logr_cf_var,logr_df_var,name){
+  all_logr_f_lma <- agg_meta(logr_f_var)[,c("exp","middle")]
+  all_logr_f_lma$condition <- "fertilization"
+
+  lma_plot <- all_logr_f_lma
+  names(lma_plot) <- c("exp",name,"condition")
+  return(lma_plot)
+}
+
+vcmax_plot_f <- combine_fertilization_fc(logr_c_vcmax,logr_f_vcmax,logr_d_vcmax,logr_cf_vcmax,logr_df_vcmax,"vcmax")
+jmax_plot_f <- combine_fertilization_fc(logr_c_jmax,logr_f_jmax,logr_d_jmax,logr_cf_jmax,logr_df_jmax,"jmax")
+lma_plot_f <- combine_fertilization_fc(logr_c_LMA,logr_f_LMA,logr_d_LMA,logr_cf_LMA,logr_df_LMA,"LMA")
+narea_plot_f <- combine_fertilization_fc(logr_c_narea,logr_f_narea,logr_d_narea,logr_cf_narea,logr_df_narea,"narea")
+nmass_plot_f <- combine_fertilization_fc(logr_c_nmass,logr_f_nmass,logr_d_nmass,logr_cf_nmass,logr_df_nmass,"nmass")
+leaf_cn_plot_f <- combine_fertilization_fc(logr_c_leaf_cn,logr_f_leaf_cn,logr_d_leaf_cn,logr_cf_leaf_cn,logr_df_leaf_cn,"leaf_cn")
+anpp_plot_f <- combine_fertilization_fc(logr_c_anpp,logr_f_anpp,logr_d_anpp,logr_cf_anpp,logr_df_anpp,"anpp")
+lai_plot_f <- combine_fertilization_fc(logr_c_lai,logr_f_lai,logr_d_lai,logr_cf_lai,logr_df_lai,"lai")
+bnpp_plot_f <- combine_fertilization_f(old_logr_c_BNPP,old_logr_f_BNPP,old_logr_d_BNPP,old_logr_cf_BNPP,old_logr_df_BNPP,"bnpp")
+Nuptake_plot_f <- combine_fertilization_fc(old_logr_c_Nuptake,old_logr_f_Nuptake,old_logr_d_Nuptake,old_logr_cf_Nuptake,old_logr_df_Nuptake,"Nuptake")
+npp_plot_f <- combine_fertilization_fc(old_logr_c_NPP,old_logr_f_NPP,old_logr_d_NPP,old_logr_cf_NPP,old_logr_df_NPP,"npp")
+soilN_plot_f <- combine_fertilization_fc(logr_c_soil_n,logr_f_soil_n,logr_d_soil_n,logr_cf_soil_n,logr_df_soil_n,"soilN")
+soil_total_N_plot_f <- combine_fertilization_fc(logr_c_soil_total_n,logr_f_soil_total_n,logr_d_soil_total_n,logr_cf_soil_total_n,logr_df_soil_total_n,"soil_totalN")
+
+vcmax_fertilization <-Reduce(function(x,y) merge(x = x, y = y, by = c("exp","condition"),all.x=TRUE),
+                       list(vcmax_plot_f,jmax_plot_f,anpp_plot_f,lma_plot_f,narea_plot_f,nmass_plot_f,
+                            leaf_cn_plot_f,lai_plot_f,bnpp_plot_f,Nuptake_plot_f,npp_plot_f,soilN_plot_f,soil_total_N_plot_f))
+
+for(i in c(1:(ncol(vcmax_fertilization)-4))){
+  p[[i]] <- ggplot(vcmax_fertilization,aes_string(x=names(vcmax_fertilization)[i+4],
+                                            y="vcmax")) +
+    geom_hline(yintercept=0)+geom_vline(xintercept=0)+
+    geom_point(aes(color=condition),size=3)+
+    stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
+    geom_smooth(color="black",method="lm",se=F)+
+    theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"))}
+
+plot_grid(p[[4]],p[[3]],p[[2]],p[[1]],p[[6]],p[[11]],nrow=2,label_size = 15)+
+  theme(plot.background=element_rect(fill="white", color="white"))
+
+ggsave(paste("~/data/output_gcme/colin/egu_update_v_fer.jpg",sep=""),width = 20, height = 10)
+
+
+for(i in c(1:(ncol(vcmax_fertilization)-4))){
+  p[[i]] <- ggplot(vcmax_fertilization,aes_string(x=names(vcmax_fertilization)[i+4],
+                                                  y="jmax")) +
+    geom_hline(yintercept=0)+geom_vline(xintercept=0)+
+    geom_point(aes(color=condition),size=3)+
+    stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
+    geom_smooth(color="black",method="lm",se=F)+
+    theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"))}
+
+plot_grid(p[[4]],p[[3]],p[[2]],p[[1]],p[[6]],p[[11]],nrow=2,label_size = 15)+
+  theme(plot.background=element_rect(fill="white", color="white"))
+
+ggsave(paste("~/data/output_gcme/colin/egu_update_j_fer.jpg",sep=""),width = 20, height = 10)
