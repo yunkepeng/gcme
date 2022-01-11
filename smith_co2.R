@@ -12,8 +12,8 @@ for (i in 1:((nrow(smith_co2)/2))){
   smith_co2$sen_coef_v[2*i-1] <- NA
   smith_co2$logr_j[2*i-1] <- NA
   smith_co2$sen_coef_j[2*i-1] <- NA
-  smith_co2$logr_jv[2*i-1] <- NA
-  smith_co2$sen_coef_jv[2*i-1] <- NA
+  #smith_co2$logr_jv[2*i-1] <- NA
+  #smith_co2$sen_coef_jv[2*i-1] <- NA
   
   #fill 1st line data
   smith_co2$ambient_co2[2*i-1] <- NA
@@ -23,14 +23,14 @@ for (i in 1:((nrow(smith_co2)/2))){
   smith_co2$ambient_jmaxSE[2*i-1] <-NA
   smith_co2$ambient_vcmax_tmean[2*i-1] <- NA
   smith_co2$ambient_jmax_tmean[2*i-1] <- NA
-  smith_co2$ambient_jv_tmean[2*i-1] <- NA
+  #smith_co2$ambient_jv_tmean[2*i-1] <- NA
 
   smith_co2$logr_v[2*i] <- log(smith_co2$Vcmax[2*i]/smith_co2$Vcmax[2*i-1])
   smith_co2$sen_coef_v[2*i] <- log(smith_co2$Vcmax[2*i]/smith_co2$Vcmax[2*i-1])/log(smith_co2$Ca[2*i]/smith_co2$Ca[2*i-1])
   smith_co2$logr_j[2*i] <- log(smith_co2$Jmax[2*i]/smith_co2$Jmax[2*i-1])
   smith_co2$sen_coef_j[2*i] <- log(smith_co2$Jmax[2*i]/smith_co2$Jmax[2*i-1])/log(smith_co2$Ca[2*i]/smith_co2$Ca[2*i-1])
-  smith_co2$logr_jv[2*i] <- log((smith_co2$Jmax[2*i]/smith_co2$Vcmax[2*i])/(smith_co2$Jmax[2*i-1]/smith_co2$Vcmax[2*i-1]))
-  smith_co2$sen_coef_jv[2*i] <- log((smith_co2$Jmax[2*i]/smith_co2$Vcmax[2*i])/(smith_co2$Jmax[2*i-1]/smith_co2$Vcmax[2*i-1]))/log(smith_co2$Ca[2*i]/smith_co2$Ca[2*i-1])
+  #smith_co2$logr_jv[2*i] <- log((smith_co2$Jmax[2*i]/smith_co2$Vcmax[2*i])/(smith_co2$Jmax[2*i-1]/smith_co2$Vcmax[2*i-1]))
+  #smith_co2$sen_coef_jv[2*i] <- log((smith_co2$Jmax[2*i]/smith_co2$Vcmax[2*i])/(smith_co2$Jmax[2*i-1]/smith_co2$Vcmax[2*i-1]))/log(smith_co2$Ca[2*i]/smith_co2$Ca[2*i-1])
 
   #fill 1st line data
   smith_co2$ambient_co2[2*i] <- smith_co2$Ca[2*i-1]
@@ -40,7 +40,7 @@ for (i in 1:((nrow(smith_co2)/2))){
   smith_co2$ambient_jmaxSE[2*i] <-smith_co2$Jmax_SE[2*i-1]
   smith_co2$ambient_vcmax_tmean[2*i] <- smith_co2$Vcmax_tmean[2*i-1]
   smith_co2$ambient_jmax_tmean[2*i] <- smith_co2$Jmax_tmean[2*i-1]
-  smith_co2$ambient_jv_tmean[2*i] <- smith_co2$JV_tmean[2*i-1]
+  #smith_co2$ambient_jv_tmean[2*i] <- smith_co2$JV_tmean[2*i-1]
 }
 
 smith_co2_final <- subset(smith_co2,is.na(logr_v)==FALSE)
@@ -170,6 +170,29 @@ for (i in 1:nrow(vcmax25_warmingco2_siteinfo)){
   vcmax25_warmingco2_siteinfo$vpd[i] <- mean(df1$vpd,na.rm=TRUE)/1000 #in kPa
   vcmax25_warmingco2_siteinfo$temp[i] <- mean(df1$temp,na.rm=TRUE) #in degree celcius
 }
+
+vcmax25_warmingco2_siteinfo$pft <- NA
+vcmax25_warmingco2_siteinfo$pft[vcmax25_warmingco2_siteinfo$Stature=="Tree"] <- "forest"
+vcmax25_warmingco2_siteinfo$pft[vcmax25_warmingco2_siteinfo$SiteID=="ChinaRiceFACE"] <- "cropland"
+vcmax25_warmingco2_siteinfo$pft[vcmax25_warmingco2_siteinfo$SiteID=="UAMACFACE"] <- "cropland"
+vcmax25_warmingco2_siteinfo$pft[vcmax25_warmingco2_siteinfo$SiteID=="GlycineCE"] <- "cropland"
+vcmax25_warmingco2_siteinfo$pft[vcmax25_warmingco2_siteinfo$SiteID=="GossypiumGC"] <- "cropland"
+vcmax25_warmingco2_siteinfo$pft[vcmax25_warmingco2_siteinfo$SiteID=="MississippiCE"] <- "cropland"
+vcmax25_warmingco2_siteinfo$pft[vcmax25_warmingco2_siteinfo$SiteID=="WheatCE"] <- "cropland"
+vcmax25_warmingco2_siteinfo$pft[vcmax25_warmingco2_siteinfo$SiteID=="ChinaMiniFACE"] <- "cropland"
+vcmax25_warmingco2_siteinfo$pft[vcmax25_warmingco2_siteinfo$SiteID=="GrassOTC"] <- "grassland"
+vcmax25_warmingco2_siteinfo$pft[vcmax25_warmingco2_siteinfo$SiteID=="PHACE"] <- "grassland"
+vcmax25_warmingco2_siteinfo$pft[vcmax25_warmingco2_siteinfo$SiteID=="FescueCE"] <- "grassland"
+vcmax25_warmingco2_siteinfo$pft[vcmax25_warmingco2_siteinfo$SiteID=="NZFACE"] <- "grassland"
+vcmax25_warmingco2_siteinfo$pft[vcmax25_warmingco2_siteinfo$SiteID=="NevadaFACE"] <- "grassland"
+vcmax25_warmingco2_siteinfo$pft[vcmax25_warmingco2_siteinfo$SiteID=="BioCON"] <- "grassland"
+vcmax25_warmingco2_siteinfo$pft[vcmax25_warmingco2_siteinfo$SiteID=="PhalarisGC"] <- "grassland"
+vcmax25_warmingco2_siteinfo$pft[vcmax25_warmingco2_siteinfo$SiteID=="SwissFACE"] <- "grassland"
+
+csvfile <- paste("/Users/yunpeng/data/smith_keenan_gcb/gcb_co2/pred_vcmax.csv")
+write.csv(vcmax25_warmingco2_siteinfo, csvfile, row.names = TRUE)
+
+
 
 smith_co2_final_removal <- subset(vcmax25_warmingco2_siteinfo,exp_nam!="BioCON" & exp_nam!="ChinaRiceFACE" & exp_nam!="DukeFACE" & exp_nam!="EUROPOPFACE" & exp_nam!="NevadaFACE" & exp_nam!="SwissFACE")
 

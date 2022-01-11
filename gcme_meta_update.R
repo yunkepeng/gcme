@@ -24,7 +24,6 @@ library(ncdf4)
 library(scales)
 library(ggpubr)
 library(MAd)
-
 # first - response ratio of each
 response_ratio <- function(df){
   #-----------------------------------------------------------------------
@@ -170,50 +169,6 @@ agg_meta <- function(df){
   output <- do.call("rbind",mylist)
   return(output)
 }
-#a new function to shows 1 trait vs. 9 other traits
-merge_multi <- function(var_y,var_x1,var_x2,var_x3,var_x4,var_x5,var_x6,var_x7,var_x8,var_x9){
-  plot_mean_y <- agg_meta_sen_coef(var_y)[,c("exp","middle")];names(plot_mean_y) <- c("exp",var_y$response[1])
-  plot_mean_x1 <- agg_meta_sen_coef(var_x1)[,c("exp","middle")];names(plot_mean_x1) <- c("exp",var_x1$response[1])
-  plot_mean_x2 <- agg_meta_sen_coef(var_x2)[,c("exp","middle")];names(plot_mean_x2) <- c("exp",var_x2$response[1])
-  plot_mean_x3 <- agg_meta_sen_coef(var_x3)[,c("exp","middle")];names(plot_mean_x3) <- c("exp",var_x3$response[1])
-  plot_mean_x4 <- agg_meta_sen_coef(var_x4)[,c("exp","middle")];names(plot_mean_x4) <- c("exp",var_x4$response[1])
-  plot_mean_x5 <- agg_meta_sen_coef(var_x5)[,c("exp","middle")];names(plot_mean_x5) <- c("exp",var_x5$response[1])
-  plot_mean_x6 <- agg_meta_sen_coef(var_x6)[,c("exp","middle")];names(plot_mean_x6) <- c("exp",var_x6$response[1])
-  plot_mean_x7 <- agg_meta_sen_coef(var_x7)[,c("exp","middle")];names(plot_mean_x7) <- c("exp",var_x7$response[1])
-  plot_mean_x8 <- agg_meta_sen_coef(var_x8)[,c("exp","middle")];names(plot_mean_x8) <- c("exp",var_x8$response[1])
-  plot_mean_x9 <- agg_meta_sen_coef(var_x9)[,c("exp","middle")];names(plot_mean_x9) <- c("exp",var_x9$response[1])
-  photo_final_others <-Reduce(function(x,y) merge(x = x, y = y, by = c("exp"),all.x=TRUE),
-                              list(plot_mean_y,plot_mean_x1,plot_mean_x2,plot_mean_x3,plot_mean_x4,plot_mean_x5,
-                                   plot_mean_x6,plot_mean_x7,plot_mean_x8,plot_mean_x9))
-  return(photo_final_others)
-}
-#merge_multi for sensitivity coefficient
-merge_multi_logr <- function(var_y,var_x1,var_x2,var_x3,var_x4,var_x5,var_x6,var_x7,var_x8,var_x9){
-  plot_mean_y <- agg_meta(var_y)[,c("exp","middle")];names(plot_mean_y) <- c("exp",var_y$response[1])
-  plot_mean_x1 <- agg_meta(var_x1)[,c("exp","middle")];names(plot_mean_x1) <- c("exp",var_x1$response[1])
-  plot_mean_x2 <- agg_meta(var_x2)[,c("exp","middle")];names(plot_mean_x2) <- c("exp",var_x2$response[1])
-  plot_mean_x3 <- agg_meta(var_x3)[,c("exp","middle")];names(plot_mean_x3) <- c("exp",var_x3$response[1])
-  plot_mean_x4 <- agg_meta(var_x4)[,c("exp","middle")];names(plot_mean_x4) <- c("exp",var_x4$response[1])
-  plot_mean_x5 <- agg_meta(var_x5)[,c("exp","middle")];names(plot_mean_x5) <- c("exp",var_x5$response[1])
-  plot_mean_x6 <- agg_meta(var_x6)[,c("exp","middle")];names(plot_mean_x6) <- c("exp",var_x6$response[1])
-  plot_mean_x7 <- agg_meta(var_x7)[,c("exp","middle")];names(plot_mean_x7) <- c("exp",var_x7$response[1])
-  plot_mean_x8 <- agg_meta(var_x8)[,c("exp","middle")];names(plot_mean_x8) <- c("exp",var_x8$response[1])
-  plot_mean_x9 <- agg_meta(var_x9)[,c("exp","middle")];names(plot_mean_x9) <- c("exp",var_x9$response[1])
-  photo_final_others <-Reduce(function(x,y) merge(x = x, y = y, by = c("exp"),all.x=TRUE),
-                              list(plot_mean_y,plot_mean_x1,plot_mean_x2,plot_mean_x3,plot_mean_x4,plot_mean_x5,
-                                   plot_mean_x6,plot_mean_x7,plot_mean_x8,plot_mean_x9))
-  return(photo_final_others)
-}
-#a function to plot output from merge_multi
-plot_multi <- function(obj){
-  p <- list()
-  for(i in 1:9){
-    p[[i]] <- ggplot(obj,aes_string(x=names(obj)[i+2], y=names(obj)[2])) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+
-      geom_point()+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
-      geom_smooth(color="red",method="lm",se=F)+theme_classic()}
-  pp <- plot_grid(p[[1]],p[[2]],p[[3]],p[[4]],p[[5]],p[[6]],p[[7]],p[[8]],p[[9]],nrow=3,label_size = 15)
-  return(pp)
-}
 #combine to one results
 agg_meta_plots <- function(df,type_name,logr,log_var){
   df$logr <- df$middle
@@ -240,34 +195,6 @@ agg_meta_plots <- function(df,type_name,logr,log_var){
   output <- do.call("rbind",mylist)
   return(output)
 }
-agg_meta_plots_ratio <- function(df,logr){
-  final_data <- eval(parse(text=paste("df$", logr, sep = "")))
-  df_box <- tibble(
-    type_name=logr, middle = mean(final_data,na.rm=TRUE), ymin   = quantile(final_data,probs=c(.025,.975),na.rm=TRUE)[1], ymax   = quantile(final_data,probs=c(.025,.975),na.rm=TRUE)[2],
-    ymin_quarter=quantile(final_data,probs=c(.25,.75),na.rm=TRUE)[1], ymax_quarter = quantile(final_data,probs=c(.25,.75),na.rm=TRUE)[2],
-    no_plots = sum(is.na(jv_ratio$jmax_vcmax)==FALSE))
-  return(df_box)
-}
-
-#a function to input two variable, combing with ecm/am and ecosystem types --> and plot a correlation
-output_fig <- function(y_var,x_var){
-  df_merged <- merge(y_var,x_var, by = c("exp","condition"),all.x=TRUE)
-  ecm_csv <- read.csv("/Users/yunpeng/data/gcme/kevin/orig_vcmax/new_ecm_types_updated.csv")
-  df_merged_ecm <- merge(df_merged,ecm_csv,by=c("exp"),all.x=TRUE)
-  print(nrow(df_merged_ecm)-nrow(df_merged))
-  
-  df_merged_ecm$ecosystem[df_merged_ecm$ecosystem=="heathland"] <- "grassland"
-  df_merged_ecm$ecosystem[df_merged_ecm$ecosystem=="temperate_forest"] <- "forest"
-  df_merged_ecm$ecosystem[df_merged_ecm$ecosystem=="shrubland"] <- "forest"
-  
-  figure1 <- ggplot(df_merged_ecm,aes_string(x=names(df_merged_ecm)[4], y=names(df_merged_ecm)[3])) +
-    geom_hline(yintercept=0)+geom_vline(xintercept=0)+
-    geom_point(aes(color=condition,shape=ecm_type),size=3)+
-    stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
-    geom_smooth(color="red",method="lm",se=F)+theme_classic()
-  return(figure1)
-}
-
 
 #read Kevin - other vars
 kevin_othervars <- read.csv("/Users/yunpeng/data/gcme/kevin/orig_leaf/YunkePeng_othervars.csv")
@@ -302,6 +229,9 @@ kevin_othervars$Year[kevin_othervars$Year<0] <- 0
 #THIS dangerous! However, since we don't know year of measurement, we could only assume it as average
 kevin_othervars$Year[is.na(kevin_othervars$Year)==TRUE] <- 2
 
+#convert lai_max to lai
+kevin_othervars$response[kevin_othervars$response=="lai_max"] <- "lai"
+
 sitename <- kevin_othervars%>% group_by(site)  %>% summarise(number = n())
 varname <- kevin_othervars%>% group_by(response)  %>% summarise(number = n())
 
@@ -332,6 +262,10 @@ logr_cf_narea <- as_tibble(response_ratio(subset(narea,treatment=="cf")));
 logr_cd_narea <- as_tibble(response_ratio(subset(narea,treatment=="cd")));
 logr_df_narea <- as_tibble(response_ratio(subset(narea,treatment=="df")));
 logr_dw_narea <- as_tibble(response_ratio(subset(narea,treatment=="dw")))
+
+#remove one plot from response ratio of root_shoot_ratio in advance - otherwise it will be NA
+kevin_othervars$response[kevin_othervars$response=="root_shoot_ratio" &
+                        kevin_othervars$exp=="maricopaface_cotton91_c"] <- NA
 
 #other vars - all created now
 for (i in 1:nrow(varname)) {
@@ -393,7 +327,7 @@ logr_cfw_anpp <-  logr_cfw_anpp %>% filter(Unit %in% c("g_m2d","g_m2gs","g_m2y",
 logr_cw_soil_n$logr_var[(logr_cw_soil_n$exp)=="ua2007_cw"] <- NA
 
 
-#LMA.
+#LMA
 kevin_LMA <- read.csv("/Users/yunpeng/data/gcme/kevin/orig_leaf/LMA.csv")
 kevin_LMA <- rename(kevin_LMA, c(ambient = x_c, elevated=x_t, ambient_Sd=sd_c, elevated_Sd=sd_t,ambient_Se=se_c,elevated_Se=se_t,n_plots=rep_c,
                                  z=elevation, co2_a=c_c, co2_e=c_t, nfertQ_a = n_c, nfertQ_e = n_t, pfertQ_a = p_c, pfertQ_e = p_t,kfertQ_a = k_c, kfertQ_e = k_t,
@@ -498,6 +432,9 @@ df <- read_csv("~/data/gcme/data_received_190325/NewData_wide_CORRECTED2.csv") %
 #for anpp, bnpp, Asat, c13
 df$response <- NA
 
+#correct unit so that it is not filtered
+df$Unit[is.na(df$Unit)==TRUE] <- "NA_unit"
+
 #remove unit g/m2 and g/tree, as not possible in anpp, bnpp, Asat and c13!
 df <- subset(df,Unit!="g/m2" & Unit!="g/tree")
 
@@ -511,15 +448,21 @@ df$response[df$Data_type=="fine_root_turnover"& df$Unit!="km/m3"& df$Unit!="m/m2
 #npp
 df$response[df$Data_type=="NPP"] <- "NPP" # all unit is correct
 
-#anpp
-#df$response[df$Data_type=="ANPP"] <- "ANPP"
+#anpp - just help to fill 3 plots from popface
+df$response[df$Data_type=="ANPP"] <- "ANPP"
 #Asat
 df$response[df$Data_type=="Asat"] <- "Asat";df$response[df$Data_type=="Amax"] <- "Amax";df$response[df$Data_type=="Anet"] <- "Anet"
 #c13
 df$response[df$Data_type=="d13C_isotope_ratio_hardwood_leaflitter"] <- "c13";df$response[df$Data_type=="d13C_isotope_ratio_leaflitter"] <- "c13";
 df$response[df$Data_type=="leaf_d13C"] <- "c13";df$response[df$Data_type=="leaf_litter_d13C"] <- "c13";df$response[df$Data_type=="litter_stable_13C_isotope_signature"] <- "c13"
 #N uptake
-df$response[df$Data_type=="N_uptake"] <- "Nuptake";df$response[df$Data_type=="NH4+_uptake"] <- "Nuptake";df$response[df$Data_type=="NO3-_uptake"] <- "Nuptake"
+df$response[df$Data_type=="N_uptake"] <- "Nuptake";df$response[df$Data_type=="NH4+_uptake"] <- "Nuptake";df$response[df$Data_type=="NO3-_uptake"] <- "Nuptake";
+df$response[df$Data_type=="gross_N_mineralization"] <- "Nuptake"
+
+#root-shoot ratio (only defined in below plot - otherwise will be failed in response ratio calculation)
+df$response[df$Data_type=="root-shoot_ratio" &(df$exp_nam=="POPFACE_pa"|df$exp_nam=="POPFACE_pe"|df$exp_nam=="POPFACE_pn"|df$exp_nam=="EUROFACE4_pa"|df$exp_nam=="EUROFACE4_pe"|df$exp_nam=="EUROFACE4_pn")] <- "root_shoot"
+
+
 #some unit is wrong - but given we had much less plots, and given that N uptake should always be flux?
 #subset(df,Data_type=="N_uptake")%>% group_by(Unit)  %>% summarise(number = n()) 
 
@@ -527,6 +470,14 @@ df$response[df$Data_type=="N_uptake"] <- "Nuptake";df$response[df$Data_type=="NH
 #df$response[df$Data_type=="litter_prod"] <- "litter";df$response[df$Data_type=="litter_mass"] <- "litter"
 
 df_only <- subset(df,is.na(response)==FALSE)
+
+#newly added soil N - copied from beni
+selvars <- c("mineral_soil_N", "soil_mineral_N", "soil_NH4-N", "soil_NO3-N","soil_NO3-N_", "soil_solution_mineral_N", "soil_solution_NH4+", "soil_solution_NO3-", "soil_NO3-_", "soil_NO3-", "soil_NH4+", "soil_NH4+-N", "resin_N", "resin_NH4+", "resin_NO3-", "rhizosphere_NO3-N", "rhizosphere_NH4-N")
+df_only <- df_only %>% 
+  bind_rows(
+    df %>% 
+      filter(Data_type %in% selvars) %>% 
+      mutate(response = "ninorg"))
 
 #1. examine data and fill missing measurement year
 empty_sampling_exp <- unique(subset(df_only,is.na(Sampling_Year==TRUE))$exp_nam)
@@ -549,6 +500,10 @@ summary(df_only$Year)
 #2. convert to lower case
 varname <- df_only%>% group_by(response)  %>% summarise(number = n())
 df_only$exp <- tolower(df_only$prev_name)
+
+df_only[grep("riceface", df_only$exp),]$exp <- gsub("\\,", "", df_only[grep("riceface", df_only$exp),]$exp)
+#rice face has more lma, narea,nmass data - needs updated
+
 
 #3. divide into dataframe
 for (i in 1:nrow(varname)) {
@@ -765,7 +720,6 @@ combine_co2_c <- function(logr_c_var,logr_f_var,logr_w_var,logr_d_var,logr_cf_va
   return(lma_plot)
 }
 
-
 lma_plot <- combine_co2(logr_c_LMA,logr_f_LMA,logr_w_LMA,logr_d_LMA,logr_cf_LMA,logr_cw_LMA,logr_cd_LMA,"LMA")
 vcmax_plot <- combine_co2(logr_c_vcmax,logr_f_vcmax,logr_w_vcmax,logr_d_vcmax,logr_cf_vcmax,logr_cw_vcmax,logr_cd_vcmax,"vcmax")
 jmax_plot <- combine_co2(logr_c_jmax,logr_f_jmax,logr_w_jmax,logr_d_jmax,logr_cf_jmax,logr_cw_jmax,logr_cd_jmax,"jmax")
@@ -780,16 +734,33 @@ Nuptake_plot <- combine_co2(old_logr_c_Nuptake,old_logr_f_Nuptake,old_logr_w_Nup
 npp_plot <- combine_co2_cf(old_logr_c_NPP,old_logr_f_NPP,old_logr_w_NPP,old_logr_d_NPP,old_logr_cf_NPP,old_logr_cw_NPP,old_logr_cd_NPP,"npp")
 soilN_plot <- combine_co2(logr_c_soil_n,logr_f_soil_n,logr_w_soil_n,logr_d_soil_n,logr_cf_soil_n,logr_cw_soil_n,logr_cd_soil_n,"soilN")
 soil_total_N_plot <- combine_co2_cfw(logr_c_soil_total_n,logr_f_soil_total_n,logr_w_soil_total_n,logr_d_soil_total_n,logr_cf_soil_total_n,logr_cw_soil_total_n,logr_cd_soil_total_n,"soil_totalN")
+#root_shoot_plot <- combine_co2_c(logr_c_root_shoot_ratio,logr_f_root_shoot_ratio,logr_w_root_shoot_ratio,logr_d_root_shoot_ratio,logr_cf_root_shoot_ratio,logr_cw_root_shoot_ratio,logr_cd_root_shoot_ratio,"root_shoot") 
+old_root_shoot_plot <- combine_co2_c(old_logr_c_root_shoot,old_logr_f_root_shoot,old_logr_w_root_shoot,old_logr_d_root_shoot,old_logr_cf_root_shoot,old_logr_cw_root_shoot,old_logr_cd_root_shoot,"root_shoot") 
+old_anpp_plot <- combine_co2_cf(old_logr_c_ANPP,old_logr_f_ANPP,old_logr_w_ANPP,old_logr_d_ANPP,old_logr_cf_ANPP,old_logr_cw_ANPP,old_logr_cd_ANPP,"old_anpp")
+#some are 0 which is wrong
+old_logr_c_ninorg$logr[old_logr_c_ninorg$logr==0] <- NA
+old_ninorg_plot <- combine_co2_cfw(old_logr_c_ninorg,old_logr_f_ninorg,old_logr_w_ninorg,old_logr_d_ninorg,old_logr_cf_ninorg,old_logr_cw_ninorg,old_logr_cd_ninorg,"old_ninorg")
+
+vcmax_plot_nfer <- combine_co2_c(logr_cf_vcmax,logr_f_vcmax,logr_w_vcmax,logr_d_vcmax,logr_cf_vcmax,logr_cw_vcmax,logr_cd_vcmax,"vcmax")
+#check N fertilization's simple effect
+vcmax_plot %>% filter(exp %in% c("duke2_c","euroface4_pa_c","euroface4_pe_c","euroface4_pn_c","new_zealand_face_c"))
+vcmax_plot_nfer
+
+#only additionally fill popface's 3 plots
+new_anpp <- subset(old_anpp_plot,exp=="popface_pa_c"|exp=="popface_pe_c"|exp=="popface_pn_c")
+names(new_anpp) <- c("exp","anpp","condition")
+anpp_plot <- rbind(anpp_plot,new_anpp)
 
 vcmax_main <-Reduce(function(x,y) merge(x = x, y = y, by = c("exp","condition"),all.x=TRUE),
                     list(vcmax_plot,jmax_plot,anpp_plot,lma_plot,narea_plot,nmass_plot,
-                         leaf_cn_plot,lai_plot,bnpp_plot,Nuptake_plot,npp_plot,soilN_plot,soil_total_N_plot))
+                         leaf_cn_plot,lai_plot,bnpp_plot,Nuptake_plot,npp_plot,soilN_plot,soil_total_N_plot,old_root_shoot_plot))
 vcmax_main$soilN[vcmax_main$soilN==0] <- NA
 vcmax_main$soilN[vcmax_main$soilN< -4] <- NA
 
 vcmax_main$combined_soilN <- vcmax_main$soilN
 vcmax_main$combined_soilN[is.na(vcmax_main$soil_totalN)==FALSE] <- vcmax_main$soil_totalN[is.na(vcmax_main$soil_totalN)==FALSE]
 vcmax_main$nuptake_bnpp <-vcmax_main$Nuptake - vcmax_main$bnpp
+vcmax_main$bnpp_anpp <-vcmax_main$bnpp - vcmax_main$anpp
 
 p <- list()
 for(i in c(1:(ncol(vcmax_main)-4))){
@@ -801,26 +772,33 @@ for(i in c(1:(ncol(vcmax_main)-4))){
     geom_smooth(color="black",method="lm",se=F)+
     theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"))}
 
-plot_grid(p[[4]],p[[3]],p[[1]],p[[8]],p[[13]],p[[7]],p[[6]],p[[12]],p[[9]],nrow=3,label_size = 15)+
+#bnpp/anpp and root/shoot
+aa1 <- p[[15]]+geom_text(aes(label=exp,hjust=0, vjust=-1,check_overlap = F))+theme(legend.position = "none")
+aa2 <- p[[12]]+geom_text(aes(label=exp,hjust=0, vjust=-1,check_overlap = F))+theme(legend.position = "none")
+plot_grid(aa1,aa2,nrow=1,label_size = 15)+
+  theme(plot.background=element_rect(fill="white", color="white"))
+ggsave(paste("~/data/output_gcme/colin/egu_update_2figs.jpg",sep=""),width = 20, height = 10)
+
+plot_grid(p[[4]],p[[3]],p[[1]],p[[8]],p[[14]],p[[7]],p[[6]],p[[13]],p[[9]],nrow=3,label_size = 15)+
   theme(plot.background=element_rect(fill="white", color="white"))
 
 ggsave(paste("~/data/output_gcme/colin/egu_update_v.jpg",sep=""),width = 20, height = 10)
 
 
-vcmax_main <-Reduce(function(x,y) merge(x = x, y = y, by = c("exp","condition"),all.x=TRUE),
+jmax_main <-Reduce(function(x,y) merge(x = x, y = y, by = c("exp","condition"),all.x=TRUE),
                     list(jmax_plot,vcmax_plot,anpp_plot,lma_plot,narea_plot,nmass_plot,
                          leaf_cn_plot,lai_plot,bnpp_plot,Nuptake_plot,npp_plot,soilN_plot,soil_total_N_plot))
-vcmax_main$soilN[vcmax_main$soilN==0] <- NA
-vcmax_main$soilN[vcmax_main$soilN< -4] <- NA
+jmax_main$soilN[jmax_main$soilN==0] <- NA
+jmax_main$soilN[jmax_main$soilN< -4] <- NA
 
-vcmax_main$combined_soilN <- vcmax_main$soilN
-vcmax_main$combined_soilN[is.na(vcmax_main$soil_totalN)==FALSE] <- vcmax_main$soil_totalN[is.na(vcmax_main$soil_totalN)==FALSE]
-vcmax_main$nuptake_bnpp <-vcmax_main$Nuptake - vcmax_main$bnpp
+jmax_main$combined_soilN <- jmax_main$soilN
+jmax_main$combined_soilN[is.na(jmax_main$soil_totalN)==FALSE] <- jmax_main$soil_totalN[is.na(jmax_main$soil_totalN)==FALSE]
+jmax_main$nuptake_bnpp <-jmax_main$Nuptake - jmax_main$bnpp
 
 p <- list()
-for(i in c(1:(ncol(vcmax_main)-4))){
-  p[[i]] <- ggplot(vcmax_main,aes_string(x=names(vcmax_main)[i+4],
-                                         y=names(vcmax_main)[3])) +
+for(i in c(1:(ncol(jmax_main)-4))){
+  p[[i]] <- ggplot(jmax_main,aes_string(x=names(jmax_main)[i+4],
+                                         y=names(jmax_main)[3])) +
     geom_hline(yintercept=0)+geom_vline(xintercept=0)+
     geom_point(aes(color=condition),size=3)+
     stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
@@ -831,6 +809,250 @@ plot_grid(p[[4]],p[[3]],p[[1]],p[[8]],p[[13]],p[[7]],p[[6]],p[[12]],p[[9]],nrow=
   theme(plot.background=element_rect(fill="white", color="white"))
 
 ggsave(paste("~/data/output_gcme/colin/egu_update_j.jpg",sep=""),width = 20, height = 10)
+
+#now, lai ~anpp
+
+lai_main <-Reduce(function(x,y) merge(x = x, y = y, by = c("exp","condition"),all.x=TRUE),
+                    list(lai_plot,vcmax_plot,jmax_plot,anpp_plot,lma_plot,narea_plot,nmass_plot,
+                         leaf_cn_plot,bnpp_plot,Nuptake_plot,npp_plot,soilN_plot,soil_total_N_plot))
+lai_main$soilN[lai_main$soilN==0] <- NA
+lai_main$soilN[lai_main$soilN< -4] <- NA
+
+lai_main$combined_soilN <- lai_main$soilN
+lai_main$combined_soilN[is.na(lai_main$soil_totalN)==FALSE] <- lai_main$soil_totalN[is.na(lai_main$soil_totalN)==FALSE]
+lai_main$nuptake_bnpp <-lai_main$Nuptake - lai_main$bnpp
+
+p <- list()
+for(i in c(1:(ncol(lai_main)-4))){
+  p[[i]] <- ggplot(lai_main,aes_string(x=names(lai_main)[i+3],
+                                         y=names(lai_main)[3])) +
+    geom_hline(yintercept=0)+geom_vline(xintercept=0)+
+    geom_point(aes(color=condition),size=3)+
+    stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
+    geom_smooth(color="black",method="lm",se=F)+
+    theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"))}
+
+plot_grid(p[[1]],p[[2]],p[[3]],p[[4]],p[[5]],
+          p[[6]],p[[7]],p[[8]],p[[9]],
+          p[[10]],p[[13]],
+          nrow=4,label_size = 15)+
+  theme(plot.background=element_rect(fill="white", color="white"))
+
+ggsave(paste("~/data/output_gcme/colin/egu_update_lai.jpg",sep=""),width = 20, height = 15)
+
+lai1<- ggplot(vcmax_main,aes_string(x="vcmax",
+                           y="anpp")) +
+  geom_hline(yintercept=0)+geom_vline(xintercept=0)+
+  geom_point(aes(color=lai),size=3)+
+  geom_text(aes(label=format(round(lai, 3), nsmall = 3)),hjust=1, vjust=0,check_overlap = T)+
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
+  geom_smooth(color="black",method="lm",se=F)
+
+lai2 <- ggplot(vcmax_main,aes_string(x="vcmax",
+                                    y="bnpp")) +
+  geom_hline(yintercept=0)+geom_vline(xintercept=0)+
+  geom_point(aes(color=lai),size=3)+
+  geom_text(aes(label=format(round(lai, 3), nsmall = 3)),hjust=1, vjust=0,check_overlap = T)+
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
+  geom_smooth(color="black",method="lm",se=F)
+
+lai3<- ggplot(vcmax_main,aes_string(x="vcmax",
+                             y="nmass")) +
+  geom_hline(yintercept=0)+geom_vline(xintercept=0)+
+  geom_point(aes(color=lai),size=3)+
+  geom_text(aes(label=format(round(lai, 3), nsmall = 3)),hjust=1, vjust=0,check_overlap = F)+
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
+  geom_smooth(color="black",method="lm",se=F)
+
+plot_grid(lai1,lai2,lai3,nrow=1,label_size = 15)+
+  theme(plot.background=element_rect(fill="white", color="white"))
+ggsave(paste("~/data/output_gcme/colin/egu_update_lai2.jpg",sep=""),width = 15, height = 5)
+
+#now, soil inorganic n ~ vcmax, jmax, nmass
+ninorg_main <-Reduce(function(x,y) merge(x = x, y = y, by = c("exp","condition"),all.x=TRUE),
+                  list(old_ninorg_plot,vcmax_plot,jmax_plot,nmass_plot))
+#remove biocon
+ninorg_main$old_ninorg[ninorg_main$old_ninorg< - 0.4] <- NA
+p <- list()
+for(i in c(1:3)){
+  p[[i]] <- ggplot(ninorg_main,aes_string(y=names(ninorg_main)[i+3],
+                                       x=names(ninorg_main)[3])) +
+    geom_hline(yintercept=0)+geom_vline(xintercept=0)+
+    geom_point(aes(color=condition),size=3)+
+    geom_text(aes(label=exp,hjust=1, vjust=0,check_overlap = T))+
+    stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
+    geom_smooth(color="black",method="lm",se=F)+labs(x="Inorganic soil N")+
+    theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"))}
+  
+plot_grid(p[[1]],p[[2]],p[[3]],nrow=1,label_size = 15)+
+  theme(plot.background=element_rect(fill="white", color="white"))
+
+ggsave(paste("~/data/output_gcme/colin/egu_update_soil.jpg",sep=""),width = 20, height = 5)
+
+#now, combined with prediction data from gcme_vcmax
+#the prediction of vcmax only includes c, w and cw - but having same value in cf
+prediction <- read.csv("/Users/yunpeng/data/gcme/kevin/forcing/pred_vcmax.csv")
+pred_vcmax <- subset(prediction,response=="vcmax")
+vcmax_plotmean <- aggregate(pred_vcmax,by=list(pred_vcmax$exp), FUN=mean, na.rm=TRUE)[,c("Group.1","pred_vcmax25_coef")]
+names(vcmax_plotmean) <- c("exp","pred_vcmax"); vcmax_plotmean <- na.omit(vcmax_plotmean)
+
+#the prediction for c, cf and cd is correct. But cw is not correct
+#merged with pft and ecm types
+ecm_csv <- read.csv("/Users/yunpeng/data/gcme/kevin/orig_vcmax/new_ecm_types_updated.csv")
+vcmax_obs <- merge(vcmax_main,ecm_csv,by=c("exp"),all.x=TRUE)
+vcmax_obs$ecosystem[vcmax_obs$ecosystem=="heathland"] <- "grassland"
+vcmax_obs$ecosystem[vcmax_obs$ecosystem=="temperate_forest"] <- "forest"
+vcmax_obs$ecosystem[vcmax_obs$ecosystem=="shrubland"] <- "forest"
+
+vcmax_obs_pred <- Reduce(function(x,y) merge(x = x, y = y, by = c("exp"),all.x=TRUE),
+                         list(vcmax_obs,vcmax_plotmean))
+
+#correct 3 co2+warming effects prediction = (logr_cw - logr_w)/log(co2 increase). 
+#This fits observation!
+# riceface_japan_l_2008_3938_14057_cw's warming effect is 0 - needs revisitsed predction
+# what is warmQ_e1, warmQ_e2, warmQ_e3?
+#vcmax_obs_pred$pred_vcmax[vcmax_obs_pred$exp=="brandbjerg_cw"] <- (subset(pred_vcmax,exp=="brandbjerg_cw")$pred_vcmax25_logr[1]-subset(pred_vcmax,exp=="brandbjerg_w")$pred_vcmax25_logr[1])/log(subset(pred_vcmax,exp=="brandbjerg_cw")$co2_e[1]-subset(pred_vcmax,exp=="brandbjerg_cw")$co2_a[1])
+#vcmax_plotmean$pred_vcmax[vcmax_obs_pred$exp=="riceface_japan_l_2007_3938_14057_cw"] <- (subset(pred_vcmax,exp=="riceface_japan_l_2007_3938_14057_cw")$pred_vcmax25_logr[1]-subset(pred_vcmax,exp=="riceface_japan_l_2007_3938_14057_w")$pred_vcmax25_logr[1])/log(subset(pred_vcmax,exp=="riceface_japan_l_2007_3938_14057_cw")$co2_e[1]-subset(pred_vcmax,exp=="riceface_japan_l_2007_3938_14057_cw")$co2_a[1])
+#vcmax_plotmean$pred_vcmax[vcmax_obs_pred$exp=="riceface_japan_l_2008_3938_14057_cw"] <- (subset(pred_vcmax,exp=="riceface_japan_l_2008_3938_14057_cw")$pred_vcmax25_logr[1]-subset(pred_vcmax,exp=="riceface_japan_l_2008_3938_14057_w")$pred_vcmax25_logr[1])/log(subset(pred_vcmax,exp=="riceface_japan_l_2008_3938_14057_cw")$co2_e[1]-subset(pred_vcmax,exp=="riceface_japan_l_2008_3938_14057_cw")$co2_a[1])
+
+#but only include co2-effect only now
+vcmax_obs_pred_co2 <- subset(vcmax_obs_pred,condition=="co2")
+vcmax_obs_pred_co2$response <- "all"
+dim(vcmax_obs_pred_co2)
+logr_c_vcmax2 <- Reduce(function(x,y) merge(x = x, y = y, by = c("exp"),all.x=TRUE),
+                        list(logr_c_vcmax,vcmax_obs_pred_co2[,c("exp","ecm_type","ecosystem","pred_vcmax")]))
+#remove setres_cf as no prediction available
+#logr_c_vcmax2 <- subset(logr_c_vcmax2,exp!="setres_cf") # but already not included
+
+vcmax_grassland <- agg_meta_sen_coef(subset(logr_c_vcmax2,ecosystem.y=="grassland")); vcmax_grassland$response <- "grassland"
+vcmax_forest <- agg_meta_sen_coef(subset(logr_c_vcmax2,ecosystem.y=="forest")); vcmax_forest$response <- "forest"
+vcmax_cropland <- agg_meta_sen_coef(subset(logr_c_vcmax2,ecosystem.y=="cropland")); vcmax_cropland$response <- "cropland"
+vcmax_alltypes <- dplyr::bind_rows(vcmax_grassland,vcmax_cropland,vcmax_forest)
+#remove a few sites with no available logr_var??? - but not applied since it not affects sen coef
+final_vcmax <- agg_meta_plots(vcmax_alltypes,"response","logr","logr_var")
+#created a unified one and help to combine to preediction column then 
+vcmax_alltypes2 <- vcmax_alltypes; vcmax_alltypes2$response <- "alltypes"
+
+final_observation <- agg_meta_plots(vcmax_alltypes2,"response","logr","logr_var")
+final_observation$type_name <- "all"
+#aggregate by mean is more closed to prediction???
+#final_observation$middle<- mean(vcmax_alltypes2$middle)
+#final_observation$ymin<- mean(vcmax_alltypes2$middle)
+#final_observation$ymax<- mean(vcmax_alltypes2$middle)
+
+pred_plotmean <- mean(vcmax_obs_pred_co2$pred_vcmax)
+final_prediction <- tibble(type_name="all",middle=pred_plotmean,ymin=pred_plotmean,ymax=pred_plotmean)
+
+a1 <- final_vcmax %>%
+  ggplot( aes(x=type_name, y=middle)) + 
+  geom_crossbar(aes(x=type_name, y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5) +
+  geom_crossbar(data=final_prediction,aes(x=type_name, y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5,color="red") +
+  geom_crossbar(data=final_observation,aes(x=type_name, y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5,color="black") +
+  geom_point(data=vcmax_alltypes,aes(x=response, y=middle, size= 1/(middle-ymin)), alpha = 0.6, width = 0.5) +
+  geom_point(data=subset(vcmax_alltypes,is.na(middle_scaled)==TRUE),aes(x=response, y=middle,size=5,color="no_SE_info"),width = 0.5) +
+  geom_point(data=vcmax_obs_pred_co2,aes(x=response, y=pred_vcmax), alpha = 0.6, width = 0.5,color="red") +
+  geom_hline( yintercept=0.0, size=0.5)+ ylim(-1,1)+
+  labs(x="", y="Sensitivity coefficient of vcmax",size=expression(paste("Error"^{-1}))) +
+  theme_classic()+coord_flip()+theme(axis.text=element_text(size=12))
+a1
+
+# now, newly adding smith's data
+smith_all <- read.csv("/Users/yunpeng/data/smith_keenan_gcb/gcb_co2/pred_vcmax.csv")
+smith_all_removal <- subset(smith_all,exp_nam!="BioCON" & exp_nam!="ChinaRiceFACE" & exp_nam!="DukeFACE" & exp_nam!="EUROPOPFACE" & exp_nam!="NevadaFACE" & exp_nam!="SwissFACE")
+smith_all_simple <- smith_all_removal[,c("SiteID","pft","sen_coef_v","sen_coef_j","pred_vcmax25_coef","pred_jmax25_coef")]
+
+smith_all_plotmean <- aggregate(smith_all_simple,by=list(smith_all_simple$SiteID,smith_all_simple$pft), FUN=mean, na.rm=TRUE)[,c("Group.1","Group.2","sen_coef_v","sen_coef_j","pred_vcmax25_coef","pred_jmax25_coef")]
+names(smith_all_plotmean) <- c("exp","ecosystem","vcmax","jmax","pred_vcmax","pred_jmax")
+
+vcmax_final <- dplyr::bind_rows(vcmax_obs_pred_co2,smith_all_plotmean)
+
+
+#jmax
+pred_jmax <- subset(prediction,response=="jmax")
+jmax_plotmean <- aggregate(pred_jmax,by=list(pred_jmax$exp), FUN=mean, na.rm=TRUE)[,c("Group.1","pred_jmax25_coef")]
+names(jmax_plotmean) <- c("exp","pred_jmax"); jmax_plotmean <- na.omit(jmax_plotmean)
+
+#the prediction for c, cf and cd is correct. But cw is not correct
+#merged with pft and ecm types
+jmax_obs <- merge(jmax_main,ecm_csv,by=c("exp"),all.x=TRUE)
+jmax_obs$ecosystem[jmax_obs$ecosystem=="heathland"] <- "grassland"
+jmax_obs$ecosystem[jmax_obs$ecosystem=="temperate_forest"] <- "forest"
+jmax_obs$ecosystem[jmax_obs$ecosystem=="shrubland"] <- "forest"
+
+jmax_obs_pred <- Reduce(function(x,y) merge(x = x, y = y, by = c("exp"),all.x=TRUE),
+                        list(jmax_obs,jmax_plotmean))
+
+
+#but only include co2-effect only now
+jmax_obs_pred_co2 <- subset(jmax_obs_pred,condition=="co2")
+jmax_obs_pred_co2$response <- "all"
+dim(jmax_obs_pred_co2)
+logr_c_jmax2 <- Reduce(function(x,y) merge(x = x, y = y, by = c("exp"),all.x=TRUE),
+                       list(logr_c_jmax,jmax_obs_pred_co2[,c("exp","ecm_type","ecosystem","pred_jmax")]))
+#remove setres_cf as no prediction available
+#logr_c_vcmax2 <- subset(logr_c_vcmax2,exp!="setres_cf") # but already not included
+
+jmax_grassland <- agg_meta_sen_coef(subset(logr_c_jmax2,ecosystem.y=="grassland")); jmax_grassland$response <- "grassland"
+jmax_forest <- agg_meta_sen_coef(subset(logr_c_jmax2,ecosystem.y=="forest")); jmax_forest$response <- "forest"
+jmax_cropland <- agg_meta_sen_coef(subset(logr_c_jmax2,ecosystem.y=="cropland")); jmax_cropland$response <- "cropland"
+jmax_alltypes <- dplyr::bind_rows(jmax_grassland,jmax_cropland,jmax_forest)
+#remove a few sites with no available logr_var??? - but not applied since it not affects sen coef
+final_jmax <- agg_meta_plots(jmax_alltypes,"response","logr","logr_var")
+#created a unified one and help to combine to preediction column then 
+jmax_alltypes2 <- jmax_alltypes; jmax_alltypes2$response <- "alltypes"
+
+#for obs
+final_observation_j <- agg_meta_plots(jmax_alltypes2,"response","logr","logr_var")
+final_observation_j$type_name <- "all"
+
+pred_plotmean_j <- mean(jmax_obs_pred_co2$pred_jmax)
+final_prediction_j <- tibble(type_name="all",middle=pred_plotmean_j,ymin=pred_plotmean_j,ymax=pred_plotmean_j)
+a2 <- final_jmax %>%
+  ggplot( aes(x=type_name, y=middle)) + 
+  geom_crossbar(aes(x=type_name, y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5) +
+  geom_crossbar(data=final_prediction_j,aes(x=type_name, y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5,color="red") +
+  geom_crossbar(data=final_observation_j,aes(x=type_name, y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5,color="black") +
+  geom_point(data=jmax_alltypes,aes(x=response, y=middle, size= 1/(middle-ymin)), alpha = 0.6, width = 0.5) +
+  geom_point(data=jmax_obs_pred_co2,aes(x=response, y=pred_jmax), alpha = 0.6, width = 0.5,color="red") +
+  geom_hline( yintercept=0.0, size=0.5)+ ylim(-1,1)+
+  labs(x="", y="Sensitivity coefficient of jmax",size=expression(paste("Error"^{-1}))) +
+  theme_classic()+coord_flip()+theme(axis.text=element_text(size=12))
+a2
+
+#finally, merged vcmax and jmax
+final_vj <- merge(final_vcmax,final_jmax, by = c("type_name"),all.x=TRUE)
+final_prediction_vj <- merge(final_prediction,final_prediction_j, by = c("type_name"),all.x=TRUE)
+final_observation_vj <- merge(final_observation,final_observation_j, by = c("type_name"),all.x=TRUE)
+vj_alltypes <- merge(vcmax_alltypes,jmax_alltypes, by = c("exp"),all.x=TRUE)
+vj_obs_pred_co2 <- merge(vcmax_obs_pred_co2,jmax_obs_pred_co2, by = c("exp"),all.x=TRUE)
+
+#another choice? aggregate directly?
+final_observation_vj$middle<- mean(vj_alltypes$middle.y-vj_alltypes$middle.x,na.rm=TRUE)
+final_observation_vj$ymin<- mean(vj_alltypes$middle.y-vj_alltypes$middle.x,na.rm=TRUE)
+final_observation_vj$ymax<- mean(vj_alltypes$middle.y-vj_alltypes$middle.x,na.rm=TRUE)
+
+a3 <- final_vj %>%
+  ggplot( aes(x=type_name, y=middle.y-middle.x)) + 
+  #geom_crossbar(aes(x=type_name, y=middle.y-middle.x, ymin=middle.y-middle.x, ymax=middle.y-middle.x), alpha = 0.6, width = 0.5) +
+  geom_crossbar(data=final_prediction_vj,aes(x=type_name, y=middle.y-middle.x, ymin=middle.y-middle.x, ymax=middle.y-middle.x), alpha = 0.6, width = 0.5,color="red") +
+  geom_crossbar(data=final_observation_vj,aes(x=type_name, y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5,color="black") +
+  geom_point(data=vj_alltypes,aes(x=response.x, y=middle.y-middle.x), alpha = 0.6, width = 0.5) +
+  geom_point(data=vj_obs_pred_co2,aes(x=response.x, y=pred_jmax-pred_vcmax), alpha = 0.6, width = 0.5,color="red") +
+  geom_hline( yintercept=0.0, size=0.5)+ ylim(-1,1)+
+  labs(x="", y="Sensitivity coefficient of jmax/vcmax") +
+  theme_classic()+coord_flip()+theme(axis.text=element_text(size=12))
+a3
+#something wrong with cropland
+
+plot_grid(a1,a2,a3,nrow=1,label_size = 15)+
+  theme(plot.background=element_rect(fill="white", color="white"))
+
+ggsave(paste("~/data/output_gcme/colin/egu_update_overall.jpg",sep=""),width = 15, height = 5)
+
+
+
+
+
 
 #now, warming
 # a look
@@ -1081,3 +1303,5 @@ plot_grid(p[[4]],p[[3]],p[[2]],p[[1]],p[[6]],p[[11]],nrow=2,label_size = 15)+
   theme(plot.background=element_rect(fill="white", color="white"))
 
 ggsave(paste("~/data/output_gcme/colin/egu_update_j_fer.jpg",sep=""),width = 20, height = 10)
+
+
