@@ -948,24 +948,13 @@ a1 <- final_vcmax %>%
   geom_crossbar(aes(x=type_name, y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5) +
   geom_crossbar(data=final_prediction,aes(x=type_name, y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5,color="red") +
   geom_crossbar(data=final_observation,aes(x=type_name, y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5,color="black") +
-  geom_point(data=vcmax_alltypes,aes(x=response, y=middle, size= 1/(middle-ymin)), alpha = 0.6, width = 0.5) +
+  geom_point(data=vcmax_alltypes,aes(x=response, y=middle, size= 1.96/(middle-ymin)), alpha = 0.6, width = 0.5) +
   geom_point(data=subset(vcmax_alltypes,is.na(middle_scaled)==TRUE),aes(x=response, y=middle,size=5,color="no_SE_info"),width = 0.5) +
   geom_point(data=vcmax_obs_pred_co2,aes(x=response, y=pred_vcmax), alpha = 0.6, width = 0.5,color="red") +
   geom_hline( yintercept=0.0, size=0.5)+ ylim(-1,1)+
-  labs(x="", y="Sensitivity coefficient of vcmax",size=expression(paste("Error"^{-1}))) +
+  labs(x="", y="Sensitivity coefficient of vcmax",size=expression(paste("Standard Error"^{-1}))) +
   theme_classic()+coord_flip()+theme(axis.text=element_text(size=12))
 a1
-
-# now, newly adding smith's data
-smith_all <- read.csv("/Users/yunpeng/data/smith_keenan_gcb/gcb_co2/pred_vcmax.csv")
-smith_all_removal <- subset(smith_all,exp_nam!="BioCON" & exp_nam!="ChinaRiceFACE" & exp_nam!="DukeFACE" & exp_nam!="EUROPOPFACE" & exp_nam!="NevadaFACE" & exp_nam!="SwissFACE")
-smith_all_simple <- smith_all_removal[,c("SiteID","pft","sen_coef_v","sen_coef_j","pred_vcmax25_coef","pred_jmax25_coef")]
-
-smith_all_plotmean <- aggregate(smith_all_simple,by=list(smith_all_simple$SiteID,smith_all_simple$pft), FUN=mean, na.rm=TRUE)[,c("Group.1","Group.2","sen_coef_v","sen_coef_j","pred_vcmax25_coef","pred_jmax25_coef")]
-names(smith_all_plotmean) <- c("exp","ecosystem","vcmax","jmax","pred_vcmax","pred_jmax")
-
-vcmax_final <- dplyr::bind_rows(vcmax_obs_pred_co2,smith_all_plotmean)
-
 
 #jmax
 pred_jmax <- subset(prediction,response=="jmax")
@@ -1012,10 +1001,11 @@ a2 <- final_jmax %>%
   geom_crossbar(aes(x=type_name, y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5) +
   geom_crossbar(data=final_prediction_j,aes(x=type_name, y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5,color="red") +
   geom_crossbar(data=final_observation_j,aes(x=type_name, y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5,color="black") +
-  geom_point(data=jmax_alltypes,aes(x=response, y=middle, size= 1/(middle-ymin)), alpha = 0.6, width = 0.5) +
+  geom_point(data=jmax_alltypes,aes(x=response, y=middle, size= 1.96/(middle-ymin)), alpha = 0.6, width = 0.5) +
   geom_point(data=jmax_obs_pred_co2,aes(x=response, y=pred_jmax), alpha = 0.6, width = 0.5,color="red") +
+  geom_point(data=subset(jmax_alltypes,is.na(middle_scaled)==TRUE),aes(x=response, y=middle,size=5,color="no_SE_info"),width = 0.5) +
   geom_hline( yintercept=0.0, size=0.5)+ ylim(-1,1)+
-  labs(x="", y="Sensitivity coefficient of jmax",size=expression(paste("Error"^{-1}))) +
+  labs(x="", y="Sensitivity coefficient of jmax",size=expression(paste("Standard Error"^{-1}))) +
   theme_classic()+coord_flip()+theme(axis.text=element_text(size=12))
 a2
 
@@ -1044,14 +1034,99 @@ a3 <- final_vj %>%
 a3
 #something wrong with cropland
 
-plot_grid(a1,a2,a3,nrow=1,label_size = 15)+
-  theme(plot.background=element_rect(fill="white", color="white"))
-
-ggsave(paste("~/data/output_gcme/colin/egu_update_overall.jpg",sep=""),width = 15, height = 5)
 
 
+# now, newly adding smith's data
+smith_all <- read.csv("/Users/yunpeng/data/smith_keenan_gcb/gcb_co2/pred_vcmax.csv")
+smith_all_removal <- subset(smith_all,exp_nam!="BioCON" & exp_nam!="ChinaRiceFACE" & exp_nam!="DukeFACE" & exp_nam!="EUROPOPFACE" & exp_nam!="NevadaFACE" & exp_nam!="SwissFACE")
+smith_all_simple <- smith_all_removal[,c("SiteID","pft","sen_coef_v","sen_coef_j","pred_vcmax25_coef","pred_jmax25_coef")]
+
+smith_all_plotmean <- aggregate(smith_all_simple,by=list(smith_all_simple$SiteID,smith_all_simple$pft), FUN=mean, na.rm=TRUE)[,c("Group.1","Group.2","sen_coef_v","sen_coef_j","pred_vcmax25_coef","pred_jmax25_coef")]
+names(smith_all_plotmean) <- c("exp","ecosystem","vcmax","jmax","pred_vcmax","pred_jmax")
+
+smith_all_plotmean$obs_jv <- smith_all_plotmean$jmax -  smith_all_plotmean$vcmax
+smith_all_plotmean$pred_jv <- smith_all_plotmean$pred_jmax -  smith_all_plotmean$pred_vcmax
+smith_all_plotmean$response <- "all"
+
+final_vc <- tibble(ecosystem="all",obs_vcmax=mean(smith_all_plotmean$vcmax,na.rm=TRUE),
+                   obs_jmax=mean(smith_all_plotmean$jmax,na.rm=TRUE),
+                   pred_vcmax=mean(smith_all_plotmean$pred_vcmax,na.rm=TRUE),
+                   pred_jmax=mean(smith_all_plotmean$pred_jmax,na.rm=TRUE))
+#vcmax
+b1 <- smith_all_plotmean %>%
+  ggplot( aes(x=ecosystem, y=vcmax)) +
+  geom_boxplot()+
+  geom_point()+
+  geom_boxplot(aes(x=response, y=vcmax))+
+  geom_point(aes(x=response, y=vcmax))+
+  geom_boxplot(aes(x=response, y=pred_vcmax),color="red")+
+  geom_point(aes(x=response, y=pred_vcmax),color="red")+
+  geom_hline( yintercept=0.0, size=0.5 )+ylim(-1,1)+
+  labs(x="", y="Smith data") +theme_classic()+
+  coord_flip() 
+b1
+
+#jmax
+b2 <- smith_all_plotmean %>%
+  ggplot( aes(x=ecosystem, y=jmax)) +
+  geom_boxplot()+
+  geom_point()+
+  geom_boxplot(aes(x=response, y=jmax))+
+  geom_point(aes(x=response, y=jmax))+
+  geom_boxplot(aes(x=response, y=pred_jmax),color="red")+
+  geom_point(aes(x=response, y=pred_jmax),color="red")+
+  geom_hline( yintercept=0.0, size=0.5 )+ylim(-1,1)+
+  labs(x="", y="Smith data") +theme_classic()+
+  coord_flip() 
+b2
+
+#jmax/vcmax
+b3 <- smith_all_plotmean %>%
+  ggplot( aes(x=ecosystem, y=obs_jv)) +
+  geom_boxplot()+
+  geom_point()+
+  geom_boxplot(aes(x=response, y=obs_jv))+
+  geom_point(aes(x=response, y=obs_jv))+
+  geom_boxplot(aes(x=response, y=pred_jv),color="red")+
+  geom_point(aes(x=response, y=pred_jv),color="red")+
+  geom_hline( yintercept=0.0, size=0.5 )+ylim(-1,1)+
+  labs(x="", y="Smith data") +theme_classic()+
+  coord_flip() 
+b3
 
 
+plot_grid(a1,a2,a3,b1,b2,b3,nrow=2,label_size = 15)+theme(plot.background=element_rect(fill="white", color="white"))
+
+ggsave(paste("~/data/output_gcme/colin/egu_update_overall.jpg",sep=""),width = 15, height = 10)
+
+#finally, combination of vcmax~jmax
+vcmax_obs_pred_co2$ref <- "GCME"
+smith_all_plotmean$ref <- "smith"
+vcmax_final <- dplyr::bind_rows(vcmax_obs_pred_co2,smith_all_plotmean)
+
+c1 <- ggplot(vcmax_obs_pred_co2,aes_string(y="vcmax", x="jmax")) +
+  geom_hline(yintercept=0)+geom_vline(xintercept=0)+
+  geom_point(aes(color=ecosystem,shape=ref),size=3)+
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
+  geom_smooth(color="black",method="lm",se=F)+
+  theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"))
+
+c2 <- ggplot(smith_all_plotmean,aes_string(y="vcmax", x="jmax")) +
+  geom_hline(yintercept=0)+geom_vline(xintercept=0)+
+  geom_point(aes(color=ecosystem,shape=ref),size=3)+
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
+  geom_smooth(color="black",method="lm",se=F)+
+  theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"))
+
+c3 <- ggplot(vcmax_final,aes_string(y="vcmax", x="jmax")) +
+  geom_hline(yintercept=0)+geom_vline(xintercept=0)+
+  geom_point(aes(color=ecosystem,shape=ref),size=3)+
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
+  geom_smooth(color="black",method="lm",se=F)+
+  theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"))
+
+plot_grid(c1,c2,c3,nrow=1,label_size = 15)+theme(plot.background=element_rect(fill="white", color="white"))
+ggsave(paste("~/data/output_gcme/colin/egu_update_overall2.jpg",sep=""),width = 15, height = 5)
 
 
 #now, warming
