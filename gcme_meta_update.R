@@ -56,6 +56,55 @@ response_ratio <- function(df){
   # Output: df_c_sub
   #-----------------------------------------------------------------------
 }
+
+#update function (if SD shown NA in plot - then relying on percentage of other samples within the same plot)
+#AND --> convert logr or logr_var = 0 is NA
+# first - response ratio of each
+response_ratio_v2 <- function(df){
+  #-----------------------------------------------------------------------
+  # Input: 
+  # name: df..
+  # df should include: c("exp_nam","ambient","ambient_Sd","ambient_Se",
+  # "elevated","elevated_Se","elevated_Sd","n_plots")
+  #-----------------------------------------------------------------------
+  df_c_sub <- df %>%         
+    ## Here only for my variables, selected as described above 
+    # get standard deviation for all data
+    mutate( my_ambient_sd = ambient_Sd, my_elevated_sd = elevated_Sd ) %>%
+    rowwise() %>% 
+    mutate( my_ambient_sd   = ifelse( is.na(my_ambient_sd),  ambient_Se  * sqrt(n_plots), my_ambient_sd ),
+            my_elevated_sd  = ifelse( is.na(my_elevated_sd), elevated_Se * sqrt(n_plots), my_elevated_sd )) %>%
+    
+    ## Get logarithm of response ratio and its variance
+    metafor::escalc( 
+      measure = "ROM", 
+      m1i = elevated, sd1i = my_elevated_sd, n1i = n_plots, 
+      m2i = ambient,  sd2i = my_ambient_sd,  n2i = n_plots, 
+      data=., 
+      append = TRUE, var.names = c("logr", "logr_var") ) %>% 
+    as_tibble() %>% 
+    mutate( logr_se = sqrt(logr_var)/sqrt(n_plots) )
+  
+  df_c_sub$id <- 1:nrow(df_c_sub)
+  df_c_sub$logr[df_c_sub$logr==0] <- NA
+  df_c_sub$logr_var[df_c_sub$logr_var==0] <- NA
+  
+  explist <- unique(df_c_sub$exp)
+  df_c_sub$new_logr_var_percentage <- NA
+  for (i in 1:length(explist)){ # if SD shown NA in plot - then relying on percentage of other samples within the same plot
+    percentage <- mean(abs(subset(df_c_sub,exp==explist[i])$logr_var/subset(df_c_sub,exp==explist[i])$logr), na.rm=TRUE)
+    df_c_sub$new_logr_var_percentage[df_c_sub$exp==explist[i]] <- percentage
+  }
+  
+  df_c_sub$logr_var[is.na(df_c_sub$logr_var)==TRUE] <- abs(df_c_sub$new_logr_var_percentage[is.na(df_c_sub$logr_var)==TRUE] * df_c_sub$logr[is.na(df_c_sub$logr_var)==TRUE])
+  df_c_sub$logr_var[df_c_sub$logr_var=="NaN"] <- NA
+  df_c_sub$logr_var[is.na(df_c_sub$logr)==TRUE] <- NA
+  return(df_c_sub)
+  #-----------------------------------------------------------------------
+  # Output: df_c_sub
+  #-----------------------------------------------------------------------
+}
+
 #for sensitivity coef
 agg_meta_sen_coef <- function(df){
   threshold <- 0.4
@@ -239,29 +288,29 @@ varname <- kevin_othervars%>% group_by(response)  %>% summarise(number = n())
 nmass <- subset(kevin_othervars,response=="leaf_n") %>%         
   filter(Unit %in% c("g","g_100g","g_g","g_kg","mg_g","mg_kg","mmol_g","ug_mg","umol_g"))
 nmass$response <- "nmass"
-logr_c_nmass <- as_tibble(response_ratio(subset(nmass,treatment=="c")));
-logr_w_nmass <- as_tibble(response_ratio(subset(nmass,treatment=="w")));
-logr_f_nmass <- as_tibble(response_ratio(subset(nmass,treatment=="f")));
-logr_d_nmass <- as_tibble(response_ratio(subset(nmass,treatment=="d")));
-logr_cw_nmass <- as_tibble(response_ratio(subset(nmass,treatment=="cw")));
-logr_cf_nmass <- as_tibble(response_ratio(subset(nmass,treatment=="cf")));
-logr_cd_nmass <- as_tibble(response_ratio(subset(nmass,treatment=="cd")));
-logr_df_nmass <- as_tibble(response_ratio(subset(nmass,treatment=="df")));
-logr_dw_nmass <- as_tibble(response_ratio(subset(nmass,treatment=="dw")))
+logr_c_nmass <- as_tibble(response_ratio_v2(subset(nmass,treatment=="c")));
+logr_w_nmass <- as_tibble(response_ratio_v2(subset(nmass,treatment=="w")));
+logr_f_nmass <- as_tibble(response_ratio_v2(subset(nmass,treatment=="f")));
+logr_d_nmass <- as_tibble(response_ratio_v2(subset(nmass,treatment=="d")));
+logr_cw_nmass <- as_tibble(response_ratio_v2(subset(nmass,treatment=="cw")));
+logr_cf_nmass <- as_tibble(response_ratio_v2(subset(nmass,treatment=="cf")));
+logr_cd_nmass <- as_tibble(response_ratio_v2(subset(nmass,treatment=="cd")));
+logr_df_nmass <- as_tibble(response_ratio_v2(subset(nmass,treatment=="df")));
+logr_dw_nmass <- as_tibble(response_ratio_v2(subset(nmass,treatment=="dw")))
 
 narea <- subset(kevin_othervars,response=="leaf_n") %>%         
   filter(Unit %in% c("g_m2","g_m3","g_pot","mg_cm2","mg_m2","mmol_m2","ug_cm2","ug_cm3","umol_m2"))
 narea$response <- "narea"
 
-logr_c_narea <- as_tibble(response_ratio(subset(narea,treatment=="c")));
-logr_w_narea <- as_tibble(response_ratio(subset(narea,treatment=="w")));
-logr_f_narea <- as_tibble(response_ratio(subset(narea,treatment=="f")));
-logr_d_narea <- as_tibble(response_ratio(subset(narea,treatment=="d")));
-logr_cw_narea <- as_tibble(response_ratio(subset(narea,treatment=="cw")));
-logr_cf_narea <- as_tibble(response_ratio(subset(narea,treatment=="cf")));
-logr_cd_narea <- as_tibble(response_ratio(subset(narea,treatment=="cd")));
-logr_df_narea <- as_tibble(response_ratio(subset(narea,treatment=="df")));
-logr_dw_narea <- as_tibble(response_ratio(subset(narea,treatment=="dw")))
+logr_c_narea <- as_tibble(response_ratio_v2(subset(narea,treatment=="c")));
+logr_w_narea <- as_tibble(response_ratio_v2(subset(narea,treatment=="w")));
+logr_f_narea <- as_tibble(response_ratio_v2(subset(narea,treatment=="f")));
+logr_d_narea <- as_tibble(response_ratio_v2(subset(narea,treatment=="d")));
+logr_cw_narea <- as_tibble(response_ratio_v2(subset(narea,treatment=="cw")));
+logr_cf_narea <- as_tibble(response_ratio_v2(subset(narea,treatment=="cf")));
+logr_cd_narea <- as_tibble(response_ratio_v2(subset(narea,treatment=="cd")));
+logr_df_narea <- as_tibble(response_ratio_v2(subset(narea,treatment=="df")));
+logr_dw_narea <- as_tibble(response_ratio_v2(subset(narea,treatment=="dw")))
 
 #remove one plot from response ratio of root_shoot_ratio in advance - otherwise it will be NA
 kevin_othervars$response[kevin_othervars$response=="root_shoot_ratio" &
@@ -272,37 +321,37 @@ for (i in 1:nrow(varname)) {
   tryCatch({
     varname1 <- varname$response[i]
     df_c <- subset(kevin_othervars,treatment=="c" & response==varname1)
-    assign(paste("logr_c_", varname1,sep=""), as_tibble(response_ratio(df_c)))
+    assign(paste("logr_c_", varname1,sep=""), as_tibble(response_ratio_v2(df_c)))
     
     df_f <- subset(kevin_othervars,treatment=="f"& response==varname1)
-    assign(paste("logr_f_", varname1,sep=""), as_tibble(response_ratio(df_f)))
+    assign(paste("logr_f_", varname1,sep=""), as_tibble(response_ratio_v2(df_f)))
     
     df_w <- subset(kevin_othervars,treatment=="w"& response==varname1)
-    assign(paste("logr_w_", varname1,sep=""), as_tibble(response_ratio(df_w)))
+    assign(paste("logr_w_", varname1,sep=""), as_tibble(response_ratio_v2(df_w)))
     
     df_d <- subset(kevin_othervars,treatment=="d"& response==varname1)
-    assign(paste("logr_d_", varname1,sep=""), as_tibble(response_ratio(df_d)))
+    assign(paste("logr_d_", varname1,sep=""), as_tibble(response_ratio_v2(df_d)))
     
     df_cf <- subset(kevin_othervars,treatment=="cf" & response==varname1)
-    assign(paste("logr_cf_", varname1,sep=""), as_tibble(response_ratio(df_cf)))
+    assign(paste("logr_cf_", varname1,sep=""), as_tibble(response_ratio_v2(df_cf)))
     
     df_cw <- subset(kevin_othervars,treatment=="cw" &response==varname1)
-    assign(paste("logr_cw_", varname1,sep=""), as_tibble(response_ratio(df_cw)))
+    assign(paste("logr_cw_", varname1,sep=""), as_tibble(response_ratio_v2(df_cw)))
     
     df_fw <- subset(kevin_othervars,treatment=="fw" & response==varname1)
-    assign(paste("logr_fw_", varname1,sep=""), as_tibble(response_ratio(df_fw)))
+    assign(paste("logr_fw_", varname1,sep=""), as_tibble(response_ratio_v2(df_fw)))
     
     df_cd <- subset(kevin_othervars,treatment=="cd" & response==varname1)
-    assign(paste("logr_cd_", varname1,sep=""), as_tibble(response_ratio(df_cd)))
+    assign(paste("logr_cd_", varname1,sep=""), as_tibble(response_ratio_v2(df_cd)))
     
     df_df <- subset(kevin_othervars,treatment=="df" & response==varname1)
-    assign(paste("logr_df_", varname1,sep=""), as_tibble(response_ratio(df_df)))
+    assign(paste("logr_df_", varname1,sep=""), as_tibble(response_ratio_v2(df_df)))
     
     df_dw <- subset(kevin_othervars,treatment=="dw" & response==varname1)
-    assign(paste("logr_dw_", varname1,sep=""), as_tibble(response_ratio(df_dw)))
+    assign(paste("logr_dw_", varname1,sep=""), as_tibble(response_ratio_v2(df_dw)))
     
     df_cfw <- subset(kevin_othervars,treatment=="cfw" & response==varname1)
-    assign(paste("logr_cfw_", varname1,sep=""), as_tibble(response_ratio(df_cfw)))
+    assign(paste("logr_cfw_", varname1,sep=""), as_tibble(response_ratio_v2(df_cfw)))
   }, error=function(e){})} 
 
 #anpp filtering with unit
@@ -351,15 +400,15 @@ sla$ambient <- 1/sla$ambient; sla$elevated <- 1/sla$elevated; sla$ambient_Sd <- 
 sla$elevated_Sd <- 1/sla$elevated_Sd;sla$ambient_Se <- 1/sla$ambient_Se;sla$elevated_Se <- 1/sla$elevated_Se
 LMA <- dplyr::bind_rows(lma,sla)
 LMA$response <- "LMA"
-logr_c_LMA <- as_tibble(response_ratio(subset(LMA,treatment=="c")));
-logr_w_LMA <-  as_tibble(response_ratio(subset(LMA,treatment=="w")));
-logr_d_LMA <-  as_tibble(response_ratio(subset(LMA,treatment=="d")));
-logr_f_LMA <-  as_tibble(response_ratio(subset(LMA,treatment=="f")));
-logr_cw_LMA <-  as_tibble(response_ratio(subset(LMA,treatment=="cw")));
-logr_cd_LMA <-  as_tibble(response_ratio(subset(LMA,treatment=="cd")));
-logr_cf_LMA <-  as_tibble(response_ratio(subset(LMA,treatment=="cf")));
-logr_df_LMA <-  as_tibble(response_ratio(subset(LMA,treatment=="df")));
-logr_dw_LMA <-  as_tibble(response_ratio(subset(LMA,treatment=="dw")))
+logr_c_LMA <- as_tibble(response_ratio_v2(subset(LMA,treatment=="c")));
+logr_w_LMA <-  as_tibble(response_ratio_v2(subset(LMA,treatment=="w")));
+logr_d_LMA <-  as_tibble(response_ratio_v2(subset(LMA,treatment=="d")));
+logr_f_LMA <-  as_tibble(response_ratio_v2(subset(LMA,treatment=="f")));
+logr_cw_LMA <-  as_tibble(response_ratio_v2(subset(LMA,treatment=="cw")));
+logr_cd_LMA <-  as_tibble(response_ratio_v2(subset(LMA,treatment=="cd")));
+logr_cf_LMA <-  as_tibble(response_ratio_v2(subset(LMA,treatment=="cf")));
+logr_df_LMA <-  as_tibble(response_ratio_v2(subset(LMA,treatment=="df")));
+logr_dw_LMA <-  as_tibble(response_ratio_v2(subset(LMA,treatment=="dw")))
 
 #final, vcmax, jmax and jmax/vcmax
 kevin <- read.csv("/Users/yunpeng/data/gcme/kevin/orig_vcmax/JunkePeng_11252021.csv")
@@ -373,7 +422,7 @@ kevin <- rename(kevin, c(ambient = x_c, elevated=x_t, ambient_Sd=sd_c, elevated_
                          warmQ_e1 = w_t1, warmQ_e2 = w_t2, warmQ_e3 = w_t3, Unit=x_units))
 #adjust temperature response
 kevin$warmQ_e2[is.na(kevin$warmQ_e2)==TRUE] <- 0
-kevin$warmQ_e2 # either 0, 1, or 2.2
+#kevin$warmQ_e2 # either 0, 1, or 2.2
 
 #correct a few sampling year --> when looking at org csv
 kevin$sampling_year[is.na(kevin$sampling_year)==TRUE & kevin$site=="brandbjerg"] <- 2011
@@ -403,25 +452,25 @@ kevin_z <- kevin_z[, !(colnames(kevin_z) %in% c("elv"))]
 kevin_z$year_start <- kevin_z$start_year
 kevin_z$year_end <- kevin_z$sampling_year
 
-logr_c_vcmax <- as_tibble(response_ratio(subset(kevin_z,treatment=="c"&response=="vcmax")));
-logr_w_vcmax <-  as_tibble(response_ratio(subset(kevin_z,treatment=="w"&response=="vcmax")));
-logr_f_vcmax <-  as_tibble(response_ratio(subset(kevin_z,treatment=="f"&response=="vcmax")));
-logr_d_vcmax <- as_tibble(response_ratio(subset(kevin_z,treatment=="d"&response=="vcmax")));
-logr_cw_vcmax <-  as_tibble(response_ratio(subset(kevin_z,treatment=="cw"&response=="vcmax")));
-logr_cf_vcmax <-  as_tibble(response_ratio(subset(kevin_z,treatment=="cf"&response=="vcmax")));
-logr_cd_vcmax <-  as_tibble(response_ratio(subset(kevin_z,treatment=="cd"&response=="vcmax")));
-logr_df_vcmax <-  as_tibble(response_ratio(subset(kevin_z,treatment=="df"&response=="vcmax")));
-logr_dw_vcmax <-  as_tibble(response_ratio(subset(kevin_z,treatment=="dw"&response=="vcmax")))
+logr_c_vcmax <- as_tibble(response_ratio_v2(subset(kevin_z,treatment=="c"&response=="vcmax")));
+logr_w_vcmax <-  as_tibble(response_ratio_v2(subset(kevin_z,treatment=="w"&response=="vcmax")));
+logr_f_vcmax <-  as_tibble(response_ratio_v2(subset(kevin_z,treatment=="f"&response=="vcmax")));
+logr_d_vcmax <- as_tibble(response_ratio_v2(subset(kevin_z,treatment=="d"&response=="vcmax")));
+logr_cw_vcmax <-  as_tibble(response_ratio_v2(subset(kevin_z,treatment=="cw"&response=="vcmax")));
+logr_cf_vcmax <-  as_tibble(response_ratio_v2(subset(kevin_z,treatment=="cf"&response=="vcmax")));
+logr_cd_vcmax <-  as_tibble(response_ratio_v2(subset(kevin_z,treatment=="cd"&response=="vcmax")));
+logr_df_vcmax <-  as_tibble(response_ratio_v2(subset(kevin_z,treatment=="df"&response=="vcmax")));
+logr_dw_vcmax <-  as_tibble(response_ratio_v2(subset(kevin_z,treatment=="dw"&response=="vcmax")))
 
-logr_c_jmax <- as_tibble(response_ratio(subset(kevin_z,treatment=="c"&response=="jmax")));
-logr_w_jmax <-  as_tibble(response_ratio(subset(kevin_z,treatment=="w"&response=="jmax")));
-logr_f_jmax <-  as_tibble(response_ratio(subset(kevin_z,treatment=="f"&response=="jmax")));
-logr_d_jmax <-  as_tibble(response_ratio(subset(kevin_z,treatment=="d"&response=="jmax")));
-logr_cw_jmax <-  as_tibble(response_ratio(subset(kevin_z,treatment=="cw"&response=="jmax")));
-logr_cf_jmax <-  as_tibble(response_ratio(subset(kevin_z,treatment=="cf"&response=="jmax")));
-logr_cd_jmax <-  as_tibble(response_ratio(subset(kevin_z,treatment=="cd"&response=="jmax")));
-logr_df_jmax <-  as_tibble(response_ratio(subset(kevin_z,treatment=="df"&response=="jmax")));
-logr_dw_jmax <-  as_tibble(response_ratio(subset(kevin_z,treatment=="dw"&response=="jmax")))
+logr_c_jmax <- as_tibble(response_ratio_v2(subset(kevin_z,treatment=="c"&response=="jmax")));
+logr_w_jmax <-  as_tibble(response_ratio_v2(subset(kevin_z,treatment=="w"&response=="jmax")));
+logr_f_jmax <-  as_tibble(response_ratio_v2(subset(kevin_z,treatment=="f"&response=="jmax")));
+logr_d_jmax <-  as_tibble(response_ratio_v2(subset(kevin_z,treatment=="d"&response=="jmax")));
+logr_cw_jmax <-  as_tibble(response_ratio_v2(subset(kevin_z,treatment=="cw"&response=="jmax")));
+logr_cf_jmax <-  as_tibble(response_ratio_v2(subset(kevin_z,treatment=="cf"&response=="jmax")));
+logr_cd_jmax <-  as_tibble(response_ratio_v2(subset(kevin_z,treatment=="cd"&response=="jmax")));
+logr_df_jmax <-  as_tibble(response_ratio_v2(subset(kevin_z,treatment=="df"&response=="jmax")));
+logr_dw_jmax <-  as_tibble(response_ratio_v2(subset(kevin_z,treatment=="dw"&response=="jmax")))
 
 
 #now, newly adding bnpp, Nuptake, Asat and npp
@@ -510,37 +559,37 @@ for (i in 1:nrow(varname)) {
   tryCatch({
     varname1 <- varname$response[i]
     df_c <- subset(df_only,treatment=="c" & response==varname1)
-    assign(paste("old_logr_c_", varname1,sep=""), as_tibble(response_ratio(df_c)))
+    assign(paste("old_logr_c_", varname1,sep=""), as_tibble(response_ratio_v2(df_c)))
     
     df_f <- subset(df_only,treatment=="f"& response==varname1)
-    assign(paste("old_logr_f_", varname1,sep=""), as_tibble(response_ratio(df_f)))
+    assign(paste("old_logr_f_", varname1,sep=""), as_tibble(response_ratio_v2(df_f)))
     
     df_w <- subset(df_only,treatment=="w"& response==varname1)
-    assign(paste("old_logr_w_", varname1,sep=""), as_tibble(response_ratio(df_w)))
+    assign(paste("old_logr_w_", varname1,sep=""), as_tibble(response_ratio_v2(df_w)))
 
     df_d <- subset(df_only,treatment=="d"& response==varname1)
-    assign(paste("old_logr_d_", varname1,sep=""), as_tibble(response_ratio(df_d)))
+    assign(paste("old_logr_d_", varname1,sep=""), as_tibble(response_ratio_v2(df_d)))
     
     df_cf <- subset(df_only,treatment=="cf" & response==varname1)
-    assign(paste("old_logr_cf_", varname1,sep=""), as_tibble(response_ratio(df_cf)))
+    assign(paste("old_logr_cf_", varname1,sep=""), as_tibble(response_ratio_v2(df_cf)))
     
     df_cw <- subset(df_only,treatment=="cw" &response==varname1)
-    assign(paste("old_logr_cw_", varname1,sep=""), as_tibble(response_ratio(df_cw)))
+    assign(paste("old_logr_cw_", varname1,sep=""), as_tibble(response_ratio_v2(df_cw)))
 
     df_cd <- subset(df_only,treatment=="cd" &response==varname1)
-    assign(paste("old_logr_cd_", varname1,sep=""), as_tibble(response_ratio(df_cd)))
+    assign(paste("old_logr_cd_", varname1,sep=""), as_tibble(response_ratio_v2(df_cd)))
         
     df_fw <- subset(df_only,treatment=="fw" & response==varname1)
-    assign(paste("old_logr_fw_", varname1,sep=""), as_tibble(response_ratio(df_fw)))
+    assign(paste("old_logr_fw_", varname1,sep=""), as_tibble(response_ratio_v2(df_fw)))
     
     df_df <- subset(df_only,treatment=="df" &response==varname1)
-    assign(paste("old_logr_df_", varname1,sep=""), as_tibble(response_ratio(df_df)))
+    assign(paste("old_logr_df_", varname1,sep=""), as_tibble(response_ratio_v2(df_df)))
     
     df_dw <- subset(df_only,treatment=="dw" & response==varname1)
-    assign(paste("old_logr_dw_", varname1,sep=""), as_tibble(response_ratio(df_dw)))
+    assign(paste("old_logr_dw_", varname1,sep=""), as_tibble(response_ratio_v2(df_dw)))
     
     df_cfw <- subset(df_only,treatment=="cfw" & response==varname1)
-    assign(paste("old_logr_cfw_", varname1,sep=""), as_tibble(response_ratio(df_cfw)))
+    assign(paste("old_logr_cfw_", varname1,sep=""), as_tibble(response_ratio_v2(df_cfw)))
   }, error=function(e){})}
 # never used old_logr_c_ANPP - since it adds more data from logr_c_anpp!
 
@@ -720,7 +769,7 @@ combine_co2_c <- function(logr_c_var,logr_f_var,logr_w_var,logr_d_var,logr_cf_va
   return(lma_plot)
 }
 
-lma_plot <- combine_co2(logr_c_LMA,logr_f_LMA,logr_w_LMA,logr_d_LMA,logr_cf_LMA,logr_cw_LMA,logr_cd_LMA,"LMA")
+lma_plot <- combine_co2_c(logr_c_LMA,logr_f_LMA,logr_w_LMA,logr_d_LMA,logr_cf_LMA,logr_cw_LMA,logr_cd_LMA,"LMA")
 vcmax_plot <- combine_co2(logr_c_vcmax,logr_f_vcmax,logr_w_vcmax,logr_d_vcmax,logr_cf_vcmax,logr_cw_vcmax,logr_cd_vcmax,"vcmax")
 jmax_plot <- combine_co2(logr_c_jmax,logr_f_jmax,logr_w_jmax,logr_d_jmax,logr_cf_jmax,logr_cw_jmax,logr_cd_jmax,"jmax")
 narea_plot <- combine_co2(logr_c_narea,logr_f_narea,logr_w_narea,logr_d_narea,logr_cf_narea,logr_cw_narea,logr_cd_narea,"narea")
