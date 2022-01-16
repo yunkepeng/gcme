@@ -1177,6 +1177,85 @@ c3 <- ggplot(vcmax_final,aes_string(y="vcmax", x="jmax")) +
 plot_grid(c1,c2,c3,nrow=1,label_size = 15)+theme(plot.background=element_rect(fill="white", color="white"))
 ggsave(paste("~/data/output_gcme/colin/egu_update_overall2.jpg",sep=""),width = 15, height = 5)
 
+#alternative method -simply using mean()
+simple_mean <- function(logr_c_vcmax,logr_f_vcmax,logr_cf_vcmax,name){
+  logr_c_vcmax$sen_coef <- logr_c_vcmax$logr/log(logr_c_vcmax$co2_e/logr_c_vcmax$co2_a)
+  df_mean <- aggregate(logr_c_vcmax,by=list(logr_c_vcmax$exp), FUN=mean, na.rm=TRUE)[,c("Group.1","sen_coef")]
+  df_mean$condition <- "co2"
+  logr_cf_vcmax$sen_coef <- logr_cf_vcmax$logr/log(logr_cf_vcmax$co2_e/logr_cf_vcmax$co2_a)
+  df_mean2 <- aggregate(logr_cf_vcmax,by=list(logr_cf_vcmax$exp), FUN=mean, na.rm=TRUE)[,c("Group.1","sen_coef","co2_a","co2_e")]
+  df_mean3 <- aggregate(logr_f_vcmax,by=list(logr_f_vcmax$exp), FUN=mean, na.rm=TRUE)[,c("Group.1","logr")]
+  df_mean3$Group.1 <- paste(substr(df_mean3$Group.1,1,nchar(df_mean3$Group.1)-1),"cf",sep="")
+  
+  df_mean_additional <-Reduce(function(x,y) merge(x = x, y = y, by = c("Group.1"),all.x=TRUE),list(df_mean2,df_mean3))
+  df_mean_additional$sen_coef <- df_mean_additional$sen_coef - df_mean_additional$logr/(log(df_mean_additional$co2_e-df_mean_additional$co2_a))
+  df_mean_additional <- df_mean_additional[,c("Group.1","sen_coef")]
+  df_mean_additional$condition <- "(co2 + Nfer)/Nfer"
+  df_mean_final <- dplyr::bind_rows(df_mean,df_mean_additional)
+  names(df_mean_final) <- c("exp",name,"condition")
+  return(df_mean_final)
+}
+
+simple_mean_c <- function(logr_c_vcmax,name){
+  logr_c_vcmax$sen_coef <- logr_c_vcmax$logr/log(logr_c_vcmax$co2_e/logr_c_vcmax$co2_a)
+  df_mean <- aggregate(logr_c_vcmax,by=list(logr_c_vcmax$exp), FUN=mean, na.rm=TRUE)[,c("Group.1","sen_coef")]
+  names(df_mean) <- c("exp",name)
+  df_mean$condition<- "co2"
+  return(df_mean)
+}
+
+
+vcmax_mean <- simple_mean(logr_c_vcmax,logr_f_vcmax,logr_cf_vcmax,"vcmax")
+jmax_mean <-simple_mean(logr_c_jmax,logr_f_jmax,logr_cf_jmax,"jmax")
+nmass_mean <-simple_mean(logr_c_nmass,logr_f_nmass,logr_cf_nmass,"nmass")
+anpp_mean <-simple_mean(logr_c_anpp,logr_f_anpp,logr_cf_anpp,"anpp")
+bnpp_mean <-simple_mean_c(old_logr_c_BNPP,"bnpp")
+lai_mean <-simple_mean(logr_c_lai,logr_f_lai,logr_cf_lai,"lai")
+soil_inorg_mean <-simple_mean(old_logr_c_ninorg,old_logr_f_ninorg,old_logr_cf_ninorg,"soil_inorg_N")
+Asat_mean <-simple_mean(old_logr_c_Asat,old_logr_f_Asat,old_logr_cf_Asat,"Asat")
+c13_mean <-simple_mean_c(old_logr_c_c13,"c13")
+
+final_mean <-Reduce(function(x,y) merge(x = x, y = y, by = c("exp","condition"),all.x=TRUE),
+                    list(vcmax_mean,jmax_mean,nmass_mean,anpp_mean,bnpp_mean,lai_mean,soil_inorg_mean))
+
+p <- list()
+for(i in c(1:6)){
+  p[[i]] <- ggplot(subset(final_mean,condition=="co2"),aes_string(y=names(final_mean)[i+3],
+                                         x="vcmax")) +
+    geom_hline(yintercept=0)+geom_vline(xintercept=0)+
+    geom_point(aes(color=condition),size=3)+
+    stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
+    geom_smooth(color="black",method="lm",se=F)+labs(x="vcmax")+
+    #geom_text(aes(label=exp),hjust=1, vjust=0,check_overlap = T)+
+    theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"))}
+
+plot_grid(p[[1]],p[[2]],p[[3]],p[[4]],p[[5]],p[[6]],nrow=2,label_size = 15)+
+  theme(plot.background=element_rect(fill="white", color="white"))
+ggsave(paste("~/data/output_gcme/colin/egu_update_alternative.jpg",sep=""),width = 15, height = 10)
+
+#and update of soil N
+logr_c_nmass
+old_logr_c_ninorg$sen_coef <- old_logr_c_ninorg$logr/log(old_logr_c_ninorg$co2_e/old_logr_c_ninorg$co2_a)
+
+mean_soilN <- aggregate(old_logr_c_ninorg,by=list(old_logr_c_ninorg$exp,old_logr_c_ninorg$Data_type), FUN=mean, na.rm=TRUE)[,c("Group.1","Group.2","sen_coef")]
+names(mean_soilN) <- c("exp","variable","soil_inorg_N")
+mean_soilN$condition<- "co2"
+ninorg_main_v2 <-Reduce(function(x,y) merge(x = x, y = y, by = c("exp","condition"),all.x=TRUE),
+                        list(mean_soilN,vcmax_plot,jmax_plot,nmass_plot))
+#remove biocon
+#ninorg_main$old_ninorg[ninorg_main$old_ninorg< - 0.4] <- NA
+p <- list()
+for(i in c(1:3)){
+  p[[i]] <- ggplot(ninorg_main_v2,aes_string(y=names(ninorg_main_v2)[i+4],
+                                             x="soil_inorg_N")) +
+    geom_hline(yintercept=0)+geom_vline(xintercept=0)+
+    geom_point(aes(color=variable),size=3)+
+    stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
+    geom_smooth(color="black",method="lm",se=F)+labs(x="Inorganic soil N")+
+    theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"))}
+
+plot_grid(p[[1]],p[[2]],p[[3]],nrow=1,label_size = 15)
+ggsave(paste("~/data/output_gcme/colin/egu_update_alternative_soilN.jpg",sep=""),width = 15, height = 5)
 
 #now, warming
 # a look
