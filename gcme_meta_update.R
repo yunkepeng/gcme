@@ -497,6 +497,17 @@ df$response[df$Data_type=="fine_root_turnover"& df$Unit!="km/m3"& df$Unit!="m/m2
 #npp
 df$response[df$Data_type=="NPP"] <- "NPP" # all unit is correct
 
+#gpp
+df$response[df$Data_type=="GPP"] <- "GPP" # all unit is correct
+
+#wue - take care about unit!
+df$response[df$Data_type=="EWUE"|df$Data_type=="instantaneous_water_use_efficiency"|df$Data_type=="leaf-level_instantaneous_water_use_efficiency"|
+               df$Data_type=="water_use_efficiency"|df$Data_type=="EWUE"] <- "WUE"
+
+df$response[df$Data_type=="Ci"] <- "ci"
+
+df$response[df$Data_type=="Ci/Ca"] <- "ci_ca"
+
 #anpp - just help to fill 3 plots from popface
 df$response[df$Data_type=="ANPP"] <- "ANPP"
 #Asat
@@ -511,6 +522,9 @@ df$response[df$Data_type=="gross_N_mineralization"] <- "Nuptake"
 #root-shoot ratio (only defined in below plot - otherwise will be failed in response ratio calculation)
 df$response[df$Data_type=="root-shoot_ratio" &(df$exp_nam=="POPFACE_pa"|df$exp_nam=="POPFACE_pe"|df$exp_nam=="POPFACE_pn"|df$exp_nam=="EUROFACE4_pa"|df$exp_nam=="EUROFACE4_pe"|df$exp_nam=="EUROFACE4_pn")] <- "root_shoot"
 
+#gs
+df$response[df$Data_type=="gs"|df$Data_type=="stomatal_conductance_(gs)"|df$Data_type=="stomatal_conductance"|df$Data_type=="canopy_conductance"] <- "gs"
+
 
 #some unit is wrong - but given we had much less plots, and given that N uptake should always be flux?
 #subset(df,Data_type=="N_uptake")%>% group_by(Unit)  %>% summarise(number = n()) 
@@ -522,6 +536,8 @@ df_only <- subset(df,is.na(response)==FALSE)
 
 #newly added soil N - copied from beni
 selvars <- c("mineral_soil_N", "soil_mineral_N", "soil_NH4-N", "soil_NO3-N","soil_NO3-N_", "soil_solution_mineral_N", "soil_solution_NH4+", "soil_solution_NO3-", "soil_NO3-_", "soil_NO3-", "soil_NH4+", "soil_NH4+-N", "resin_N", "resin_NH4+", "resin_NO3-", "rhizosphere_NO3-N", "rhizosphere_NH4-N")
+#selvars2 <- c("mineral_soil_N", "soil_mineral_N", "soil_NH4-N", "soil_NO3-N","soil_NO3-N_",  "soil_NO3-_", "soil_NO3-", "soil_NH4+", "soil_NH4+-N", "resin_N", "resin_NH4+", "resin_NO3-", "rhizosphere_NO3-N", "rhizosphere_NH4-N")
+
 df_only <- df_only %>% 
   bind_rows(
     df %>% 
@@ -552,6 +568,7 @@ df_only$exp <- tolower(df_only$prev_name)
 
 df_only[grep("riceface", df_only$exp),]$exp <- gsub("\\,", "", df_only[grep("riceface", df_only$exp),]$exp)
 #rice face has more lma, narea,nmass data - needs updated
+
 
 
 #3. divide into dataframe
@@ -592,6 +609,63 @@ for (i in 1:nrow(varname)) {
     assign(paste("old_logr_cfw_", varname1,sep=""), as_tibble(response_ratio_v2(df_cfw)))
   }, error=function(e){})}
 # never used old_logr_c_ANPP - since it adds more data from logr_c_anpp!
+
+#check unit
+Asat_unit <- old_logr_c_Asat %>% group_by(exp,Unit)  %>% summarise(number = n())
+gs_unit <- old_logr_c_gs %>% group_by(exp,Unit)  %>% summarise(number = n())
+Asat_gs <- merge(Asat_unit,gs_unit,by=c("exp"),all.x=TRUE)
+
+#correct unit and calculate Ca - Asat/gs
+#remove some strange unit that cannot be combined -->now all in umol/m2/s
+old_logr_c_Asat$ambient[old_logr_c_Asat$exp=="st_face_ld_c" & (old_logr_c_Asat$Unit=="mmol/g*s" | old_logr_c_Asat$Unit=="mol/g*s")] <- NA
+old_logr_c_Asat$elevated[old_logr_c_Asat$exp=="st_face_ld_c" & (old_logr_c_Asat$Unit=="mmol/g*s" | old_logr_c_Asat$Unit=="mol/g*s")] <- NA
+
+old_logr_c_Asat$ambient[old_logr_c_Asat$exp=="st_face_pu_c" & (old_logr_c_Asat$Unit=="mmol/g*s" | old_logr_c_Asat$Unit=="mol/g*s")] <- NA
+old_logr_c_Asat$elevated[old_logr_c_Asat$exp=="st_face_pu_c" & (old_logr_c_Asat$Unit=="mmol/g*s" | old_logr_c_Asat$Unit=="mol/g*s")] <- NA
+old_logr_c_Asat <- subset(old_logr_c_Asat,is.na(ambient)==FALSE)
+
+#gs: making unit within plot consistent (from mmol to mol)
+old_logr_c_gs$ambient[old_logr_c_gs$exp=="euroface4_pe_c" & old_logr_c_gs$Unit=="mmol/m2/s"] <- old_logr_c_gs$ambient[old_logr_c_gs$exp=="euroface4_pe_c" & old_logr_c_gs$Unit=="mmol/m2/s"]/1000
+old_logr_c_gs$ambient[old_logr_c_gs$exp=="facts_ii_face3_pt_c" & old_logr_c_gs$Unit=="mmol/m2/s"] <- old_logr_c_gs$ambient[old_logr_c_gs$exp=="facts_ii_face3_pt_c" & old_logr_c_gs$Unit=="mmol/m2/s"]/1000
+old_logr_c_gs$ambient[old_logr_c_gs$exp=="facts_ii_face4_bp_c" & old_logr_c_gs$Unit=="mmol/m2/s"] <- old_logr_c_gs$ambient[old_logr_c_gs$exp=="facts_ii_face4_bp_c" & old_logr_c_gs$Unit=="mmol/m2/s"]/1000
+old_logr_c_gs$ambient[old_logr_c_gs$exp=="nevada_desert_face_c" & old_logr_c_gs$Unit=="mmol/m2/sec"] <- old_logr_c_gs$ambient[old_logr_c_gs$exp=="nevada_desert_face_c" & old_logr_c_gs$Unit=="mmol/m2/sec"]/1000
+old_logr_c_gs$ambient[old_logr_c_gs$exp=="ornerp_liqui2_c" & old_logr_c_gs$Unit=="mmol/m2*s"] <- old_logr_c_gs$ambient[old_logr_c_gs$exp=="ornerp_liqui2_c" & old_logr_c_gs$Unit=="mmol/m2*s"]/1000
+
+#gs: all converting from from H2O to CO2
+old_logr_c_gs$ambient[old_logr_c_gs$exp=="brandbjerg_c"] <- old_logr_c_gs$ambient[old_logr_c_gs$exp=="brandbjerg_c"]*44/18
+old_logr_c_gs$ambient[old_logr_c_gs$exp=="riceface_china_33n_120e_ar_1_cv"] <- old_logr_c_gs$ambient[old_logr_c_gs$exp=="riceface_china_33n_120e_ar_1_cv"]*44/18
+old_logr_c_gs$ambient[old_logr_c_gs$exp=="riceface_china_33n_120e_ar_1_c"] <- old_logr_c_gs$ambient[old_logr_c_gs$exp=="riceface_china_33n_120e_ar_1_c"]*44/18
+
+old_logr_c_gs$elevated[old_logr_c_gs$exp=="euroface4_pe_c" & old_logr_c_gs$Unit=="mmol/m2/s"] <- old_logr_c_gs$elevated[old_logr_c_gs$exp=="euroface4_pe_c" & old_logr_c_gs$Unit=="mmol/m2/s"]/1000
+old_logr_c_gs$elevated[old_logr_c_gs$exp=="facts_ii_face3_pt_c" & old_logr_c_gs$Unit=="mmol/m2/s"] <- old_logr_c_gs$elevated[old_logr_c_gs$exp=="facts_ii_face3_pt_c" & old_logr_c_gs$Unit=="mmol/m2/s"]/1000
+old_logr_c_gs$elevated[old_logr_c_gs$exp=="facts_ii_face4_bp_c" & old_logr_c_gs$Unit=="mmol/m2/s"] <- old_logr_c_gs$elevated[old_logr_c_gs$exp=="facts_ii_face4_bp_c" & old_logr_c_gs$Unit=="mmol/m2/s"]/1000
+old_logr_c_gs$elevated[old_logr_c_gs$exp=="nevada_desert_face_c" & old_logr_c_gs$Unit=="mmol/m2/sec"] <- old_logr_c_gs$elevated[old_logr_c_gs$exp=="nevada_desert_face_c" & old_logr_c_gs$Unit=="mmol/m2/sec"]/1000
+old_logr_c_gs$elevated[old_logr_c_gs$exp=="ornerp_liqui2_c" & old_logr_c_gs$Unit=="mmol/m2*s"] <- old_logr_c_gs$elevated[old_logr_c_gs$exp=="ornerp_liqui2_c" & old_logr_c_gs$Unit=="mmol/m2*s"]/1000
+
+old_logr_c_gs$elevated[old_logr_c_gs$exp=="brandbjerg_c"] <- old_logr_c_gs$elevated[old_logr_c_gs$exp=="brandbjerg_c"]*44/18
+old_logr_c_gs$elevated[old_logr_c_gs$exp=="riceface_china_33n_120e_ar_1_cv"] <- old_logr_c_gs$elevated[old_logr_c_gs$exp=="riceface_china_33n_120e_ar_1_cv"]*44/18
+old_logr_c_gs$elevated[old_logr_c_gs$exp=="riceface_china_33n_120e_ar_1_c"] <- old_logr_c_gs$elevated[old_logr_c_gs$exp=="riceface_china_33n_120e_ar_1_c"]*44/18
+
+#gs data must be converting from mmol to mol
+old_logr_c_gs$Unit[old_logr_c_gs$exp=="st_face_ld_c"]
+old_logr_c_gs$ambient[old_logr_c_gs$exp=="st_face_ld_c"] <- old_logr_c_gs$ambient[old_logr_c_gs$exp=="st_face_ld_c"]/1000
+old_logr_c_gs$ambient[old_logr_c_gs$exp=="st_face_pu_c"] <- old_logr_c_gs$ambient[old_logr_c_gs$exp=="st_face_pu_c"]/1000
+
+old_logr_c_gs$elevated[old_logr_c_gs$exp=="st_face_ld_c"] <- old_logr_c_gs$elevated[old_logr_c_gs$exp=="st_face_ld_c"]/1000
+old_logr_c_gs$elevated[old_logr_c_gs$exp=="st_face_pu_c"] <- old_logr_c_gs$elevated[old_logr_c_gs$exp=="st_face_pu_c"]/1000
+
+Asat_mean <- aggregate(old_logr_c_Asat,by=list(old_logr_c_Asat$exp,old_logr_c_Asat$Unit), FUN=mean, na.rm=TRUE)[,c("Group.1","co2_a","co2_e","ambient","elevated")]
+gs_mean <- aggregate(old_logr_c_gs,by=list(old_logr_c_gs$exp), FUN=mean, na.rm=TRUE)[,c("Group.1","co2_a","co2_e","ambient","elevated")]
+Asat_gs_mean <- merge(Asat_mean,gs_mean,by=c("Group.1"),all.x=TRUE)
+Asat_gs_mean$ambient_ratio <- Asat_gs_mean$ambient.x/Asat_gs_mean$ambient.y
+Asat_gs_mean$elevated_ratio <- Asat_gs_mean$elevated.x/Asat_gs_mean$elevated.y
+
+#since n_plot = 1, magnitude must be wrong but we don't know!
+Asat_gs_mean$ambient_ratio[Asat_gs_mean$Group.1=="riceface_china_33n_120e_ar_1_cv"] <- NA
+Asat_gs_mean$ambient_ratio[Asat_gs_mean$Group.1=="riceface_china_33n_120e_ar_1_c"] <- NA
+Asat_gs_mean$elevated_ratio[Asat_gs_mean$Group.1=="riceface_china_33n_120e_ar_1_cv"] <- NA
+Asat_gs_mean$elevated_ratio[Asat_gs_mean$Group.1=="riceface_china_33n_120e_ar_1_c"] <- NA
+summary(Asat_gs_mean)
 
 #now, revising figures
 #this function creates to combine cf plots (high-N) into c-only plot
@@ -790,6 +864,20 @@ old_anpp_plot <- combine_co2_cf(old_logr_c_ANPP,old_logr_f_ANPP,old_logr_w_ANPP,
 old_logr_c_ninorg$logr[old_logr_c_ninorg$logr==0] <- NA
 old_ninorg_plot <- combine_co2_cfw(old_logr_c_ninorg,old_logr_f_ninorg,old_logr_w_ninorg,old_logr_d_ninorg,old_logr_cf_ninorg,old_logr_cw_ninorg,old_logr_cd_ninorg,"old_ninorg")
 
+#gpp
+gpp_plot <- combine_co2_c(old_logr_c_GPP,old_logr_f_GPP,old_logr_w_GPP,old_logr_d_GPP,old_logr_cf_GPP,old_logr_cw_GPP,old_logr_cd_GPP,"gpp")
+
+#Asat, Amax, c13 and gs
+Asat_plot <- combine_co2(old_logr_c_Asat,old_logr_f_Asat,old_logr_w_Asat,old_logr_d_Asat,old_logr_cf_Asat,old_logr_cw_Asat,old_logr_cd_Asat,"Asat")
+Amax_plot <- combine_co2_c(old_logr_c_Amax,old_logr_f_Amax,old_logr_w_Amax,old_logr_d_Amax,old_logr_cf_Amax,old_logr_cw_Amax,old_logr_cd_Amax,"Amax")
+c13_plot <- combine_co2_c(old_logr_c_c13,old_logr_f_c13,old_logr_w_c13,old_logr_d_c13,old_logr_cf_c13,old_logr_cw_c13,old_logr_cd_c13,"c13")
+gs_plot <- combine_co2(old_logr_c_gs,old_logr_f_gs,old_logr_w_gs,old_logr_d_gs,old_logr_cf_gs,old_logr_cw_gs,old_logr_cd_gs,"gs")
+
+#wue, ci, c1
+wue_plot <- combine_co2_c(old_logr_c_WUE,old_logr_f_WUE,old_logr_w_WUE,old_logr_d_WUE,old_logr_cf_WUE,old_logr_cw_WUE,old_logr_cd_WUE,"wue")
+ci_plot <- combine_co2_c(old_logr_c_ci,old_logr_f_ci,old_logr_w_ci,old_logr_d_ci,old_logr_cf_ci,old_logr_cw_ci,old_logr_cd_ci,"ci")
+ci_ca_plot <- combine_co2_c(old_logr_c_ci_ca,old_logr_f_ci_ca,old_logr_w_ci_ca,old_logr_d_ci_ca,old_logr_cf_ci_ca,old_logr_cw_ci_ca,old_logr_cd_ci_ca,"ci_ca")
+
 vcmax_plot_nfer <- combine_co2_c(logr_cf_vcmax,logr_f_vcmax,logr_w_vcmax,logr_d_vcmax,logr_cf_vcmax,logr_cw_vcmax,logr_cd_vcmax,"vcmax")
 #check N fertilization's simple effect
 vcmax_plot %>% filter(exp %in% c("duke2_c","euroface4_pa_c","euroface4_pe_c","euroface4_pn_c","new_zealand_face_c"))
@@ -803,6 +891,10 @@ anpp_plot <- rbind(anpp_plot,new_anpp)
 vcmax_main <-Reduce(function(x,y) merge(x = x, y = y, by = c("exp","condition"),all.x=TRUE),
                     list(vcmax_plot,jmax_plot,anpp_plot,lma_plot,narea_plot,nmass_plot,
                          leaf_cn_plot,lai_plot,bnpp_plot,Nuptake_plot,npp_plot,soilN_plot,soil_total_N_plot,old_root_shoot_plot))
+
+anpp_compare <-Reduce(function(x,y) merge(x = x, y = y, by = c("exp","condition"),all.x=TRUE),
+                    list(anpp_plot,old_anpp_plot))
+#needs double check
 vcmax_main$soilN[vcmax_main$soilN==0] <- NA
 vcmax_main$soilN[vcmax_main$soilN< -4] <- NA
 
@@ -937,6 +1029,50 @@ plot_grid(p[[1]],p[[2]],p[[3]],nrow=1,label_size = 15)+
   theme(plot.background=element_rect(fill="white", color="white"))
 
 ggsave(paste("~/data/output_gcme/colin/egu_update_soil.jpg",sep=""),width = 20, height = 5)
+
+#newly combine from combination
+#have a look at soil data
+avail_N <- subset(df_only,response=="ninorg") %>% filter(exp %in%vcmax_main$exp)
+avail_N2 <- avail_N[,c("exp","ambient","elevated","co2_a","co2_e","Data_type","Unit")]
+avail_N2$variable <- NA
+avail_N2$variable[avail_N2$Data_type=="mineral_soil_N"|avail_N2$Data_type=="soil_mineral_N"|avail_N2$Data_type=="resin_N"] <- "mineral_N"
+avail_N2$variable[avail_N2$Data_type=="soil_NH4"|avail_N2$Data_type=="soil_NH4+"|avail_N2$Data_type=="soil_NH4+-N"|avail_N2$Data_type=="soil_NH4-N"] <- "NH4"
+avail_N2$variable[avail_N2$Data_type=="soil_NO3-N"|avail_N2$Data_type=="soil_NO3-N_"|avail_N2$Data_type=="soil_NO3-_"|avail_N2$Data_type=="soil_NO3-"] <- "NO3"
+#now already exclude solution N, and |avail_N2$Data_type=="resin_NH4+"|avail_N2$Data_type=="rhizosphere_NH4-N"
+
+avail_N2 <- subset(avail_N2,is.na(variable)==FALSE)
+avail_N3 <- aggregate(avail_N2,by=list(avail_N2$exp,avail_N2$variable), FUN=mean, na.rm=TRUE)
+avail_N3$exp <- avail_N3$Group.1;avail_N3$variable <- avail_N3$Group.2; avail_N3 <- avail_N3[,c("exp","ambient","elevated","co2_a","co2_e","variable")]
+avail_option <- subset(avail_N3,exp=="biocon_c"|exp=="brandbjerg_c"|exp=="duke2_c"|exp=="giface_c")
+#perfectly divided by 4 + 4 --> combine them
+avail_option
+avail_option[1,2] <- avail_option[1,2] +avail_option[5,2];avail_option[1,3] <- avail_option[1,3] +avail_option[5,3];
+avail_option[2,2] <- avail_option[2,2] +avail_option[6,2];avail_option[2,3] <- avail_option[2,3] +avail_option[6,3];
+avail_option[3,2] <- avail_option[3,2] +avail_option[7,2];avail_option[3,3] <- avail_option[3,3] +avail_option[7,3];
+avail_option[4,2] <- avail_option[4,2] +avail_option[8,2];avail_option[4,3] <- avail_option[4,3] +avail_option[8,3]
+avail_option_final <- avail_option[1:4,]
+avail_option_final$variable <- "NH4+NO3"
+soil_mineral <- rbind(avail_N3[1:7,],avail_option_final)
+soil_mineral$mineral_soilN <- log(soil_mineral$elevated/soil_mineral$ambient)/log(soil_mineral$co2_e/soil_mineral$co2_a)
+
+soil_NH4 <- subset(avail_N3,variable=="NH4")
+soil_NH4$NH4 <- log(soil_NH4$elevated/soil_NH4$ambient)/log(soil_NH4$co2_e/soil_NH4$co2_a)
+
+soil_NO3 <- subset(avail_N3,variable=="NO3")
+soil_NO3$NO3 <- log(soil_NO3$elevated/soil_NO3$ambient)/log(soil_NO3$co2_e/soil_NO3$co2_a)
+
+new_soil_vcmax <-Reduce(function(x,y) merge(x = x, y = y, by = c("exp"),all.x=TRUE),
+                     list(vcmax_main,soil_mineral[c("exp","variable","mineral_soilN")],soil_NH4[,c("exp","NH4")],soil_NO3[,c("exp","NO3")]))
+
+ggplot(subset(new_soil_vcmax,condition=="co2"),aes_string(y="vcmax",x="mineral_soilN")) +
+  geom_hline(yintercept=0)+geom_vline(xintercept=0)+
+  geom_point(aes(color=variable),size=3)+
+  geom_text(aes(label=exp,hjust=1, vjust=0,check_overlap = T))+
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
+  geom_smooth(color="black",method="lm",se=F)+labs(x="Inorganic soil N")+
+  theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"))
+ggsave(paste("~/data/output_gcme/colin/egu_update_soil_final.jpg",sep=""),width = 10, height = 5)
+
 
 #now, combined with prediction data from gcme_vcmax
 #the prediction of vcmax only includes c, w and cw - but having same value in cf
@@ -1086,12 +1222,40 @@ a3
 
 
 # now, newly adding smith's data
-smith_all <- read.csv("/Users/yunpeng/data/smith_keenan_gcb/gcb_co2/pred_vcmax.csv")
-smith_all_removal <- subset(smith_all,exp_nam!="BioCON" & exp_nam!="ChinaRiceFACE" & exp_nam!="DukeFACE" & exp_nam!="EUROPOPFACE" & exp_nam!="NevadaFACE" & exp_nam!="SwissFACE")
-smith_all_simple <- smith_all_removal[,c("SiteID","pft","sen_coef_v","sen_coef_j","pred_vcmax25_coef","pred_jmax25_coef")]
 
-smith_all_plotmean <- aggregate(smith_all_simple,by=list(smith_all_simple$SiteID,smith_all_simple$pft), FUN=mean, na.rm=TRUE)[,c("Group.1","Group.2","sen_coef_v","sen_coef_j","pred_vcmax25_coef","pred_jmax25_coef")]
-names(smith_all_plotmean) <- c("exp","ecosystem","vcmax","jmax","pred_vcmax","pred_jmax")
+#new file
+#GlycineCE -->ecocells_w (NOT ENTERED)
+#OakOTC --> mi_c
+#ORNL -->ornerp_liqui_c
+#PineOTC --> Christchurch_pr_c
+#RichmondGH --> australiacotton_c
+# UIAPine --> ua_otc_c
+#PHACE --> phace_c
+
+#old file
+#AspenFACE -->Rhine-aspenFACE_c (important!)
+#BilyKriz --> Bily_Kriz_c
+#Headley (remove Quercus	rubra and only keep) --> Headley_qp_c
+#viesalm --> Vielsalm_c
+  
+smith_all <- read.csv("/Users/yunpeng/data/smith_keenan_gcb/gcb_co2/pred_vcmax.csv")
+
+smith_all_removal <- subset(smith_all,exp_nam!="NZFACE" &exp_nam!="BioCON" & exp_nam!="ChinaRiceFACE" & exp_nam!="DukeFACE" & exp_nam!="EUROPOPFACE" & exp_nam!="NevadaFACE" & exp_nam!="SwissFACE")
+smith_all_simple <- smith_all_removal[,c("SiteID","pft","sen_coef_v","sen_coef_j","pred_vcmax25_coef","pred_jmax25_coef","lon","lat","z")]
+
+smith_all_plotmean <- aggregate(smith_all_simple,by=list(smith_all_simple$SiteID,smith_all_simple$pft), FUN=mean, na.rm=TRUE)[,c("Group.1","Group.2","sen_coef_v","sen_coef_j","pred_vcmax25_coef","pred_jmax25_coef","lon","lat","z")]
+names(smith_all_plotmean) <- c("exp","ecosystem","vcmax","jmax","pred_vcmax","pred_jmax","lon","lat","z")
+smith_all_plotmean$exp[smith_all_plotmean$exp=="OakOTC"] <- "mi_c";
+smith_all_plotmean$exp[smith_all_plotmean$exp=="ORNL"] <- "ornerp_liqui_c";
+smith_all_plotmean$exp[smith_all_plotmean$exp=="PineOTC"] <- "Christchurch_pr_c";
+smith_all_plotmean$exp[smith_all_plotmean$exp=="RichmondGH"] <- "australiacotton_c";
+smith_all_plotmean$exp[smith_all_plotmean$exp=="UIAPine"] <- "ua_otc_c";
+smith_all_plotmean$exp[smith_all_plotmean$exp=="PHACE"] <- "phace_c";
+smith_all_plotmean$exp[smith_all_plotmean$exp=="AspenFACE"] <- "rhine-aspenface_c";
+smith_all_plotmean$exp[smith_all_plotmean$exp=="BilyKriz"] <- "bily_kriz_c";
+smith_all_plotmean$exp[smith_all_plotmean$exp=="Headley"] <- "headley_qp_c";
+smith_all_plotmean$exp[smith_all_plotmean$exp=="Viesalm"] <- "vielsalm_c"
+smith_combined <- smith_all_plotmean[,c("exp","ecosystem","vcmax","jmax")]
 
 smith_all_plotmean$obs_jv <- smith_all_plotmean$jmax -  smith_all_plotmean$vcmax
 smith_all_plotmean$pred_jv <- smith_all_plotmean$pred_jmax -  smith_all_plotmean$pred_vcmax
@@ -1215,17 +1379,19 @@ soil_inorg_mean <-simple_mean(old_logr_c_ninorg,old_logr_f_ninorg,old_logr_cf_ni
 Asat_mean <-simple_mean(old_logr_c_Asat,old_logr_f_Asat,old_logr_cf_Asat,"Asat")
 c13_mean <-simple_mean_c(old_logr_c_c13,"c13")
 
+((-8.4+1000)/(old_logr_c_c13$ambient+1000)-1)*1000 # -8.4: For the same year the mean atmospheric d13CCO2 reported from Mauna Loa is -8.4‰ (Keeling et al., 2001).
+
 final_mean <-Reduce(function(x,y) merge(x = x, y = y, by = c("exp","condition"),all.x=TRUE),
                     list(vcmax_mean,jmax_mean,nmass_mean,anpp_mean,bnpp_mean,lai_mean,soil_inorg_mean))
 
 p <- list()
 for(i in c(1:6)){
-  p[[i]] <- ggplot(subset(final_mean,condition=="co2"),aes_string(y=names(final_mean)[i+3],
-                                         x="vcmax")) +
+  p[[i]] <- ggplot(subset(final_mean,condition=="co2"),aes_string(x=names(final_mean)[i+3],
+                                         y="vcmax")) +
     geom_hline(yintercept=0)+geom_vline(xintercept=0)+
     geom_point(aes(color=condition),size=3)+
     stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
-    geom_smooth(color="black",method="lm",se=F)+labs(x="vcmax")+
+    geom_smooth(color="black",method="lm",se=F)+labs(y="vcmax")+
     #geom_text(aes(label=exp),hjust=1, vjust=0,check_overlap = T)+
     theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"))}
 
@@ -1256,6 +1422,22 @@ for(i in c(1:3)){
 
 plot_grid(p[[1]],p[[2]],p[[3]],nrow=1,label_size = 15)
 ggsave(paste("~/data/output_gcme/colin/egu_update_alternative_soilN.jpg",sep=""),width = 15, height = 5)
+
+
+#combined GCME + Smith
+smith_combined$condition <- "co2"
+smith_vcmax <- smith_combined[,c("exp","vcmax","condition")]
+smith_jmax <- smith_combined[,c("exp","jmax","condition")]
+vcmax_plot2 <- rbind(vcmax_plot,smith_vcmax)
+jmax_plot2 <- rbind(jmax_plot,smith_jmax)
+
+vcmax_all <-Reduce(function(x,y) merge(x = x, y = y, by = c("exp","condition"),all=TRUE),
+                    list(vcmax_plot2,jmax_plot2,Asat_plot,gs_plot,Amax_plot,c13_plot,ci_ca_plot,ci_plot,wue_plot,anpp_plot,lma_plot,narea_plot,nmass_plot,
+                         leaf_cn_plot,lai_plot,bnpp_plot,Nuptake_plot,npp_plot,soilN_plot,soil_total_N_plot,old_root_shoot_plot,old_ninorg_plot,gpp_plot))
+
+
+
+
 
 #now, warming
 # a look
