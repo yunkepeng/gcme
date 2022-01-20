@@ -654,12 +654,14 @@ old_logr_c_gs$ambient[old_logr_c_gs$exp=="st_face_pu_c"] <- old_logr_c_gs$ambien
 old_logr_c_gs$elevated[old_logr_c_gs$exp=="st_face_ld_c"] <- old_logr_c_gs$elevated[old_logr_c_gs$exp=="st_face_ld_c"]/1000
 old_logr_c_gs$elevated[old_logr_c_gs$exp=="st_face_pu_c"] <- old_logr_c_gs$elevated[old_logr_c_gs$exp=="st_face_pu_c"]/1000
 
+#hist(old_logr_c_gs$ambient[old_logr_c_gs$exp=="nevada_desert_face_c"])
+#already check distribution of all plots --> good
+
 Asat_mean <- aggregate(old_logr_c_Asat,by=list(old_logr_c_Asat$exp,old_logr_c_Asat$Unit), FUN=mean, na.rm=TRUE)[,c("Group.1","co2_a","co2_e","ambient","elevated")]
 gs_mean <- aggregate(old_logr_c_gs,by=list(old_logr_c_gs$exp), FUN=mean, na.rm=TRUE)[,c("Group.1","co2_a","co2_e","ambient","elevated")]
 Asat_gs_mean <- merge(Asat_mean,gs_mean,by=c("Group.1"),all.x=TRUE)
 Asat_gs_mean$ambient_ratio <- Asat_gs_mean$ambient.x/Asat_gs_mean$ambient.y
 Asat_gs_mean$elevated_ratio <- Asat_gs_mean$elevated.x/Asat_gs_mean$elevated.y
-
 #since n_plot = 1, magnitude must be wrong but we don't know!
 Asat_gs_mean$ambient_ratio[Asat_gs_mean$Group.1=="riceface_china_33n_120e_ar_1_cv"] <- NA
 Asat_gs_mean$ambient_ratio[Asat_gs_mean$Group.1=="riceface_china_33n_120e_ar_1_c"] <- NA
@@ -667,6 +669,54 @@ Asat_gs_mean$elevated_ratio[Asat_gs_mean$Group.1=="riceface_china_33n_120e_ar_1_
 Asat_gs_mean$elevated_ratio[Asat_gs_mean$Group.1=="riceface_china_33n_120e_ar_1_c"] <- NA
 summary(Asat_gs_mean)
 
+Asat_gs_mean$ambient_ci <- Asat_gs_mean$co2_a.x - Asat_gs_mean$ambient_ratio 
+Asat_gs_mean$elevated_ci <- Asat_gs_mean$co2_e.x - Asat_gs_mean$elevated_ratio 
+
+Asat_gs_mean$ci <- log(Asat_gs_mean$elevated_ci/Asat_gs_mean$ambient_ci)/log(Asat_gs_mean$co2_e.x/Asat_gs_mean$co2_a.x) 
+Asat_gs_mean_final <- subset(Asat_gs_mean,is.na(ci)==FALSE)[,c("Group.1","ci","co2_a.x","co2_e.x","ambient_ci","elevated_ci")]
+names(Asat_gs_mean_final) <- c("exp","ci","co2_a","co2_e","ambient_ci","elevated_ci")
+Asat_gs_mean_final$data <- "Asat/gs"
+
+#then ci, ca
+old_logr_c_ci_mean <- aggregate(old_logr_c_ci,by=list(old_logr_c_ci$exp), FUN=mean, na.rm=TRUE)[,c("Group.1","co2_a","co2_e","ambient","elevated")]
+old_logr_c_ci_mean$ci <- log(old_logr_c_ci_mean$elevated/old_logr_c_ci_mean$ambient)/log(old_logr_c_ci_mean$co2_e/old_logr_c_ci_mean$co2_a) 
+old_logr_c_ci_mean <- old_logr_c_ci_mean[,c("Group.1","ci","co2_a","co2_e","ambient","elevated")]
+names(old_logr_c_ci_mean) <- c("exp","ci","co2_a","co2_e","ambient_ci","elevated_ci")
+old_logr_c_ci_mean$data <- "ci"
+
+old_logr_c_ci_ca_mean  <- aggregate(old_logr_c_ci_ca,by=list(old_logr_c_ci_ca$exp), FUN=mean, na.rm=TRUE)[,c("Group.1","co2_a","co2_e","ambient","elevated")]
+old_logr_c_ci_ca_mean$ci <- log((old_logr_c_ci_ca_mean$elevated*old_logr_c_ci_ca_mean$co2_e)/(old_logr_c_ci_ca_mean$ambient*old_logr_c_ci_ca_mean$co2_a))/log(old_logr_c_ci_ca_mean$co2_e/old_logr_c_ci_ca_mean$co2_a) 
+old_logr_c_ci_ca_mean$ambient <- old_logr_c_ci_ca_mean$ambient*old_logr_c_ci_ca_mean$co2_a
+old_logr_c_ci_ca_mean$elevated <- old_logr_c_ci_ca_mean$elevated*old_logr_c_ci_ca_mean$co2_e
+
+old_logr_c_ci_ca_mean <- old_logr_c_ci_ca_mean[,c("Group.1","ci","co2_a","co2_e","ambient","elevated")]
+names(old_logr_c_ci_ca_mean) <- c("exp","ci","co2_a","co2_e","ambient_ci","elevated_ci")
+old_logr_c_ci_ca_mean$data <- "ci"
+old_logr_c_ci_ca_mean <- subset(old_logr_c_ci_ca_mean,exp=="swissface_trifolium2_c") #remove another since it was already covered
+
+#finally, c13
+
+old_logr_c_c13$delta_ambient <- ((-8.4+1000)/(old_logr_c_c13$ambient+1000)-1)*1000 # -8.4: For the same year the mean atmospheric d13CCO2 reported from Mauna Loa is -8.4‰ (Keeling et al., 2001).
+old_logr_c_c13$delta_elevated <- ((-8.4+1000)/(old_logr_c_c13$elevated+1000)-1)*1000 
+
+old_logr_c_c13$ci_ambient <- old_logr_c_c13$co2_a * (old_logr_c_c13$delta_ambient - 4.4)/(27-4.4)
+old_logr_c_c13$ci_elevated <- old_logr_c_c13$co2_e * (old_logr_c_c13$delta_elevated - 4.4)/(27-4.4)
+
+old_logr_c_c13_mean <- aggregate(old_logr_c_c13,by=list(old_logr_c_c13$exp), FUN=mean, na.rm=TRUE)[,c("Group.1","co2_a","co2_e","ci_ambient","ci_elevated")]
+old_logr_c_c13_mean$ci <- log(old_logr_c_c13_mean$ci_elevated/old_logr_c_c13_mean$ci_ambient)/log(old_logr_c_c13_mean$co2_e/old_logr_c_c13_mean$co2_a) 
+old_logr_c_c13_mean <- old_logr_c_c13_mean[,c("Group.1","ci","co2_a","co2_e","ci_ambient","ci_elevated")]
+names(old_logr_c_c13_mean) <- c("exp","ci","co2_a","co2_e","ambient_ci","elevated_ci")
+old_logr_c_c13_mean$data <- "c13"
+
+ci_final <- dplyr::bind_rows(Asat_gs_mean_final,old_logr_c_ci_mean,old_logr_c_ci_ca_mean,old_logr_c_c13_mean)
+#mark 4 replcated plots
+ci_final$data[ci_final$exp=="soyfacesoy1_c" & ci_final$data=="Asat/gs"] <- "Asat/gs_replicated"
+ci_final$data[ci_final$exp=="soyfacesoy2_c"& ci_final$data=="Asat/gs"] <- "Asat/gs_replicated"
+ci_final$data[ci_final$exp=="swissface_trifolium2_c"& ci_final$data=="Asat/gs"] <- "Asat/gs_replicated"
+ci_final$data[ci_final$exp=="facts_ii_face3_pt_c"& ci_final$data=="Asat/gs"] <- "Asat/gs_replicated"
+
+ci_final_removal <- subset(ci_final,data!="Asat/gs_replicated")
+ci_final_removal$ci_increase <- ci_final_removal$elevated_ci-ci_final_removal$ambient_ci
 #now, revising figures
 #this function creates to combine cf plots (high-N) into c-only plot
 # log (cf/a) - log(f/a) = log(cf/f)
@@ -1013,7 +1063,7 @@ ggsave(paste("~/data/output_gcme/colin/egu_update_lai2.jpg",sep=""),width = 15, 
 ninorg_main <-Reduce(function(x,y) merge(x = x, y = y, by = c("exp","condition"),all.x=TRUE),
                   list(old_ninorg_plot,vcmax_plot,jmax_plot,nmass_plot))
 #remove biocon
-ninorg_main$old_ninorg[ninorg_main$old_ninorg< - 0.4] <- NA
+#ninorg_main$old_ninorg[ninorg_main$old_ninorg< - 0.4] <- NA
 p <- list()
 for(i in c(1:3)){
   p[[i]] <- ggplot(ninorg_main,aes_string(y=names(ninorg_main)[i+3],
@@ -1379,7 +1429,6 @@ soil_inorg_mean <-simple_mean(old_logr_c_ninorg,old_logr_f_ninorg,old_logr_cf_ni
 Asat_mean <-simple_mean(old_logr_c_Asat,old_logr_f_Asat,old_logr_cf_Asat,"Asat")
 c13_mean <-simple_mean_c(old_logr_c_c13,"c13")
 
-((-8.4+1000)/(old_logr_c_c13$ambient+1000)-1)*1000 # -8.4: For the same year the mean atmospheric d13CCO2 reported from Mauna Loa is -8.4‰ (Keeling et al., 2001).
 
 final_mean <-Reduce(function(x,y) merge(x = x, y = y, by = c("exp","condition"),all.x=TRUE),
                     list(vcmax_mean,jmax_mean,nmass_mean,anpp_mean,bnpp_mean,lai_mean,soil_inorg_mean))
@@ -1425,18 +1474,50 @@ ggsave(paste("~/data/output_gcme/colin/egu_update_alternative_soilN.jpg",sep="")
 
 
 #combined GCME + Smith
-smith_combined$condition <- "co2"
-smith_vcmax <- smith_combined[,c("exp","vcmax","condition")]
-smith_jmax <- smith_combined[,c("exp","jmax","condition")]
-vcmax_plot2 <- rbind(vcmax_plot,smith_vcmax)
-jmax_plot2 <- rbind(jmax_plot,smith_jmax)
+smith_combined$condition <- "co2_smith"
+smith_combined$exp <- tolower(smith_combined$exp)
+names(smith_combined) <- c("exp","ecosystem_smith","vcmax_smith","jmax_smith","condition_smith")
+smith_vcmax <- smith_combined[,c("exp","vcmax_smith","condition_smith")]
+smith_jmax <- smith_combined[,c("exp","jmax_smith","ecosystem_smith")]
+#vcmax_plot2 <- rbind(vcmax_plot,smith_vcmax)
+#jmax_plot2 <- rbind(jmax_plot,smith_jmax)
 
 vcmax_all <-Reduce(function(x,y) merge(x = x, y = y, by = c("exp","condition"),all=TRUE),
-                    list(vcmax_plot2,jmax_plot2,Asat_plot,gs_plot,Amax_plot,c13_plot,ci_ca_plot,ci_plot,wue_plot,anpp_plot,lma_plot,narea_plot,nmass_plot,
+                    list(vcmax_plot,jmax_plot,Asat_plot,anpp_plot,lma_plot,narea_plot,nmass_plot,
                          leaf_cn_plot,lai_plot,bnpp_plot,Nuptake_plot,npp_plot,soilN_plot,soil_total_N_plot,old_root_shoot_plot,old_ninorg_plot,gpp_plot))
+vcmax_all$rep <- duplicated(vcmax_all$exp)
+vcmax_all <- subset(vcmax_all,rep=="FALSE")
+vcmax_all_ci <- merge(vcmax_all,ci_final_removal,by=c("exp"),all.x=TRUE)
 
+vcmax_all_ci_smith <-Reduce(function(x,y) merge(x = x, y = y, by = c("exp"),all.x=TRUE),list(vcmax_all_ci,smith_vcmax,smith_jmax))
+vcmax_all_ci_smith$vcmax[is.na(vcmax_all_ci_smith$vcmax_smith)==FALSE] <- vcmax_all_ci_smith$vcmax_smith[is.na(vcmax_all_ci_smith$vcmax_smith)==FALSE]
+vcmax_all_ci_smith$jmax[is.na(vcmax_all_ci_smith$jmax_smith)==FALSE] <- vcmax_all_ci_smith$jmax_smith[is.na(vcmax_all_ci_smith$jmax_smith)==FALSE]
 
+ggplot(vcmax_all_ci,aes_string(y="vcmax",x="ci_increase")) +
+  geom_hline(yintercept=0)+geom_vline(xintercept=0)+
+  geom_point(aes(color=data),size=3)+
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
+  geom_smooth(color="black",method="lm",se=F)+
+  theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"))
 
+ggplot(vcmax_all_ci,aes_string(y="vcmax",x="old_ninorg")) +
+  geom_hline(yintercept=0)+geom_vline(xintercept=0)+
+  geom_point(size=3)+xlab("Inorganic N")+
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
+  geom_smooth(color="black",method="lm",se=F)+
+  geom_text(aes(label=substr(x, 1, 3)),hjust=-0.1, vjust=0,check_overlap = F)+
+  theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"))
+
+for(i in c(c(1:7,9,10,12,16,17))){
+  p[[i]] <- ggplot(vcmax_all_ci,aes_string(x=names(vcmax_all_ci)[i+2],
+                                             y="ci")) +
+    geom_hline(yintercept=0)+geom_vline(xintercept=0)+
+    geom_point(aes(color=data),size=3)+
+    stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
+    geom_smooth(color="black",method="lm",se=F)+
+    theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"))}
+plot_grid(p[[1]],p[[2]],p[[3]],p[[4]],p[[5]],p[[6]],
+          p[[7]],p[[9]],p[[10]],p[[12]],p[[16]],p[[17]],nrow=4,label_size = 15)
 
 
 #now, warming
