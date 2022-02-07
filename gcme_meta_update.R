@@ -714,9 +714,9 @@ ci_final$data[ci_final$exp=="soyfacesoy1_c" & ci_final$data=="Asat/gs"] <- "Asat
 ci_final$data[ci_final$exp=="soyfacesoy2_c"& ci_final$data=="Asat/gs"] <- "Asat/gs_replicated"
 ci_final$data[ci_final$exp=="swissface_trifolium2_c"& ci_final$data=="Asat/gs"] <- "Asat/gs_replicated"
 ci_final$data[ci_final$exp=="facts_ii_face3_pt_c"& ci_final$data=="Asat/gs"] <- "Asat/gs_replicated"
+ci_final$ci_increase <- ci_final$elevated_ci-ci_final$ambient_ci
 
 ci_final_removal <- subset(ci_final,data!="Asat/gs_replicated")
-ci_final_removal$ci_increase <- ci_final_removal$elevated_ci-ci_final_removal$ambient_ci
 #now, revising figures
 #this function creates to combine cf plots (high-N) into c-only plot
 # log (cf/a) - log(f/a) = log(cf/f)
@@ -1114,7 +1114,7 @@ soil_NO3$NO3 <- log(soil_NO3$elevated/soil_NO3$ambient)/log(soil_NO3$co2_e/soil_
 new_soil_vcmax <-Reduce(function(x,y) merge(x = x, y = y, by = c("exp"),all.x=TRUE),
                      list(vcmax_main,soil_mineral[c("exp","variable","mineral_soilN")],soil_NH4[,c("exp","NH4")],soil_NO3[,c("exp","NO3")]))
 
-ggplot(subset(new_soil_vcmax,condition=="co2"),aes_string(y="vcmax",x="mineral_soilN")) +
+ggplot(new_soil_vcmax,aes_string(y="vcmax",x="mineral_soilN")) +
   geom_hline(yintercept=0)+geom_vline(xintercept=0)+
   geom_point(aes(color=variable),size=3)+
   geom_text(aes(label=exp,hjust=1, vjust=0,check_overlap = T))+
@@ -1183,8 +1183,7 @@ a1 <- final_vcmax %>%
   geom_crossbar(aes(x=type_name, y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5) +
   geom_crossbar(data=final_prediction,aes(x=type_name, y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5,color="red") +
   geom_crossbar(data=final_observation,aes(x=type_name, y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5,color="black") +
-  geom_point(data=vcmax_alltypes,aes(x=response, y=middle, size= 1.96/(middle-ymin)), alpha = 0.6, width = 0.5) +
-  geom_point(data=subset(vcmax_alltypes,is.na(middle_scaled)==TRUE),aes(x=response, y=middle,size=5,color="no_SE_info"),width = 0.5) +
+  geom_point(data=vcmax_alltypes,aes(x=response, y=middle, size= 1.96/(middle-ymin)), alpha = 0.6, width = 0.5) +#geom_point(data=subset(vcmax_alltypes,is.na(middle_scaled)==TRUE),aes(x=response, y=middle,size=5,color="no_SE_info"),width = 0.5) +
   geom_point(data=vcmax_obs_pred_co2,aes(x=response, y=pred_vcmax), alpha = 0.6, width = 0.5,color="red") +
   geom_hline( yintercept=0.0, size=0.5)+ ylim(-1,1)+
   labs(x="", y="Sensitivity coefficient of vcmax",size=expression(paste("Standard Error"^{-1}))) +
@@ -1237,8 +1236,7 @@ a2 <- final_jmax %>%
   geom_crossbar(data=final_prediction_j,aes(x=type_name, y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5,color="red") +
   geom_crossbar(data=final_observation_j,aes(x=type_name, y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5,color="black") +
   geom_point(data=jmax_alltypes,aes(x=response, y=middle, size= 1.96/(middle-ymin)), alpha = 0.6, width = 0.5) +
-  geom_point(data=jmax_obs_pred_co2,aes(x=response, y=pred_jmax), alpha = 0.6, width = 0.5,color="red") +
-  geom_point(data=subset(jmax_alltypes,is.na(middle_scaled)==TRUE),aes(x=response, y=middle,size=5,color="no_SE_info"),width = 0.5) +
+  geom_point(data=jmax_obs_pred_co2,aes(x=response, y=pred_jmax), alpha = 0.6, width = 0.5,color="red") + #geom_point(data=subset(jmax_alltypes,is.na(middle_scaled)==TRUE),aes(x=response, y=middle,size=5,color="no_SE_info"),width = 0.5) +
   geom_hline( yintercept=0.0, size=0.5)+ ylim(-1,1)+
   labs(x="", y="Sensitivity coefficient of jmax",size=expression(paste("Standard Error"^{-1}))) +
   theme_classic()+coord_flip()+theme(axis.text=element_text(size=12))
@@ -1269,7 +1267,8 @@ a3 <- final_vj %>%
 a3
 #something wrong with cropland
 
-
+plot_grid(a1,a2,a3,nrow=1,label_size = 15)+theme(plot.background=element_rect(fill="white", color="white"))
+ggsave(paste("~/data/output_gcme/colin/egu_update_gcme.jpg",sep=""),width = 15, height = 5)
 
 # now, newly adding smith's data
 
@@ -1435,7 +1434,7 @@ final_mean <-Reduce(function(x,y) merge(x = x, y = y, by = c("exp","condition"),
 
 p <- list()
 for(i in c(1:6)){
-  p[[i]] <- ggplot(subset(final_mean,condition=="co2"),aes_string(x=names(final_mean)[i+3],
+  p[[i]] <- ggplot(subset(final_mean),aes_string(x=names(final_mean)[i+3],
                                          y="vcmax")) +
     geom_hline(yintercept=0)+geom_vline(xintercept=0)+
     geom_point(aes(color=condition),size=3)+
@@ -1487,17 +1486,30 @@ vcmax_all <-Reduce(function(x,y) merge(x = x, y = y, by = c("exp","condition"),a
                          leaf_cn_plot,lai_plot,bnpp_plot,Nuptake_plot,npp_plot,soilN_plot,soil_total_N_plot,old_root_shoot_plot,old_ninorg_plot,gpp_plot))
 vcmax_all$rep <- duplicated(vcmax_all$exp)
 vcmax_all <- subset(vcmax_all,rep=="FALSE")
-vcmax_all_ci <- merge(vcmax_all,ci_final_removal,by=c("exp"),all.x=TRUE)
+#vcmax_all_ci <- merge(vcmax_all,ci_final_removal,by=c("exp"),all.x=TRUE)
+vcmax_all_ci <- merge(vcmax_all,ci_final,by=c("exp"),all.x=TRUE)
 
 vcmax_all_ci_smith <-Reduce(function(x,y) merge(x = x, y = y, by = c("exp"),all.x=TRUE),list(vcmax_all_ci,smith_vcmax,smith_jmax))
 vcmax_all_ci_smith$vcmax[is.na(vcmax_all_ci_smith$vcmax_smith)==FALSE] <- vcmax_all_ci_smith$vcmax_smith[is.na(vcmax_all_ci_smith$vcmax_smith)==FALSE]
 vcmax_all_ci_smith$jmax[is.na(vcmax_all_ci_smith$jmax_smith)==FALSE] <- vcmax_all_ci_smith$jmax_smith[is.na(vcmax_all_ci_smith$jmax_smith)==FALSE]
+vcmax_all_ci_smith_soil <- merge(vcmax_all_ci_smith,new_soil_vcmax[,c("exp","mineral_soilN")],by=c("exp"),all.x=TRUE)
 
-ggplot(vcmax_all_ci,aes_string(y="vcmax",x="ci_increase")) +
+vcmax_all_ci$x_increase <- vcmax_all_ci$elevated_ci/vcmax_all_ci$co2_e - vcmax_all_ci$ambient_ci/vcmax_all_ci$co2_a
+
+ggplot(subset(vcmax_all_ci,data!="c13" & data!="ci"),aes_string(y="vcmax",x="x_increase")) +
   geom_hline(yintercept=0)+geom_vline(xintercept=0)+
-  geom_point(aes(color=data),size=3)+
+  geom_point(size=3)+
   stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
   geom_smooth(color="black",method="lm",se=F)+
+  geom_text(aes(label=substr(exp, 1, 11)),hjust=-0.1, vjust=0,check_overlap = F)+
+  theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"))
+
+ggplot(subset(vcmax_all_ci, data=="ci"),aes_string(y="vcmax",x="x_increase")) +
+  geom_hline(yintercept=0)+geom_vline(xintercept=0)+
+  geom_point(size=3)+
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
+  geom_smooth(color="black",method="lm",se=F)+
+  geom_text(aes(label=substr(exp, 1, 11)),hjust=0, vjust=0,check_overlap = F)+
   theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"))
 
 ggplot(vcmax_all_ci,aes_string(y="vcmax",x="old_ninorg")) +
@@ -1505,20 +1517,48 @@ ggplot(vcmax_all_ci,aes_string(y="vcmax",x="old_ninorg")) +
   geom_point(size=3)+xlab("Inorganic N")+
   stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
   geom_smooth(color="black",method="lm",se=F)+
-  geom_text(aes(label=substr(x, 1, 3)),hjust=-0.1, vjust=0,check_overlap = F)+
+  geom_text(aes(label=substr(exp, 1, 11)),hjust=-0.1, vjust=0,check_overlap = F)+
   theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"))
 
-for(i in c(c(1:7,9,10,12,16,17))){
-  p[[i]] <- ggplot(vcmax_all_ci,aes_string(x=names(vcmax_all_ci)[i+2],
-                                             y="ci")) +
+for(i in c(c(4,9,6,12,11,32))){
+  p[[i]] <- ggplot(subset(vcmax_all_ci_smith_soil,condition=="co2"|condition=="(co2 + Nfer)/Nfer"),aes_string(x=names(vcmax_all_ci_smith_soil)[i],
+                                             y="vcmax")) +
     geom_hline(yintercept=0)+geom_vline(xintercept=0)+
-    geom_point(aes(color=data),size=3)+
+    geom_point(aes(color=condition),size=3)+
     stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
     geom_smooth(color="black",method="lm",se=F)+
     theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"))}
-plot_grid(p[[1]],p[[2]],p[[3]],p[[4]],p[[5]],p[[6]],
-          p[[7]],p[[9]],p[[10]],p[[12]],p[[16]],p[[17]],nrow=4,label_size = 15)
+plot_grid(p[[4]],p[[9]],p[[6]],p[[12]],p[[11]],p[[32]],nrow=2,label_size = 15)
+ggsave(paste("~/data/output_gcme/colin/egu_update_finalvcmax.jpg",sep=""),width = 25, height = 15)
 
+#check lacked points
+
+vcmax_all_ci_smith_plot <- merge(vcmax_all_ci_smith,unique(df_only[,c("exp","exp_nam")]),unique(kevin_othervars[,c("exp","site")]),by=c("exp"),all.x=TRUE)
+
+vcmax_all_ci_smith_plot <-Reduce(function(x,y) merge(x = x, y = y, by = c("exp"),all.x=TRUE),
+                       list(vcmax_all_ci_smith,unique(df_only[,c("exp","exp_nam")]),unique(kevin_othervars[,c("exp","site")])))
+vcmax_all_ci_smith_plot$exp_nam <- tolower(vcmax_all_ci_smith_plot$exp_nam)
+vcmax_all_ci_smith_plot$site[is.na(vcmax_all_ci_smith_plot$site)==TRUE] <- vcmax_all_ci_smith_plot$exp_nam[is.na(vcmax_all_ci_smith_plot$site)==TRUE]
+vcmax_all_ci_smith_plot$site[is.na(vcmax_all_ci_smith_plot$site)==TRUE] <- vcmax_all_ci_smith_plot$exp[is.na(vcmax_all_ci_smith_plot$site)==TRUE]
+vcmax_all_ci_smith_plot[grep("riceface_japan", vcmax_all_ci_smith_plot$site),]$site <- "riceface_japan"
+vcmax_all_ci_smith_plot[grep("riceface_china", vcmax_all_ci_smith_plot$site),]$site <- "riceface_china"
+
+#vcmax, jmax, anpp, bnpp, npp, nmass, lai, soil N 
+
+missing_vcmax <- unique(subset(vcmax_all_ci_smith_plot,condition=="co2"&is.na(vcmax)==TRUE & is.na(anpp)==FALSE)[,c("condition","site")])
+missing_anpp <- unique(subset(vcmax_all_ci_smith_plot,condition=="co2"&is.na(vcmax)==FALSE & is.na(anpp)==TRUE)[,c("condition","site")])
+missing_bnpp <- unique(subset(vcmax_all_ci_smith_plot,condition=="co2"&is.na(vcmax)==FALSE & is.na(bnpp)==TRUE)[,c("condition","site")])
+missing_npp <- unique(subset(vcmax_all_ci_smith_plot,condition=="co2"&is.na(vcmax)==FALSE & is.na(npp)==TRUE)[,c("condition","site")])
+missing_lai <- unique(subset(vcmax_all_ci_smith_plot,condition=="co2"&is.na(vcmax)==FALSE & is.na(lai)==TRUE)[,c("condition","site")])
+missing_nmass <- unique(subset(vcmax_all_ci_smith_plot,condition=="co2"&is.na(vcmax)==FALSE & is.na(nmass)==TRUE)[,c("condition","site")])
+missing_old_ninorg <- unique(subset(vcmax_all_ci_smith_plot,condition=="co2"&is.na(vcmax)==FALSE & is.na(old_ninorg)==TRUE)[,c("condition","site")])
+missing_ci <- unique(subset(vcmax_all_ci_smith_plot,condition=="co2"&is.na(vcmax)==FALSE & is.na(ci)==TRUE)[,c("condition","site")])
+names(missing_vcmax) <- c("vcmax","site");names(missing_anpp) <- c("anpp","site");names(missing_bnpp) <- c("bnpp","site");
+names(missing_npp) <- c("npp","site");names(missing_lai) <- c("lai","site");names(missing_old_ninorg) <- c("old_ninorg","site");
+names(missing_ci) <- c("ci","site");names(missing_nmass) <- c("nmass","site")
+missing_together <-Reduce(function(x,y) merge(x = x, y = y, by = c("site"),all=TRUE),
+                                 list(missing_vcmax,missing_anpp,missing_bnpp,missing_npp,missing_lai,missing_old_ninorg,missing_nmass,missing_ci))
+missing_together_final <- data.frame(lapply(missing_together, gsub, pattern = "co2", replacement = "missing"))
 
 #now, warming
 # a look
