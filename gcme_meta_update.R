@@ -525,7 +525,9 @@ df$response[df$Data_type=="root-shoot_ratio" &(df$exp_nam=="POPFACE_pa"|df$exp_n
 #gs
 df$response[df$Data_type=="gs"|df$Data_type=="stomatal_conductance_(gs)"|df$Data_type=="stomatal_conductance"|df$Data_type=="canopy_conductance"] <- "gs"
 
-
+#additional vcmax
+df$response[df$Data_type=="Vcmax"] <- "vcmax"
+df$response[df$Data_type=="Jmax"] <- "jmax"
 #some unit is wrong - but given we had much less plots, and given that N uptake should always be flux?
 #subset(df,Data_type=="N_uptake")%>% group_by(Unit)  %>% summarise(number = n()) 
 
@@ -1271,7 +1273,6 @@ plot_grid(a1,a2,a3,nrow=1,label_size = 15)+theme(plot.background=element_rect(fi
 ggsave(paste("~/data/output_gcme/colin/egu_update_gcme.jpg",sep=""),width = 15, height = 5)
 
 # now, newly adding smith's data
-
 #new file
 #GlycineCE -->ecocells_w (NOT ENTERED)
 #OakOTC --> mi_c
@@ -1531,6 +1532,18 @@ for(i in c(c(4,9,6,12,11,32))){
 plot_grid(p[[4]],p[[9]],p[[6]],p[[12]],p[[11]],p[[32]],nrow=2,label_size = 15)
 ggsave(paste("~/data/output_gcme/colin/egu_update_finalvcmax.jpg",sep=""),width = 25, height = 15)
 
+#nmass?
+for(i in c(c(6,7,10,11,12,13,14,32))){
+  p[[i]] <- ggplot(subset(vcmax_all_ci_smith_soil,condition=="co2"|condition=="(co2 + Nfer)/Nfer"),aes_string(x=names(vcmax_all_ci_smith_soil)[i],
+                                                                                                              y="nmass")) +
+    geom_hline(yintercept=0)+geom_vline(xintercept=0)+
+    geom_point(aes(color=condition),size=3)+
+    stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
+    geom_smooth(color="black",method="lm",se=F)+
+    theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"))}
+plot_grid(p[[6]],p[[7]],p[[10]],p[[11]],p[[12]],p[[13]],p[[14]],p[[32]],nrow=3,label_size = 15)
+ggsave(paste("~/data/output_gcme/colin/egu_update_finalvcmax.jpg",sep=""),width = 25, height = 15)
+
 #check lacked points
 
 vcmax_all_ci_smith_plot <- merge(vcmax_all_ci_smith,unique(df_only[,c("exp","exp_nam")]),unique(kevin_othervars[,c("exp","site")]),by=c("exp"),all.x=TRUE)
@@ -1559,6 +1572,36 @@ names(missing_ci) <- c("ci","site");names(missing_nmass) <- c("nmass","site")
 missing_together <-Reduce(function(x,y) merge(x = x, y = y, by = c("site"),all=TRUE),
                                  list(missing_vcmax,missing_anpp,missing_bnpp,missing_npp,missing_lai,missing_old_ninorg,missing_nmass,missing_ci))
 missing_together_final <- data.frame(lapply(missing_together, gsub, pattern = "co2", replacement = "missing"))
+
+
+
+
+#now, check original individuals ci
+ci1 <- old_logr_c_ci[,c("exp","Sampling_date","co2_a","co2_e","ambient","elevated")]
+ci1$type <- "ci"
+
+cica1 <- subset(old_logr_c_ci_ca,exp=="swissface_trifolium2_c")[,c("exp","Sampling_date","co2_a","co2_e","ambient","elevated")]
+cica1$type <- "cica"
+final_ci <- rbind(ci1,cica1)  
+
+vcmax_old <- old_logr_c_vcmax[,c("exp","Sampling_date","co2_a","co2_e","ambient","elevated")]
+vcmax1 <- vcmax_old %>% filter(exp %in% unique(final_ci$exp))
+vcmax_ci <- merge(vcmax1,final_ci,by=c("exp","Sampling_date","co2_a","co2_e"),all.x=TRUE)
+vcmax_ci <- na.omit(vcmax_ci)
+vcmax_ci$vcmax <- log(vcmax_ci$elevated.x/vcmax_ci$ambient.x)/log(vcmax_ci$co2_e/vcmax_ci$co2_a)
+
+vcmax_ci$ambient.y[vcmax_ci$type=="cica"] <- vcmax_ci$ambient.y[vcmax_ci$type=="cica"]*vcmax_ci$co2_a[vcmax_ci$type=="cica"] 
+vcmax_ci$elevated.y[vcmax_ci$type=="cica"] <- vcmax_ci$elevated.y[vcmax_ci$type=="cica"]*vcmax_ci$co2_e[vcmax_ci$type=="cica"] 
+
+vcmax_ci$ci_change <- vcmax_ci$elevated.y - vcmax_ci$ambient.y
+vcmax_ci$X_change <- vcmax_ci$elevated.y/vcmax_ci$co2_e - vcmax_ci$ambient.y/vcmax_ci$co2_a
+
+ggplot(vcmax_ci,aes_string(x="X_change",y="vcmax")) +
+  geom_hline(yintercept=0)+geom_vline(xintercept=0)+
+  geom_point(aes(color=exp),size=3)+
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
+  geom_smooth(aes(color=exp),method="lm",se=F)+
+  theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"))
 
 #now, warming
 # a look

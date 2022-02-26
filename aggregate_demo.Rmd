@@ -1,5 +1,5 @@
 ---
-title: "Aggregating individuals to plot-mean value"
+title: "From multiple samples to plot-mean: two possible aggregation method?"
 author: "Yunke Peng"
 date: "Jan 14, 2022"
 output:
@@ -8,49 +8,42 @@ output:
   word_document: default
 ---
 
-### Preprocessing and select a specific plot as an example to show (duke_c, npp).
+```{r setup, include=FALSE} 
+knitr::opts_chunk$set(warning = FALSE, message = FALSE) 
+```
+
+### Preprocessing
+reprocessing and select one specific plot and variable as an example to show (duke_c, npp).
 ```{r}
 library(dplyr)
 library(metafor)
 library(MAd)
 library(tidyverse)
 df <- read_csv("~/data/gcme/data_received_190325/NewData_wide_CORRECTED2.csv") %>%
-  
-  # something is wrong in columns ambient_Sd, ambient_Se, elevated...
-  mutate( ambient_Sd  = as.numeric(ambient_Sd),  ambient_Se  = as.numeric(ambient_Se), 
+    mutate( ambient_Sd  = as.numeric(ambient_Sd),  ambient_Se  = as.numeric(ambient_Se), 
           elevated_Sd = as.numeric(elevated_Sd), elevated_Se = as.numeric(elevated_Se) )
 
 # save experiments names
 df_experiments <- df %>% select(exp_nam, prev_name) %>% distinct()
 
 # take only experiments >1 yr
-list_exp_gt1yr <- df %>% 
-  filter(!is.na(Year)) %>% 
-  group_by(exp_nam) %>% 
-  summarise(nyears=max(Year)) %>% 
-  filter(nyears>1) %>% 
-  select(exp_nam) %>% 
-  unlist() %>% 
-  unname()
+list_exp_gt1yr <- df %>% filter(!is.na(Year)) %>%  group_by(exp_nam) %>% summarise(nyears=max(Year)) %>% 
+  filter(nyears>1) %>% select(exp_nam) %>% unlist() %>% unname()
 
 df_c <- df %>%
-  
   filter(treatment=="c") %>% 
-  
   ## More than 1 year data
   filter(exp_nam %in% list_exp_gt1yr) %>% 
-  
   ## Combine with experiments meta info
   left_join( 
     read_csv("~/data/gcme/data_received_190325/table_var_exp_names_experiments.csv") %>% 
       select(prev_name, Fumigation_type=my_fumigation_type, Vegetation_type),
     by = c("prev_name")
   ) %>% 
-  
   ## Filter only Fumigation_type OTC or FACE
   filter( Fumigation_type %in% c("OTC", "FACE") ) %>%
-  
   {.}
+
 selvars <- c("NPP")
 
 df_c_sub <- df_c %>% 
@@ -59,7 +52,6 @@ df_c_sub <- df_c %>%
 
 #calculating response ratio
 df_c_sub <- df_c_sub %>%         
-  
   # get standard deviation for all data
   mutate( 
     my_ambient_sd = ambient_Sd, 
@@ -70,7 +62,6 @@ df_c_sub <- df_c_sub %>%
     my_ambient_sd = ifelse( is.na(my_ambient_sd),  ambient_Se  * sqrt(n_plots), my_ambient_sd ),
     my_elevated_sd  = ifelse( is.na(my_elevated_sd), elevated_Se * sqrt(n_plots), my_elevated_sd )
   ) %>%
-  
   ## Get logarithm of response ratio and its variance
   metafor::escalc( 
     measure = "ROM", 
@@ -83,9 +74,14 @@ df_c_sub <- df_c_sub %>%
 
 df_c_test <- subset(df_c_sub,prev_name=="DUKE_c" & varnam=="npp")
 
+#response ratio, its variance, years of measurement, number of plots, and experiment name (DUKE_c)
+summary(df_c_test[,c("logr","logr_var","Year","n_plots","prev_name")])
+
 ```
 
-### Method 1: using MAd::agg function (the one previously used by Beni). But it has problem as discussed before, since the output value is exactly the same to normal individuals average.
+### Method 1: Mad::agg
+
+using MAd::agg function (the one previously used). But it has problem, since the output value is exactly the same to normal individuals average.
 ```{r}
 
 #method 1: using aggregation method 1: MAd::agg
@@ -101,7 +97,7 @@ df_plotmean1 <- df_c_test %>%
 
 df_plotmean1
 
-#however, as discussed before (this function MAd::agg did have some problem), because it yield exactly the same value to normal mean values!
+#however,  it yield exactly the same value to mean values.
 normal_mean <- df_c_test %>% 
   filter(!is.na(logr_var) & !is.na(logr)) %>%  group_by(exp_nam) %>%
   dplyr::summarize(Mean = mean(logr, na.rm=TRUE))
@@ -113,7 +109,9 @@ df_plotmean1$es - normal_mean$Mean
 ```
 
 
-### Method 2: using metafor::rma.mv, as discussed and confirmed by Beni and Yunke in November (at UK). And we dicussed in one meeting that take measurement year as ramdon factor - did you remember it..? Now in all my analysis I have used this method as we confirmed earlier.
+### Method 2: metafor::rma.mv
+This method imputed variance of each sample (within one plot), and also considered  Years of treatment as random factor (or not). And then, the output "plot-mean" value is indeed different to above normal mean value, that is, necessarily affected by variance of each sample.
+
 ```{r}
 
 #alternatively - we are using this method as previously confirmed from Beni - where random factor is year.
@@ -126,8 +124,20 @@ out_meta <- df_c_test %>%
 df_plotmean2 <- tibble(
   exp="DUKE_c",varnam="npp", es = out_meta$b[1,1],var= (out_meta$se*sqrt(out_meta$k))^2) # variance = (SD)^2 = (SE * sqrt(n_samples))^2
 
-
 df_plotmean2
  
+#if not considered measurement year as random factor..the output value differ slightly
+
+out_meta <- df_c_test %>% 
+  filter(!is.na(logr_var) & !is.na(logr)) %>% 
+  mutate( id = paste(exp_nam, varnam, sep = "_XXX_")) %>% 
+  metafor::rma.mv( logr, logr_var, method = "REML",control = list(stepadj=0.3),data = .)
+
+df_plotmean3 <- tibble(
+  exp="DUKE_c",varnam="npp", es = out_meta$b[1,1],var= (out_meta$se*sqrt(out_meta$k))^2) # variance = (SD)^2 = (SE * sqrt(n_samples))^2
+
+df_plotmean3
 
 ```
+
+So, we are wondering which method might best work if we are interested in plot-mean based meta-analysis?

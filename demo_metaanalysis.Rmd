@@ -1,0 +1,210 @@
+---
+title: "CN acclimation"
+author: "Beni Stocker & Yunke Peng"
+date: "13/2/2022"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: show
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,warning = FALSE, message = FALSE)
+library(tidyverse)
+library(metafor)   # see ?dat.curtis1998 for an example with CO2 manipulation data
+library(patchwork)
+library(ggrepel)
+```
+
+
+## Read data
+
+We're reading data from Kevin's database, selecting only data where only CO2 was manipulated, from experiments that lasted more than 2 years, and include OTC and FACE experiments. This is a demo and we're using just ANPP data (any of `c("aboveground_production", "annual_aboveground_biomass_production", "ANPP")`).
+
+```{r, warning=FALSE, message=FALSE}
+df <- read_csv("~/data/gcme/data_received_190325/NewData_wide_CORRECTED2.csv") %>%
+  
+  # something is wrong in columns ambient_Sd, ambient_Se, elevated...
+  mutate( ambient_Sd  = as.numeric(ambient_Sd),  ambient_Se  = as.numeric(ambient_Se), 
+          elevated_Sd = as.numeric(elevated_Sd), elevated_Se = as.numeric(elevated_Se) )
+  
+# save experiments names
+df_experiments <- df %>% select(exp_nam, prev_name) %>% distinct()
+
+# take only experiments >1 yr
+list_exp_gt1yr <- df %>% 
+  filter(!is.na(Year)) %>% 
+  group_by(exp_nam) %>% 
+  summarise(nyears=max(Year)) %>% 
+  filter(nyears>1) %>% 
+  select(exp_nam) %>% 
+  unlist() %>% 
+  unname()
+
+selvars <- c("aboveground_production", "annual_aboveground_biomass_production", "ANPP")
+
+df_c <- df %>%
+  
+  ## filter experiments with only manipulated CO2
+  filter(treatment=="c") %>% 
+  
+  ## More than 1 year data
+  filter(exp_nam %in% list_exp_gt1yr) %>% 
+  
+  ## Combine with experiments meta info
+  left_join( 
+    read_csv("~/data/gcme/data_received_190325/table_var_exp_names_experiments.csv") %>% 
+      select(prev_name, Fumigation_type, Vegetation_type),
+    by = c("prev_name")
+  ) %>% 
+  
+  ## Filter only Fumigation_type OTC or FACE
+  filter( Fumigation_type %in% c("OTC", "FACE") ) %>%
+  
+  ## reduce for demo
+  dplyr::select(exp_nam, factors, treatment, Data_type, Sampling_Year, ambient, ambient_Sd = ambient_Sd, ambient_Se, elevated, elevated_Sd, elevated_Se, n_plots) %>% 
+  
+  ## use only ANPP data
+  filter(Data_type %in% selvars) %>% 
+  mutate(varnam = "anpp") %>% 
+  
+  ## create a unique indendifying
+  mutate(id = paste0("i", 1:n()))
+```
+
+The data now looks like this:
+```{r}
+df_c %>% 
+  knitr::kable()
+```
+
+
+## Response ratio
+
+Calculate log response ratio within each plot, using `metafor::escalc(measure = "ROM", ...)`.
+
+**Questions:**
+
+- Do you calculate the response ratio before aggregating (done in the next step)?
+- What's the standard error of the response ratio?
+
+```{r}
+df_c <- df_c %>%         
+  
+  mutate( 
+    ambient_Sd = ifelse( is.na(ambient_Sd),  ambient_Se  * sqrt(n_plots), ambient_Sd ),
+    elevated_Sd  = ifelse( is.na(elevated_Sd), elevated_Se * sqrt(n_plots), elevated_Sd )
+    ) %>%
+
+  ## Get logarithm of response ratio and its variance
+  metafor::escalc( 
+    measure = "ROM", 
+    m1i = elevated, sd1i = elevated_Sd, n1i = n_plots, 
+    m2i = ambient,  sd2i = ambient_Sd,  n2i = n_plots, 
+    data=., 
+    append = TRUE, var.names = c("logr", "logr_var") ) %>% 
+  as_tibble() %>% 
+  
+  ## calculate standard error of response ratio
+  mutate( logr_se = sqrt(logr_var)/sqrt(n_plots) )
+```
+
+## Aggregate
+
+Aggregate data by experiment (and variable name - here only ANPP), pooling all measurements (multiple years, sampling dates and plots). For this we're using `MAd::agg()` with a correlation among within-study outcome variables of 0.5 (`cor = 0.5`) is assumed as per the function's default.
+
+In the data we always have the same number of plots in ambient and elevated and calculate standard error of effect size from its standard deviation (`sqrt(logr_var)`) and N. 
+```{r}
+df_c_agg <- df_c %>% 
+  
+  filter(!is.na(logr_var) & !is.na(logr)) %>% 
+  mutate( id = exp_nam ) %>% 
+  
+  MAd::agg( id = id, es = logr, var = logr_var, n.1 = n_plots, n.2 = n_plots, cor = 0.5, method = "BHHR", data = . ) %>% 
+  
+  rename(exp_nam = id,
+         logr = es, 
+         logr_var = var) %>% 
+
+  ## add number of plots column and varnam
+  left_join( df_c %>% 
+               ungroup() %>% 
+               group_by( exp_nam, varnam ) %>%
+               summarise( n_plots = sum(n_plots) ) %>% 
+               select( exp_nam, varnam, n_plots ),
+             by = "exp_nam" ) %>% 
+  
+  ## calculate standard error of effect size
+  mutate( logr_se = sqrt(logr_var)/sqrt(n_plots) )
+```
+This now yields a value and standard error for each experiment. However, the output value yields identical results as values from simple aggregate by mean(). See below comparison between "logr", "aggregated_mean_logr".  
+```{r}
+df_c_mean <- aggregate(df_c,by=list(df_c$exp_nam), FUN=mean, na.rm=TRUE)[,c("Group.1","logr")]
+
+names(df_c_mean) <- c("exp_nam","aggregated_mean_logr")
+
+df_c_agg_mean <-  merge(df_c_agg,df_c_mean,by=c("exp_nam"),all.x=TRUE)
+
+df_c_agg_mean %>% 
+  knitr::kable()
+
+```
+
+**Questions:**
+
+- Here the aggregated value obtained from agg() function, is identical to mean(), could this be accepted for us to continue use, or we may try any alternative method?
+
+- Yunke was thinking if this can be replaced by using metafor::rma.mv function. Because this method can successfully account for variance of each samples within plot to obtain aggregated value. Taking "BioCON" plot (first column shown in above table) as an example. See below result, mean value from this "new method" is 0.12, which is different to mean value using agg fucntion (0.13). Could this be considered as an alternative method?
+
+```{r}
+out_meta <- subset(df_c,exp_nam=="BioCON") %>% 
+  metafor::rma.mv( logr, logr_var, method = "REML",control = list(stepadj=0.3),data = .)
+
+df_plotmean2 <- tibble(
+  exp="BioCON",logr = out_meta$b[1,1],logr_var= (out_meta$se*sqrt(out_meta$k))^2) # variance = (SD)^2 = (SE * sqrt(n_samples))^2
+
+df_plotmean2
+
+subset(df_c_agg_mean,exp_nam=="BioCON")
+
+```
+
+## Meta analysis
+
+Now, we summarise that across multiple experiments to get a meta analysis of effect sizes, treating experiments as a random factor, and no moderators accounted for.
+```{r}
+out_meta <- df_c_agg %>% 
+  metafor::rma.mv( logr, logr_var, method = "REML", random = ~ 1 | exp_nam, slab = exp_nam, control = list(stepadj=0.3), data = . )
+```
+
+Standard "forest plot".
+```{r}
+metafor::forest(out_meta, xlab="Log Response Ratio", mlab="", xlim=c(-1,1), cex=0.5)
+```
+
+Some other nice plot, showing a box with the confidence interval of the meta-analytic estimate.
+```{r}
+out_meta_scaled <- predict( out_meta, transf=exp )
+
+df_box <- tibble(
+  varnam = "anpp", 
+  middle = out_meta$b[1,1], 
+  ymin   = out_meta$ci.lb, 
+  ymax   = out_meta$ci.ub,
+  
+  middle_scaled = out_meta_scaled$pred, 
+  ymin_scaled   = out_meta_scaled$ci.lb, 
+  ymax_scaled   = out_meta_scaled$ci.ub
+)
+
+df_c_agg %>%
+  ggplot( aes(x = varnam, y = logr)) +
+  geom_jitter( color = rgb(0,0,0,0.3), aes( size = 1/logr_se ), position = position_jitter(w = 0.2, h = 0) ) +
+  geom_crossbar( data = df_box, aes(x = varnam, y = middle, ymin = ymin, ymax = ymax), fill = "grey80", alpha = 0.6, width = 0.5 ) +
+  geom_hline( yintercept = 0.0, size = 0.5 ) +
+  labs(x = "", y = "Log Response Ratio", size = expression(paste("Error"^{-1}))) +
+  coord_flip() +
+  ylim(-1,1)
+```
+
