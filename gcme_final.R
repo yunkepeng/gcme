@@ -545,3 +545,4 @@ plot_grid(p[[1]],p[[2]],p[[3]],p[[4]],p[[5]],p[[6]],p[[7]],p[[8]],p[[9]],p[[10]]
   theme(plot.background=element_rect(fill="white", color="white"))
 ggsave(paste("~/data/output_gcme/colin/final_fig2_jmax.jpg",sep=""),width = 20, height = 20)
 
+#finally, read soil csv
