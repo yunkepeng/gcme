@@ -254,7 +254,6 @@ bnpp_dataset <- subset(kevin_othervars_cf,output=="bnpp"&(response=="root_produc
 
 unique(bnpp_dataset[,c("exp","response","Unit")])
 
-
 #soil mineral N in dry-mass: 7+1
 #7 plots: nh4 + no3
 soil_nh4 <- subset(kevin_othervars_cf,response=="soil_nh4-n") %>% group_by(exp,Unit) %>% summarise(co2_a = mean(co2_a), co2_e = mean(co2_e), ambient = mean(ambient), elevated = mean(elevated))
@@ -389,6 +388,7 @@ bnpp_plot_final <- merge(bnpp_plot,unique(bnpp_dataset[,c("exp","response")]),by
 soil_mineral_plotmean$condition <- "co2"
 soil_mineral_plotmean$condition[soil_mineral_plotmean$exp=="duke2_cf"] <- "fertilization"
 soil_mineral_plotmean <- soil_mineral_plotmean[,c("exp","condition","soil_mineral_N","type")]
+soil_mineral_plotmean_dry <- subset(soil_mineral_plotmean,type=="dry")
 
 anpp_plot <- combine_co2_cf(logr_c_anpp,logr_f_anpp,logr_cf_anpp,"anpp")
 lai_plot <- combine_co2_cf(logr_c_lai,logr_f_lai,logr_cf_lai,"lai")
@@ -436,59 +436,41 @@ jmax_all_plot$condition[is.na(jmax_all_plot$condition)==TRUE] <- "co2"
 names(jmax_all_plot) <- c("exp","jmax","condition")
 
 final_mean <-Reduce(function(x,y) merge(x = x, y = y, by = c("exp","condition"),all.x=TRUE),
-                    list(vcmax_all_plot,jmax_all_plot,lma_plot,narea_plot,nmass_plot,bnpp_plot_final,soil_mineral_plotmean,
+                    list(vcmax_all_plot,jmax_all_plot,lma_plot,narea_plot,nmass_plot,bnpp_plot_final,soil_mineral_plotmean_dry,
                          anpp_plot,lai_plot,soil_total_n_plot,soil_cn_min_layer_plot,agb_plot,agb_n_plot,asat_plot,anet_plot,
                          bgb_plot,bgb_coarse_plot,bgb_n_plot,fine_root_biomass_plot,fine_root_n_plot,leaf_biomass_plot,leaf_c_plot,leaf_cn_plot,
                          leaf_litter_c_plot,leaf_litter_cn_plot,leaf_litter_n_plot,leaf_nue_plot,litter_biomass_plot,litterfall_plot,
                          mb_plot,mbc_plot,mbn_plot,r_leaf_plot,r_root_plot,r_soil_plot,root_n_uptake_plot,root_shoot_ratio_plot,soc_plot,soil_c_plot,
                          soil_total_c_plot,total_biomass_plot,total_biomass_n_plot,wood_n_plot,soil_potential_net_n_mineralization_plot))
 
-#add two plots from Cesar
-Cesar_anpp <- read.csv("/Users/yunpeng/data/gcme/cesar/ANPP.csv")
-phace <- log(112.6493/111.8533)/log(600/384)
-Aspen <- (log(669.6334/517.9303)/log(550/360) + log(621.7131/429.4247)/log(550/360))/2
-final_mean$anpp[final_mean$exp=="phace_c"] <- phace
-final_mean$anpp[final_mean$exp=="rhine-aspenface_c"] <- Aspen
+#variables interested...
+c("soil_nh4-n","soil_no3-n","soil_in")
+c("soil_solution_mineral_n","soil_solution_nh4","soil_solution_no3")
 
-final_data <- final_mean[,c(4,6,7:10,12,14:50)]
 
-res2 <- rcorr(as.matrix(final_data))
-p_value <- as.data.frame(res2$P[,c("vcmax","jmax")])
+soil_min <- kevin_othervars_cf %>%
+  filter(response %in%c("soil_nh4-n","soil_no3-n","soil_in"))
+soil_min_c <- subset(soil_min,treatment=="c")
+new_soil_min <- agg_meta_sen_coef(response_ratio_v2(soil_min_c))
+test<- (merge(final_mean,new_soil_min[,c("exp","middle")],by=c("exp"),all.x=TRUE))
 
-vcmax_sig <- subset(p_value[order(p_value[,c("vcmax")] ),],vcmax<= 0.2)
-jmax_sig <- subset(p_value[order(p_value[,c("jmax")] ),],jmax<= 0.2)
-
-vcmax_select <- rownames(vcmax_sig)
-jmax_select <- rownames(jmax_sig)
-
-p <- list()
-for(i in c(1:length(vcmax_select))){
-  p[[i]] <- ggplot(final_mean,aes_string(x=vcmax_select[i], y="vcmax")) +
-    geom_hline(yintercept=0)+geom_vline(xintercept=0)+
-    geom_point(aes(color=condition),size=3)+
-    stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
-    geom_smooth(color="black",method="lm",se=F)+labs(y="vcmax")+
-    #geom_text(aes(label=exp),hjust=1, vjust=0,check_overlap = T)+
-    theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"))}
-
-p[[6]] <- ggplot(final_mean,aes_string(x="bnpp", y="vcmax")) +
+ggplot(test,aes_string(x="middle", y="vcmax")) +
   geom_hline(yintercept=0)+geom_vline(xintercept=0)+
-  geom_point(aes(color=response),size=3)+
+  geom_point(aes(color=condition),size=3)+
   stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
-  geom_smooth(color="black",method="lm",se=F)+labs(y="vcmax")+
-  #geom_text(aes(label=exp),hjust=1, vjust=0,check_overlap = T)+
-  theme(axis.text=element_text(size=15),axis.title=element_text(size=15,face="bold"))
-
-p[[21]] <- ggplot(final_mean,aes_string(x="soil_mineral_N", y="vcmax")) +
-  geom_hline(yintercept=0)+geom_vline(xintercept=0)+
-  geom_point(aes(color=type),size=3)+
-  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
-  geom_smooth(color="black",method="lm",se=F)+labs(y="vcmax")+
-  #geom_text(aes(label=exp),hjust=1, vjust=0,check_overlap = T)+
+  geom_smooth(color="black",method="lm",se=F)+labs(x="mineral soil N")+
   theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"))
 
+#further process
 
-#what's going on with anpp? - when removing g/m2 - it becomes better
+#1. Remove a negative Asat (since it is Asat at constant co2)
+final_mean$asat[final_mean$exp=="new_zealand_face_c"] <- NA
+#2. remove high Tleaf measurement's vcmax (actually, two papers: darbah_et_al_2010a and darbah_et_al_2010b)
+final_mean$vcmax[final_mean$exp=="facts_ii_face3_pt_c"] <- agg_meta_sen_coef(response_ratio_v2(subset(logr_c_vcmax,exp=="facts_ii_face3_pt_c" & citation!="darbah_et_al_2010b" & citation!="darbah_et_al_2010a")))$middle
+final_mean$vcmax[final_mean$exp=="facts_ii_face4_bp_c"] <- agg_meta_sen_coef(response_ratio_v2(subset(logr_c_vcmax,exp=="facts_ii_face4_bp_c" & citation!="darbah_et_al_2010b")))$middle
+
+#3. anpp modification
+# when removing g/m2 - it becomes better
 anpp_new <- subset(kevin_othervars_cf,response=="anpp"&Unit!="t_ha"&Unit!="g_m2"&Unit!="gc_m2"&Unit!="mg"&Unit!="g_plant")
 unique(anpp_new[,c("exp","Unit")]);unique(anpp_new[,c("Unit")])
 
@@ -497,50 +479,157 @@ anpp_new_c <- response_ratio_v2(subset(anpp_new,treatment=="c"))
 anpp_new_cf <- response_ratio_v2(subset(anpp_new,treatment=="cf"))
 
 anpp_new_vcmax <- merge(vcmax_all_plot,combine_co2_c(anpp_new_c,anpp_new_f,anpp_new_cf,"anpp_new"),by = c("exp","condition"),all.x=TRUE)
-p[[24]] <- ggplot(anpp_new_vcmax,aes_string(x="anpp_new", y="vcmax")) +
-  geom_hline(yintercept=0)+geom_vline(xintercept=0)+
-  geom_point(aes(color=condition),size=3)+
-  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
-  geom_smooth(color="black",method="lm",se=F)+labs(x="ANPP (without g/m2..)",y="vcmax")+
-  #geom_text(aes(label=exp),hjust=1, vjust=0,check_overlap = T)+
-  theme(axis.text=element_text(size=15),axis.title=element_text(size=15,face="bold"))
 
-plot_grid(p[[1]],p[[2]],p[[3]],p[[4]],p[[5]],p[[6]],p[[7]],p[[8]],p[[9]],p[[10]],p[[11]],p[[12]],
-          p[[13]],p[[14]],p[[15]],p[[16]],p[[17]],p[[18]],p[[19]],p[[20]],p[[21]],p[[22]],p[[23]],p[[24]],
-          nrow=5,label_size = 15)+
-  theme(plot.background=element_rect(fill="white", color="white"))
-ggsave(paste("~/data/output_gcme/colin/final_fig2_vcmax.jpg",sep=""),width = 20, height = 20)
+#Add additional grassland anpp - summing up samples within year and include
+unique(logr_c_anpp$Unit)
+aa <- subset(logr_c_anpp,Unit=="g_m2"|Unit=="gc_m2"|Unit=="t_ha")
+unique(aa[,c("exp","start_year","sampling_year")])
+# 5 additional plots available as the others are forest --> they are just one sample, so use it directly
+add_anpp <- final_mean[,c("exp","anpp")] %>% filter(exp %in%c("riceface_japan_ko_2013_3558_13960_c","riceface_japan_a_2003_3938_14057_c","riceface_japan_a_2004_3938_14057_c","soyfacesoy1_c","soyfacesoy2_c"))
+#only 3 samples - include them
+anpp_new_vcmax$anpp_new[anpp_new_vcmax$exp=="riceface_japan_ko_2013_3558_13960_c"] <- add_anpp$anpp[add_anpp$exp=="riceface_japan_ko_2013_3558_13960_c"] 
+anpp_new_vcmax$anpp_new[anpp_new_vcmax$exp=="soyfacesoy1_c"] <- add_anpp$anpp[add_anpp$exp=="soyfacesoy1_c"] 
+anpp_new_vcmax$anpp_new[anpp_new_vcmax$exp=="soyfacesoy2_c"] <- add_anpp$anpp[add_anpp$exp=="soyfacesoy2_c"] 
+
+#popface is g/m2 but forest, we don't know why so only just remove it!
+final_mean <- merge(final_mean,anpp_new_vcmax[,c("exp","anpp_new")],by = c("exp"),all.x=TRUE)
+final_mean$anpp <- final_mean$anpp_new
+final_mean <- subset( final_mean, select = -anpp_new )
 
 
+#add two plots from Cesar -->after adding them --becoming weaker!
+#Cesar_anpp <- read.csv("/Users/yunpeng/data/gcme/cesar/ANPP.csv")
+#phace <- log(112.6493/111.8533)/log(600/384)
+#Aspen <- (log(669.6334/517.9303)/log(550/360) + log(621.7131/429.4247)/log(550/360))/2
+
+#further look
+
+#final_mean$anpp[final_mean$exp=="phace_c"] <- phace
+#final_mean$anpp[final_mean$exp=="rhine-aspenface_c"] <- Aspen
+
+csvfile <- paste("/Users/yunpeng/data/gcme/kevin/final_mean.csv")
+write.csv(final_mean, csvfile, row.names = TRUE)
+
+
+final_data <- final_mean[,c(4,6,7:10,12,14:50)]
+
+res2 <- rcorr(as.matrix(final_data))
+p_value <- as.data.frame(res2$P[,c("vcmax","jmax")])
+
+vcmax_sig <- subset(p_value[order(p_value[,c("vcmax")] ),],vcmax<= 0.3)
+jmax_sig <- subset(p_value[order(p_value[,c("jmax")] ),],jmax<= 0.3)
+
+vcmax_select <- rownames(vcmax_sig)
+jmax_select <- rownames(jmax_sig)
 
 p <- list()
+s <- list()
+for(i in c(1:length(vcmax_select))){
+  p[[i]] <- ggplot(final_mean,aes_string(x=vcmax_select[i], y="vcmax")) +
+    geom_hline(yintercept=0)+geom_vline(xintercept=0)+
+    geom_point(aes(color=condition),size=3)+
+    stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
+    geom_smooth(color="black",method="lm",se=F)+labs(y="vcmax")+
+    theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"))}
+
+
+#add mineral soil of vcmax
+s[[1]] <- ggplot(final_mean,aes_string(x="soil_mineral_N", y="vcmax")) +
+  geom_hline(yintercept=0)+geom_vline(xintercept=0)+
+  geom_point(aes(color=condition),size=3)+ #or type
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
+  labs(y="vcmax")+
+  theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"))
+
+
+
+plot_grid(p[[1]],p[[2]],p[[11]],p[[4]],p[[3]],p[[5]],p[[10]],p[[14]],s[[1]],p[[22]],p[[23]],p[[19]],
+          nrow=4,label_size = 15)+
+  theme(plot.background=element_rect(fill="white", color="white"))
+ggsave(paste("~/data/output_gcme/colin/final_fig2_vcmax_simple.jpg",sep=""),width = 20, height = 20)
+
+
+#jmax
+b <- list()
+#add mineral soil of jmax
+s[[2]] <- ggplot(final_mean,aes_string(x="soil_mineral_N", y="jmax")) +
+  geom_hline(yintercept=0)+geom_vline(xintercept=0)+
+  geom_point(aes(color=condition),size=3)+ #or type
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
+  theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"))
+
 for(i in c(1:length(jmax_select))){
-  p[[i]] <- ggplot(final_mean,aes_string(x=jmax_select[i], y="jmax")) +
+  b[[i]] <- ggplot(final_mean,aes_string(x=jmax_select[i], y="jmax")) +
     geom_hline(yintercept=0)+geom_vline(xintercept=0)+
     geom_point(aes(color=condition),size=3)+
     stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
     geom_smooth(color="black",method="lm",se=F)+labs(y="jmax")+
-    #geom_text(aes(label=exp),hjust=1, vjust=0,check_overlap = T)+
     theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"))}
-p[[2]] <- ggplot(final_mean,aes_string(x="bnpp", y="jmax")) +
-  geom_hline(yintercept=0)+geom_vline(xintercept=0)+
-  geom_point(aes(color=response),size=3)+
-  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
-  geom_smooth(color="black",method="lm",se=F)+labs(y="jmax")+
-  #geom_text(aes(label=exp),hjust=1, vjust=0,check_overlap = T)+
-  theme(axis.text=element_text(size=15),axis.title=element_text(size=15,face="bold"))
 
-anpp_new_jmax <- merge(jmax_all_plot,combine_co2_c(anpp_new_c,anpp_new_f,anpp_new_cf,"anpp_new"),by = c("exp","condition"),all.x=TRUE)
-p[[15]] <- ggplot(anpp_new_jmax,aes_string(x="anpp_new", y="jmax")) +
+
+plot_grid(b[[2]],b[[8]],b[[10]],b[[4]],b[[3]],b[[9]],
+          nrow=2,label_size = 15)+theme(plot.background=element_rect(fill="white", color="white"))
+ggsave(paste("~/data/output_gcme/colin/final_fig2_jmax.jpg",sep=""),width = 20, height = 20)
+
+
+plot_grid(p[[1]],p[[2]],p[[4]],p[[3]],p[[5]],b[[2]],b[[4]],b[[3]],b[[9]],
+          nrow=3,label_size = 15)+theme(plot.background=element_rect(fill="white", color="white"))
+ggsave(paste("~/data/output_gcme/colin/fig2_final.jpg",sep=""),width = 20, height = 15)
+
+plot_grid(p[[22]],p[[23]],s[[1]],b[[10]],b[[8]],s[[2]],
+          nrow=2,label_size = 15)+theme(plot.background=element_rect(fill="white", color="white"))
+ggsave(paste("~/data/output_gcme/colin/figs1_final.jpg",sep=""),width = 20, height = 10)
+
+
+
+#new part - warming, fertilization and light
+subset(kevin_othervars,treatment=="w")
+subset(kevin_othervars,treatment=="s")
+subset(kevin_othervars,treatment=="f")
+kevin_othervars_wsf <- subset(kevin_othervars,treatment=="w"|treatment=="s"|treatment=="f")
+
+#check numbers of sites and variables 
+varname2 <- kevin_othervars_wsf%>% group_by(response)  %>% summarise(number = n())
+
+#other vars - all created now
+for (i in 1:nrow(varname2)) {
+  tryCatch({
+    varname2a <- varname2$response[i]
+    df_w <- subset(kevin_othervars_wsf,treatment=="w" & response==varname2a)
+    assign(paste("logr_w_", varname2a,sep=""), as_tibble(response_ratio_v2(df_w)))
+    
+    df_s <- subset(kevin_othervars_wsf,treatment=="s"& response==varname2a)
+    assign(paste("logr_s_", varname2a,sep=""), as_tibble(response_ratio_v2(df_s)))
+    
+    df_f <- subset(kevin_othervars_wsf,treatment=="f" & response==varname2a)
+    assign(paste("logr_f_", varname2a,sep=""), as_tibble(response_ratio_v2(df_f)))
+  }, error=function(e){})} 
+
+
+response_ratio_v2(logr_f_vcmax)[,c("logr","logr_var","exp")] %>%
+  ggplot(aes(x=exp, y=logr)) +
+  geom_point(aes(size=1/logr_var)) +
+  geom_hline( yintercept=0.0, size=0.5)+ ylim(-1,1)+
+  labs(x="", y="fertilization on vcmax",size=expression(paste("Variance"^{-1})))+
+  theme_classic()+coord_flip()+theme(axis.text=element_text(size=12))
+
+response_ratio_v2(logr_s_npp)[,c("logr","logr_var","exp")] %>%
+  ggplot(aes(x=exp, y=logr)) +
+  geom_point(aes(size=1/logr_var)) +
+  geom_hline( yintercept=0.0, size=0.5)+ ylim(-1,1)+
+  labs(x="", y="Shading on NPP",size=expression(paste("Variance"^{-1})))+
+  theme_classic()+coord_flip()+theme(axis.text=element_text(size=20))
+  
+#check
+ggplot(final_mean,aes_string(x="jmax", y="vcmax")) +
   geom_hline(yintercept=0)+geom_vline(xintercept=0)+
   geom_point(aes(color=condition),size=3)+
   stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
-  geom_smooth(color="black",method="lm",se=F)+labs(x="ANPP (without g/m2..)",y="jmax")+
-  #geom_text(aes(label=exp),hjust=1, vjust=0,check_overlap = T)+
-  theme(axis.text=element_text(size=15),axis.title=element_text(size=15,face="bold"))
+  geom_smooth(color="black",method="lm",se=F)+labs(y="vcmax")+
+  geom_text(aes(label=substr(exp, 1, 11)),hjust=0, vjust=0,check_overlap = F)+
+  theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"))
 
-plot_grid(p[[1]],p[[2]],p[[3]],p[[4]],p[[5]],p[[6]],p[[7]],p[[8]],p[[9]],p[[10]],p[[11]],p[[12]],
-          p[[13]],p[[14]],p[[15]],
-          nrow=4,label_size = 15)+
-  theme(plot.background=element_rect(fill="white", color="white"))
-ggsave(paste("~/data/output_gcme/colin/final_fig2_jmax.jpg",sep=""),width = 20, height = 20)
+logr_c_vcmax[grep("trifolium", logr_c_vcmax$dominant_species),]$exp
+final_mean
+#swiss_face_trifolium
+#aspen
