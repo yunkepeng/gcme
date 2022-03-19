@@ -248,7 +248,7 @@ kevin_othervars_cf$output[kevin_othervars_cf$response=="coarse_root_production"|
                             kevin_othervars_cf$response=="fine_root_turnover"|
                             kevin_othervars_cf$response=="root_production"|
                             (kevin_othervars_cf$response=="fine_root_biomass" & kevin_othervars_cf$Unit=="g_m2y")|
-                            (kevin_othervars_cf$response=="fine_root_production" & (kevin_othervars_cf$Unit=="gc_m2yr"|kevin_othervars_cf$Unit=="mm_cm2d"|kevin_othervars_cf$Unit=="g_m2y"| kevin_othervars_cf$Unit=="gc_m2y"|kevin_othervars_cf$Unit=="gdw_m2y"))] <- "bnpp"
+                            (kevin_othervars_cf$response=="fine_root_production")] <- "bnpp"
 
 bnpp_dataset <- subset(kevin_othervars_cf,output=="bnpp"&(response=="root_production"|exp=="christchurch_pr_c"|exp=="nevada_desert_face_c"|exp=="popface_pa_c"|exp=="popface_pe_c"|exp=="popface_pn_c"| (exp=="facts_ii_face3_pt_c"&response=="fine_root_production")|exp=="biforface_c"))
 
@@ -443,24 +443,6 @@ final_mean <-Reduce(function(x,y) merge(x = x, y = y, by = c("exp","condition"),
                          mb_plot,mbc_plot,mbn_plot,r_leaf_plot,r_root_plot,r_soil_plot,root_n_uptake_plot,root_shoot_ratio_plot,soc_plot,soil_c_plot,
                          soil_total_c_plot,total_biomass_plot,total_biomass_n_plot,wood_n_plot,soil_potential_net_n_mineralization_plot))
 
-#variables interested...
-c("soil_nh4-n","soil_no3-n","soil_in")
-c("soil_solution_mineral_n","soil_solution_nh4","soil_solution_no3")
-
-
-soil_min <- kevin_othervars_cf %>%
-  filter(response %in%c("soil_nh4-n","soil_no3-n","soil_in"))
-soil_min_c <- subset(soil_min,treatment=="c")
-new_soil_min <- agg_meta_sen_coef(response_ratio_v2(soil_min_c))
-test<- (merge(final_mean,new_soil_min[,c("exp","middle")],by=c("exp"),all.x=TRUE))
-
-ggplot(test,aes_string(x="middle", y="vcmax")) +
-  geom_hline(yintercept=0)+geom_vline(xintercept=0)+
-  geom_point(aes(color=condition),size=3)+
-  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
-  geom_smooth(color="black",method="lm",se=F)+labs(x="mineral soil N")+
-  theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"))
-
 #further process
 
 #1. Remove a negative Asat (since it is Asat at constant co2)
@@ -495,6 +477,21 @@ anpp_new_vcmax$anpp_new[anpp_new_vcmax$exp=="soyfacesoy2_c"] <- add_anpp$anpp[ad
 final_mean <- merge(final_mean,anpp_new_vcmax[,c("exp","anpp_new")],by = c("exp"),all.x=TRUE)
 final_mean$anpp <- final_mean$anpp_new
 final_mean <- subset( final_mean, select = -anpp_new )
+
+#add popface's soil 
+old_data <- read_csv("~/data/gcme/data_received_190325/NewData_wide_CORRECTED2.csv") %>%
+  mutate( ambient_Sd  = as.numeric(ambient_Sd),  ambient_Se  = as.numeric(ambient_Se), 
+          elevated_Sd = as.numeric(elevated_Sd), elevated_Se = as.numeric(elevated_Se),
+          co2_a  = as.numeric(co2_a),  co2_e  = as.numeric(co2_e), 
+          ambient  = as.numeric(ambient),  elevated  = as.numeric(elevated))
+
+old_data$exp <- tolower(old_data$exp_nam)
+popface <-subset(old_data, (exp_nam=="POPFACE_pa"|exp_nam=="POPFACE_pe"|exp_nam=="POPFACE_pn")&Data_type=="soil_mineral_N")
+new_popface <- as.data.frame(agg_meta_sen_coef(response_ratio_v2(popface))[,c("exp","middle")])
+names(new_popface) <- c("exp","soil_mineral_N")
+final_mean$soil_mineral_N[final_mean$exp=="popface_pa_c"] <- new_popface$soil_mineral_N[new_popface$exp=="popface_pa"]
+final_mean$soil_mineral_N[final_mean$exp=="popface_pe_c"] <- new_popface$soil_mineral_N[new_popface$exp=="popface_pe"]
+final_mean$soil_mineral_N[final_mean$exp=="popface_pn_c"] <- new_popface$soil_mineral_N[new_popface$exp=="popface_pn"]
 
 
 #add two plots from Cesar -->after adding them --becoming weaker!
@@ -581,12 +578,119 @@ plot_grid(p[[22]],p[[23]],s[[1]],b[[10]],b[[8]],s[[2]],
 ggsave(paste("~/data/output_gcme/colin/figs1_final.jpg",sep=""),width = 20, height = 10)
 
 
+###Addition 1: three ways to calculate soil mineral N
+
+#three ways to focus on mineral N vs. vcmax
+#fig.1 sum-up method
+
+s[[1]] <- ggplot(final_mean,aes_string(x="soil_mineral_N", y="vcmax")) +
+  geom_hline(yintercept=0)+geom_vline(xintercept=0)+
+  geom_point(size=3)+ #or type
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
+  labs(y="vcmax")+geom_text(aes(label=exp,hjust=0, vjust=-1,check_overlap = F))+
+  theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"))
+
+s[[1]]
+
+#fig2, combing all variables together
+c("soil_nh4-n","soil_no3-n","soil_in")
+c("soil_solution_mineral_n","soil_solution_nh4","soil_solution_no3")
+soil_min_c <- kevin_othervars_cf %>%
+  filter(response %in%c("soil_nh4-n","soil_no3-n","soil_in"))%>%
+  filter(treatment %in%c("c"))
+
+new_soil_min <- agg_meta_sen_coef(response_ratio_v2(soil_min_c))
+test<- (merge(final_mean,new_soil_min[,c("exp","middle")],by=c("exp"),all.x=TRUE))
+
+test$middle[test$exp=="popface_pa_c"] <- new_popface$soil_mineral_N[new_popface$exp=="popface_pa"]
+test$middle[test$exp=="popface_pe_c"] <- new_popface$soil_mineral_N[new_popface$exp=="popface_pe"]
+test$middle[test$exp=="popface_pn_c"] <- new_popface$soil_mineral_N[new_popface$exp=="popface_pn"]
+
+s2 <- ggplot(test,aes_string(x="middle", y="vcmax")) +
+  geom_hline(yintercept=0)+geom_vline(xintercept=0)+
+  geom_point(size=3)+
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
+  geom_smooth(color="black",method="lm",se=F)+labs(x="mineral soil N")+geom_text(aes(label=exp,hjust=0, vjust=-1,check_overlap = F))+
+  theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"))
+s2
+
+ggplot(subset(test,exp!="giface_c" & exp!="brandbjerg_c"& exp!="new_zealand_face_c"),aes_string(x="middle", y="vcmax")) +
+  geom_hline(yintercept=0)+geom_vline(xintercept=0)+
+  geom_point(size=3)+
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
+  geom_smooth(color="black",method="lm",se=F)+labs(x="mineral soil N")+geom_text(aes(label=exp,hjust=0, vjust=-1,check_overlap = F))+
+  theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"))
+
+#fig3, combing all under aggreagtion method
+n1 <- agg_meta_sen_coef(response_ratio_v2(kevin_othervars_cf %>%filter(response %in%c("soil_nh4-n"))%>% filter(treatment %in%c("c"))))[,c("exp","middle")]
+n1$name<- "soil_nh4_dry"
+n2 <- agg_meta_sen_coef(response_ratio_v2(kevin_othervars_cf %>%filter(response %in%c("soil_no3-n"))%>% filter(treatment %in%c("c"))))[,c("exp","middle")]
+n2$name<- "soil_no3_dry"
+n3 <- agg_meta_sen_coef(response_ratio_v2(kevin_othervars_cf %>%filter(response %in%c("soil_in"))%>% filter(treatment %in%c("c"))))[,c("exp","middle")]
+n3$name <- "soil_mineral_N"
+n4 <- agg_meta_sen_coef(response_ratio_v2(kevin_othervars_cf %>%filter(response %in%c("soil_solution_mineral_n"))%>% filter(treatment %in%c("c"))))[,c("exp","middle")]
+n4$name <- "soil_solution_mineral_N"
+n5 <- agg_meta_sen_coef(response_ratio_v2(kevin_othervars_cf %>%filter(response %in%c("soil_solution_nh4"))%>% filter(treatment %in%c("c"))))[,c("exp","middle")]
+n5$name <- "soil_nh4_solution"
+n6 <- agg_meta_sen_coef(response_ratio_v2(kevin_othervars_cf %>%filter(response %in%c("soil_solution_no3"))%>% filter(treatment %in%c("c"))))[,c("exp","middle")]
+n6$name <- "soil_no3_solution"
+
+n_all <- dplyr::bind_rows(n1,n2,n3,n4,n5,n6)
+
+method3 <- merge(final_mean,n_all,by=c("exp"),all.x=TRUE)
+method3$middle[method3$exp=="popface_pa_c"] <- new_popface$soil_mineral_N[new_popface$exp=="popface_pa"]
+method3$middle[method3$exp=="popface_pe_c"] <- new_popface$soil_mineral_N[new_popface$exp=="popface_pe"]
+method3$middle[method3$exp=="popface_pn_c"] <- new_popface$soil_mineral_N[new_popface$exp=="popface_pn"]
+
+s3 <- ggplot(method3,aes_string(x="middle", y="vcmax")) +
+  geom_hline(yintercept=0)+geom_vline(xintercept=0)+
+  geom_point(aes(color=name),size=3)+
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
+  geom_smooth(color="black",method="lm",se=F)+labs(x="mineral soil N")+
+  theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"))
+s3
+
+s3 <- ggplot(subset(method3,is.na(middle)==FALSE),aes_string(x="middle", y="vcmax")) +
+  geom_hline(yintercept=0)+geom_vline(xintercept=0)+
+  geom_point(aes(color=exp),size=3)+
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
+  geom_smooth(color="black",method="lm",se=F)+labs(x="mineral soil N")+
+  theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"))
+s3
+
+#above, needs to include old data? See beni's code
 
 #new part - warming, fertilization and light
-subset(kevin_othervars,treatment=="w")
-subset(kevin_othervars,treatment=="s")
-subset(kevin_othervars,treatment=="f")
-kevin_othervars_wsf <- subset(kevin_othervars,treatment=="w"|treatment=="s"|treatment=="f")
+kevin_othervars_wsf <- subset(kevin_othervars, (treatment=="c"|treatment=="w"|treatment=="s"|treatment=="f"|treatment=="i"|treatment=="d")&is.na(exp)==FALSE)
+
+###pre-processing: 
+#anpp and anpp_grain are both anpp.
+kevin_othervars_wsf$response[kevin_othervars_wsf$response=="anpp_grain"] <- "anpp"
+unique(subset(kevin_othervars_wsf,response=="anpp")$Unit)
+
+#some tiny change: leaf_n needs division - but leaf_p doesn't need (as it is all pmass)
+nmass_wsf <- subset(kevin_othervars_wsf,response=="leaf_n") %>% filter(Unit %in% c("g","g_100g","g_g","g_kg","mg_g","mg_kg","mmol_g","ug_mg","umol_g"))
+nmass_wsf$response <- "nmass"
+logr_w_nmass <- as_tibble(response_ratio_v2(subset(nmass_wsf,treatment=="w")));
+all_logr_c_nmass <- as_tibble(response_ratio_v2(subset(nmass_wsf,treatment=="c")))
+
+#bnpp - make sure data between them are not mixed.
+kevin_othervars_wsf$output[kevin_othervars_wsf$response=="coarse_root_production"|
+                             kevin_othervars_wsf$response=="fine_root_turnover"|
+                             (kevin_othervars_wsf$response=="root_production")|
+                            (kevin_othervars_wsf$response=="fine_root_biomass" & kevin_othervars_wsf$Unit=="g_m2y")|
+                            (kevin_othervars_wsf$response=="fine_root_production")] <- "bnpp" # this g/m2 should be in cropland
+
+bnpp_dataset <- subset(kevin_othervars_wsf,output=="bnpp")
+unique(bnpp_dataset[,c("response","Unit")])
+
+bnpp_dataset$response <- "bnpp"
+
+all_logr_c_bnpp <- as_tibble(response_ratio_v2(subset(bnpp_dataset,treatment=="c")));
+logr_w_bnpp <- as_tibble(response_ratio_v2(subset(bnpp_dataset,treatment=="w")))
+
+#create a column to combine exp and exp_nam
+exp_name <- unique(kevin_othervars[,c("exp","exp_nam")])
 
 #check numbers of sites and variables 
 varname2 <- kevin_othervars_wsf%>% group_by(response)  %>% summarise(number = n())
@@ -595,6 +699,10 @@ varname2 <- kevin_othervars_wsf%>% group_by(response)  %>% summarise(number = n(
 for (i in 1:nrow(varname2)) {
   tryCatch({
     varname2a <- varname2$response[i]
+    
+    df_c <- subset(kevin_othervars_wsf,treatment=="c" & response==varname2a)
+    assign(paste("all_logr_c_", varname2a,sep=""), as_tibble(response_ratio_v2(df_c)))
+    
     df_w <- subset(kevin_othervars_wsf,treatment=="w" & response==varname2a)
     assign(paste("logr_w_", varname2a,sep=""), as_tibble(response_ratio_v2(df_w)))
     
@@ -603,33 +711,175 @@ for (i in 1:nrow(varname2)) {
     
     df_f <- subset(kevin_othervars_wsf,treatment=="f" & response==varname2a)
     assign(paste("logr_f_", varname2a,sep=""), as_tibble(response_ratio_v2(df_f)))
+    
+    df_i <- subset(kevin_othervars_wsf,treatment=="i" & response==varname2a)
+    assign(paste("logr_i_", varname2a,sep=""), as_tibble(response_ratio_v2(df_i)))
+    
+    df_d <- subset(kevin_othervars_wsf,treatment=="d" & response==varname2a)
+    assign(paste("logr_d_", varname2a,sep=""), as_tibble(response_ratio_v2(df_d)))
   }, error=function(e){})} 
 
 
-response_ratio_v2(logr_f_vcmax)[,c("logr","logr_var","exp")] %>%
-  ggplot(aes(x=exp, y=logr)) +
-  geom_point(aes(size=1/logr_var)) +
-  geom_hline( yintercept=0.0, size=0.5)+ ylim(-1,1)+
-  labs(x="", y="fertilization on vcmax",size=expression(paste("Variance"^{-1})))+
-  theme_classic()+coord_flip()+theme(axis.text=element_text(size=12))
 
-response_ratio_v2(logr_s_npp)[,c("logr","logr_var","exp")] %>%
-  ggplot(aes(x=exp, y=logr)) +
-  geom_point(aes(size=1/logr_var)) +
-  geom_hline( yintercept=0.0, size=0.5)+ ylim(-1,1)+
-  labs(x="", y="Shading on NPP",size=expression(paste("Variance"^{-1})))+
-  theme_classic()+coord_flip()+theme(axis.text=element_text(size=20))
-  
-#check
-ggplot(final_mean,aes_string(x="jmax", y="vcmax")) +
+
+#create a function, with a input of list of variable, and output a potential figure
+
+#create function
+output_point <- function(list_of_variable){
+  test <- list_of_variable
+  point_list <- list() 
+  boxplot_list <- list() 
+  for (i in 1:length(test)){ 
+    
+    data1 <- assign(test[i], get(test[i]))
+    a1 <- agg_meta(response_ratio_v2(data1))
+    a2 <- merge(a1[,c("middle","logr_var","exp","no")],exp_name,by=c("exp"),all.x=TRUE)
+    mean_percentage <- median(a2$logr_var/a2$middle,na.rm=TRUE)
+    a2$logr_var[is.na(a2$logr_var==TRUE)] <- abs(a2$middle[is.na(a2$logr_var==TRUE)]*mean_percentage)
+    a2$logr_se <- sqrt(a2$logr_var)/sqrt(a2$no)
+    a2$type_name <- data1$response[1]
+    a2$exp_nam[is.na(a2$exp_nam)==TRUE] <- a2$exp[is.na(a2$exp_nam)==TRUE]
+    a2$exp_nam[is.na(a2$exp_nam)==TRUE] <- "unknown"
+    
+    out_meta2 <- a2 %>% metafor::rma.mv( middle, logr_var, method = "REML", random = ~ 1 | exp_nam, slab = exp, control = list(stepadj=0.3), data = . )
+    output2 <- tibble(type_name=data1$response[1],middle=out_meta2$b[1,1],ymin = out_meta2$ci.lb, ymax= out_meta2$ci.ub)
+    
+    point_list[[i]] <- a2
+    boxplot_list[[i]] <- output2
+    }
+  point_list_final <- do.call("rbind",point_list)
+  boxplot_list_final <- do.call("rbind",boxplot_list)
+  return(point_list_final)
+}
+output_boxplot <- function(list_of_variable){
+  test <- list_of_variable
+  point_list <- list() 
+  boxplot_list <- list() 
+  for (i in 1:length(test)){ 
+    
+    data1 <- assign(test[i], get(test[i]))
+    a1 <- agg_meta(response_ratio_v2(data1))
+    a2 <- merge(a1[,c("middle","logr_var","exp","no")],exp_name,by=c("exp"),all.x=TRUE)
+    mean_percentage <- median(a2$logr_var/a2$middle,na.rm=TRUE)
+    a2$logr_var[is.na(a2$logr_var==TRUE)] <- abs(a2$middle[is.na(a2$logr_var==TRUE)]*mean_percentage)
+    a2$logr_se <- sqrt(a2$logr_var)/sqrt(a2$no)
+    a2$type_name <- data1$response[1]
+    a2$exp_nam[is.na(a2$exp_nam)==TRUE] <- a2$exp[is.na(a2$exp_nam)==TRUE]
+    a2$exp_nam[is.na(a2$exp_nam)==TRUE] <- "unknown"
+    
+    out_meta2 <- a2 %>% metafor::rma.mv( middle, logr_var, method = "REML", random = ~ 1 | exp_nam, slab = exp, control = list(stepadj=0.3), data = . )
+    output2 <- tibble(type_name=data1$response[1],middle=out_meta2$b[1,1],ymin = out_meta2$ci.lb, ymax= out_meta2$ci.ub)
+    
+    point_list[[i]] <- a2
+    boxplot_list[[i]] <- output2
+  }
+  point_list_final <- do.call("rbind",point_list)
+  boxplot_list_final <- do.call("rbind",boxplot_list)
+  return(boxplot_list_final)
+}
+
+#for co2 sen coef
+output_point_co2 <- function(list_of_variable){
+  test <- list_of_variable
+  point_list <- list() 
+  boxplot_list <- list() 
+  for (i in 1:length(test)){ 
+    
+    data1 <- assign(test[i], get(test[i]))
+    a1 <- agg_meta_sen_coef(response_ratio_v2(data1))
+    a2 <- merge(a1[,c("middle","logr_var","exp","no")],exp_name,by=c("exp"),all.x=TRUE)
+    mean_percentage <- median(a2$logr_var/a2$middle,na.rm=TRUE)
+    #fill missing log_var at plot-mean
+    a2$logr_var[is.na(a2$logr_var==TRUE)] <- abs(a2$middle[is.na(a2$logr_var==TRUE)]*mean_percentage)
+    a2$logr_se <- sqrt(a2$logr_var)/sqrt(a2$no)
+    a2$type_name <- data1$response[1]
+    #fill missing co2 exp_name
+    a2$exp_nam[is.na(a2$exp_nam)==TRUE] <- a2$exp[is.na(a2$exp_nam)==TRUE]
+    a2$exp_nam[is.na(a2$exp_nam)==TRUE] <- "unknown"
+    
+    out_meta2 <- a2 %>% metafor::rma.mv( middle, logr_var, method = "REML", random = ~ 1 | exp_nam, slab = exp, control = list(stepadj=0.3), data = . )
+    output2 <- tibble(type_name=data1$response[1],middle=out_meta2$b[1,1],ymin = out_meta2$ci.lb, ymax= out_meta2$ci.ub)
+    
+    point_list[[i]] <- a2
+    boxplot_list[[i]] <- output2
+  }
+  point_list_final <- do.call("rbind",point_list)
+  boxplot_list_final <- do.call("rbind",boxplot_list)
+  return(point_list_final)
+}
+output_boxplot_co2 <- function(list_of_variable){
+  test <- list_of_variable
+  point_list <- list() 
+  boxplot_list <- list() 
+  for (i in 1:length(test)){ 
+    
+    data1 <- assign(test[i], get(test[i]))
+    a1 <- agg_meta_sen_coef(response_ratio_v2(data1))
+    a2 <- merge(a1[,c("middle","logr_var","exp","no")],exp_name,by=c("exp"),all.x=TRUE)
+    mean_percentage <- median(a2$logr_var/a2$middle,na.rm=TRUE)
+    a2$logr_var[is.na(a2$logr_var==TRUE)] <- abs(a2$middle[is.na(a2$logr_var==TRUE)]*mean_percentage)
+    a2$logr_se <- sqrt(a2$logr_var)/sqrt(a2$no)
+    a2$type_name <- data1$response[1]
+    a2$exp_nam[is.na(a2$exp_nam)==TRUE] <- a2$exp[is.na(a2$exp_nam)==TRUE]
+    a2$exp_nam[is.na(a2$exp_nam)==TRUE] <- "unknown"
+    
+    out_meta2 <- a2 %>% metafor::rma.mv( middle, logr_var, method = "REML", random = ~ 1 | exp_nam, slab = exp, control = list(stepadj=0.3), data = . )
+    output2 <- tibble(type_name=data1$response[1],middle=out_meta2$b[1,1],ymin = out_meta2$ci.lb, ymax= out_meta2$ci.ub)
+    
+    point_list[[i]] <- a2
+    boxplot_list[[i]] <- output2
+  }
+  point_list_final <- do.call("rbind",point_list)
+  boxplot_list_final <- do.call("rbind",boxplot_list)
+  return(boxplot_list_final)
+}
+
+warming_point <- output_point(c("logr_w_vcmax","logr_w_jmax","logr_w_anpp","logr_w_bnpp","logr_w_npp","logr_w_gpp","logr_w_nmass","logr_w_root_shoot_ratio"))
+warming_boxplot <- output_boxplot(c("logr_w_vcmax","logr_w_jmax","logr_w_anpp","logr_w_bnpp","logr_w_npp","logr_w_gpp","logr_w_nmass","logr_w_root_shoot_ratio"))
+warming_boxplot$type_name <- factor(warming_boxplot$type_name, levels = warming_boxplot$type_name)
+
+b2 <- warming_boxplot %>% ggplot( aes(x=type_name, y=middle)) + geom_crossbar(aes(x=type_name, y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5,color="black") +
+  geom_point(data=warming_point,aes(x=type_name, y=middle, size= 1/logr_se), alpha = 0.6, width = 0.5) +geom_hline( yintercept=0.0, size=0.5)+ ylim(-1,1)+
+  labs(y="Response ratio (warming)",x=" ",size=expression(paste("Standard Error"^{-1}))) + theme_classic()+coord_flip()+theme(axis.text=element_text(size=12))
+
+#co2 - preprocessing
+all_logr_c_anpp$exp_nam[is.na(all_logr_c_anpp$exp_nam)==TRUE] <- all_logr_c_anpp$exp[is.na(all_logr_c_anpp$exp_nam)==TRUE]
+
+co2_point <- output_point_co2(c("logr_c_vcmax","logr_c_jmax","all_logr_c_anpp","all_logr_c_bnpp","all_logr_c_npp","all_logr_c_gpp","all_logr_c_nmass","all_logr_c_root_shoot_ratio"))
+co2_boxplot <- output_boxplot_co2(c("logr_c_vcmax","logr_c_jmax","all_logr_c_anpp","all_logr_c_bnpp","all_logr_c_npp","all_logr_c_gpp","all_logr_c_nmass","all_logr_c_root_shoot_ratio"))
+co2_boxplot$type_name <- factor(co2_boxplot$type_name, levels = co2_boxplot$type_name)
+
+b1 <- co2_boxplot %>% ggplot( aes(x=type_name, y=middle)) + geom_crossbar(aes(x=type_name, y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5,color="black") +
+  geom_point(data=co2_point,aes(x=type_name, y=middle, size= 1/logr_se), alpha = 0.6, width = 0.5) +geom_hline( yintercept=0.0, size=0.5)+ ylim(-1,1)+
+  labs(y="Sensitivity coefficient (CO2)",x=" ",size=expression(paste("Standard Error"^{-1}))) + theme_classic()+coord_flip()+theme(axis.text=element_text(size=12))
+
+plot_grid(b1,b2,nrow=1,label_size = 15)+
+  theme(plot.background=element_rect(fill="white", color="white"))
+ggsave(paste("~/data/output_gcme/colin/final_fig3.jpg",sep=""),width = 15, height = 10)
+
+
+
+#check how N fer changed vcmax, jmax...
+
+nfer <- final_mean %>% filter(exp %in%c("duke2_cf","euroface4_pa_cf","euroface4_pe_cf","euroface4_pn_cf","new_zealand_face_cf",
+                                "duke2_c","euroface4_pa_c","euroface4_pe_c","euroface4_pn_c","new_zealand_face_c"))
+
+nfer <- final_mean %>% filter(exp %in%c("duke2_cf","euroface4_pa_cf","euroface4_pe_cf","euroface4_pn_cf",
+                                        "duke2_c","euroface4_pa_c","euroface4_pe_c","euroface4_pn_c"))
+
+test2 <- final_mean
+logr_c_vcmax[grep("trifolium", logr_c_vcmax$dominant_species),]$exp
+
+test2$condition[test2$exp=="swissface_trifolium2_c"] <- "N-fixing"
+test2$condition[test2$exp=="rhine-aspenface_c"] <- "N-fixing"
+
+ggplot(test2,aes_string(x="jmax", y="vcmax")) +
   geom_hline(yintercept=0)+geom_vline(xintercept=0)+
   geom_point(aes(color=condition),size=3)+
   stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
-  geom_smooth(color="black",method="lm",se=F)+labs(y="vcmax")+
-  geom_text(aes(label=substr(exp, 1, 11)),hjust=0, vjust=0,check_overlap = F)+
+  geom_text(data=subset(nfer,condition=="co2"),aes(label=exp))+
+  geom_smooth(color="black",method="lm",se=F)+labs(x="jmax")+
   theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"))
 
-logr_c_vcmax[grep("trifolium", logr_c_vcmax$dominant_species),]$exp
-final_mean
-#swiss_face_trifolium
-#aspen
+ggsave(paste("~/data/output_gcme/colin/final_fig4.jpg",sep=""),width = 15, height = 10)
+
