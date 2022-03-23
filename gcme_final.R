@@ -493,6 +493,54 @@ final_mean$soil_mineral_N[final_mean$exp=="popface_pa_c"] <- new_popface$soil_mi
 final_mean$soil_mineral_N[final_mean$exp=="popface_pe_c"] <- new_popface$soil_mineral_N[new_popface$exp=="popface_pe"]
 final_mean$soil_mineral_N[final_mean$exp=="popface_pn_c"] <- new_popface$soil_mineral_N[new_popface$exp=="popface_pn"]
 
+#finally, merged with ECM and ecosystem
+#merge
+#include ecm from gcme
+ecm_csv <- na.omit(read.csv("/Users/yunpeng/data/gcme/kevin/orig_vcmax/new_ecm_types_updated.csv")[,c("exp","ecm_type")])
+
+#include ecm from smith (see line 637 from code gcme_final_vcmas)
+smith <- read.csv("/Users/yunpeng/data/smith_keenan_gcb/gcb_co2/pred_vcmax.csv")
+smith_all_plotmean <- subset(smith,exp_nam!="NZFACE" &exp_nam!="BioCON" & exp_nam!="ChinaRiceFACE" & exp_nam!="DukeFACE" & exp_nam!="EUROPOPFACE" & exp_nam!="NevadaFACE" & exp_nam!="SwissFACE")
+smith_all_plotmean$ecm_type <- smith_all_plotmean$Nac
+smith_all_plotmean$exp[smith_all_plotmean$exp=="OakOTC"] <- "mi_c";
+smith_all_plotmean$exp[smith_all_plotmean$exp=="ORNL"] <- "ornerp_liqui_c";
+smith_all_plotmean$exp[smith_all_plotmean$exp=="PineOTC"] <- "Christchurch_pr_c";
+smith_all_plotmean$exp[smith_all_plotmean$exp=="RichmondGH"] <- "australiacotton_c";
+smith_all_plotmean$exp[smith_all_plotmean$exp=="UIAPine"] <- "ua_otc_c";
+smith_all_plotmean$exp[smith_all_plotmean$exp=="PHACE"] <- "phace_c";
+smith_all_plotmean$exp[smith_all_plotmean$exp=="AspenFACE"] <- "rhine-aspenface_c";
+smith_all_plotmean$exp[smith_all_plotmean$exp=="BilyKriz"] <- "bily_kriz_c";
+smith_all_plotmean$exp[smith_all_plotmean$exp=="Headley"] <- "headley_qp_c";
+smith_all_plotmean$exp[smith_all_plotmean$exp=="Viesalm"] <- "vielsalm_c"
+smith_all_plotmean$exp <- tolower(smith_all_plotmean$exp)
+#three are replicated - modify them
+smith_all_plotmean$ecm_type[smith_all_plotmean$exp=="grassotc"] <- "Nfix" # 2 N-fixing vs. 4 AM
+smith_all_plotmean$ecm_type[smith_all_plotmean$exp=="rhine-aspenface_c"] <- "ECM" # two ECM > 1 AM
+smith_all_plotmean$ecm_type[smith_all_plotmean$exp=="macchia"] <- "AM" # two AM > 1 ECM
+
+ecm_smith <- unique(smith_all_plotmean[,c("exp","ecm_type")])
+
+ecm_all <- unique(rbind(ecm_smith,ecm_csv))
+
+#merge to combine them
+final_mean <- merge(final_mean,ecm_all,by=c("exp"),all.x=TRUE)
+
+#some others are Nfix, change manually
+unique(smith$exp_nam[smith$Nac=="Nfix"])
+final_mean$ecm_type[final_mean$exp=="biocon_c"]<- "Nfix"
+final_mean$ecm_type[final_mean$exp=="swissface_trifolium2_c"]<- "Nfix"
+final_mean$ecm_type[final_mean$exp=="new_zealand_face_c"] <- "Nfix"
+
+#make two divisions - ecosystem
+final_mean$ecosystem_level <- final_mean$ecosystem
+final_mean$ecosystem_level[final_mean$ecm_type=="Nfix"] <- "N-fixing"
+final_mean$ecosystem_level[final_mean$condition=="Fertilization"] <- "High-N"
+
+#make two divisions - ecm
+final_mean$ecm_level <- final_mean$ecm_type
+final_mean$ecm_level[final_mean$ecm_type=="Nfix"] <- "N-fixing"
+final_mean$ecm_level[final_mean$condition=="Fertilization"] <- "High-N"
+
 
 #add two plots from Cesar -->after adding them --becoming weaker!
 #Cesar_anpp <- read.csv("/Users/yunpeng/data/gcme/cesar/ANPP.csv")
@@ -509,7 +557,6 @@ write.csv(final_mean, csvfile, row.names = TRUE)
 
 
 final_data <- final_mean[,c(4,6,7:10,12,14:50)]
-
 res2 <- rcorr(as.matrix(final_data))
 p_value <- as.data.frame(res2$P[,c("vcmax","jmax")])
 
@@ -524,27 +571,46 @@ s <- list()
 for(i in c(1:length(vcmax_select))){
   p[[i]] <- ggplot(final_mean,aes_string(x=vcmax_select[i], y="vcmax")) +
     geom_hline(yintercept=0)+geom_vline(xintercept=0)+
-    geom_point(aes(color=condition),size=3)+
+    geom_point(aes(color=ecosystem_level),size=3)+
     stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
     geom_smooth(color="black",method="lm",se=F)+labs(y="vcmax")+
-    theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"))}
-
+    theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"),legend.position="none")}
 
 #add mineral soil of vcmax
 s[[1]] <- ggplot(final_mean,aes_string(x="soil_mineral_N", y="vcmax")) +
   geom_hline(yintercept=0)+geom_vline(xintercept=0)+
-  geom_point(aes(color=condition),size=3)+ #or type
+  geom_point(aes(color=ecosystem_level),size=3)+ #or type
   stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
   labs(y="vcmax")+
-  theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"))
+  theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"),legend.position="none")
+
+#create legend situation
+a1 <- ggplot(final_mean,aes_string(x=vcmax_select[3], y="vcmax")) +
+  geom_hline(yintercept=0)+geom_vline(xintercept=0)+
+  geom_point(aes(color=ecosystem_level),size=3)+
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
+  geom_smooth(color="black",method="lm",se=F)+labs(y="vcmax")+
+  theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"),
+        legend.title=element_blank(),legend.text = element_text(size=20))
+
+b1 <- as_ggplot(get_legend(a1))
 
 
-
-plot_grid(p[[1]],p[[2]],p[[11]],p[[4]],p[[3]],p[[5]],p[[10]],p[[14]],s[[1]],p[[22]],p[[23]],p[[19]],
-          nrow=4,label_size = 15)+
+plot_grid(p[[1]],p[[2]],p[[3]],b1,
+          p[[6]],p[[4]],s[[1]],b1,nrow=2,label_size = 15,
+          rel_widths = c(6/20, 6/20,6/20,2/20))+
   theme(plot.background=element_rect(fill="white", color="white"))
-ggsave(paste("~/data/output_gcme/colin/final_fig2_vcmax_simple.jpg",sep=""),width = 20, height = 20)
+ggsave(paste("~/data/output_gcme/colin/fig2_vcmax.jpg",sep=""),width = 20, height = 10)
 
+#site distribution
+kevin <- unique(read.csv("/Users/yunpeng/data/gcme/kevin/orig_vcmax/JunkePeng_11252021.csv")[,c("lon","lat")])
+smith <- unique(read.csv("/Users/yunpeng/data/smith_keenan_gcb/gcb_co2/pred_vcmax.csv")[,c("lon","lat")])
+vcmax_sites <- rbind(kevin,smith)
+
+newmap <- getMap(resolution = "low")
+sp::plot(newmap, xlim = c(-180, 180), ylim = c(-75, 75), asp = 1)
+
+points(vcmax_sites$lon,vcmax_sites$lat, col="red", pch=16,cex=1)
 
 #jmax
 b <- list()
