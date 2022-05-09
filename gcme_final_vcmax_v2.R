@@ -87,35 +87,18 @@ agg_meta_sen_coef <- function(df){
   df$logr <- df$sen_coef
   df$logr_var <- df$sen_coef_var
   df$logr_se <- df$sen_coef_se
-  #some are just all NA for original data's standard deviation - needs division -> in this way just calculate normal mean, lower and upper band
-  for (i in 1:length(explist)){ # if over half of samples doens't have variance, or N =1 then we should not rely on this anyways.
-    if (sum(is.na(subset(df,exp==explist[i])$logr_var),na.rm=TRUE)/length(is.na(subset(df,exp==explist[i])$logr_var)) >=threshold |
-        length(subset(df,exp==explist[i])$logr_var) ==1){
-      mean_value <- mean(subset(df,exp==explist[i])$logr,na.rm=TRUE)
-      n_samples <- length(subset(df,exp==explist[i])$logr_var)
-      df_box <- tibble(
-        exp=explist[i], middle = mean_value,
-        ymin   = NA,
-        ymax   = NA,
-        ymin_quarter = NA,
-        ymax_quarter   = NA,
-        variance_info ="No",no=n_samples,logr_var=NA)
-    } else {
-      #where year is random factor
-      out_meta <-  subset(df,exp==explist[i]) %>% 
-        mutate( id = 1:nrow(subset(df,exp==explist[i])) ) %>% 
-        metafor::rma.mv( logr, logr_var, method = "REML", control = list(stepadj=0.3),  random = ~ 1 | exp_nam / id, data = .)
-      
-      out_meta_quarter <- subset(df,exp==explist[i]) %>% 
-        mutate( id = 1:nrow(subset(df,exp==explist[i])) ) %>% 
-        metafor::rma.mv( logr, logr_var, method = "REML",level=50, control = list(stepadj=0.3),  random = ~ 1 | exp_nam / id, data = .)
-      
-      n_samples <- length(subset(df,exp==explist[i])$logr_var)
-      
-      df_box <- tibble(
-        exp=explist[i], middle = out_meta$b[1,1], ymin   = out_meta$ci.lb, ymax   = out_meta$ci.ub,
-        ymin_quarter=out_meta_quarter$ci.lb, ymax_quarter = out_meta_quarter$ci.ub,
-        variance_info ="Yes",no=n_samples,logr_var = (out_meta$se * sqrt(out_meta$k))^2)}
+  #all using mean value
+  for (i in 1:length(explist)){
+    
+    mean_value <- mean(subset(df,exp==explist[i])$logr,na.rm=TRUE)
+    n_samples <- length(subset(df,exp==explist[i])$logr_var)
+    df_box <- tibble(
+      exp=explist[i], middle = mean_value,
+      ymin   = NA,
+      ymax   = NA,
+      ymin_quarter = NA,
+      ymax_quarter   = NA,
+      variance_info ="No",no=n_samples,logr_var=NA)
     mylist[[i]] <- df_box}
   output <- do.call("rbind",mylist)
   return(output)
@@ -125,36 +108,17 @@ agg_meta_sen_coef <- function(df){
 agg_meta <- function(df){
   threshold <- 0.5
   explist <- unique(df$exp)
-  mylist <- list() #create an empty list
-  #some are just all NA for original data's standard deviation - needs division -> in this way just calculate normal mean, lower and upper band
-  for (i in 1:length(explist)){ # if over half of samples doens't have variance, or N =1 then we should not rely on this anyways.
-    if (sum(is.na(subset(df,exp==explist[i])$logr_var),na.rm=TRUE)/length(is.na(subset(df,exp==explist[i])$logr_var)) >=threshold |
-        length(subset(df,exp==explist[i])$logr_var) ==1){
-      mean_value <- mean(subset(df,exp==explist[i])$logr,na.rm=TRUE)
-      n_samples <- length(subset(df,exp==explist[i])$logr_var)
-      df_box <- tibble(
-        exp=explist[i], middle = mean_value,
-        ymin   = NA,
-        ymax   = NA,
-        ymin_quarter = NA,
-        ymax_quarter   = NA,
-        variance_info ="No",no=n_samples,logr_var = NA)
-    } else {
-      #where year is random factor
-      out_meta <-  subset(df,exp==explist[i]) %>% 
-        mutate( id = 1:nrow(subset(df,exp==explist[i])) ) %>% 
-        metafor::rma.mv( logr, logr_var, method = "REML", control = list(stepadj=0.3),  random = ~ 1 | exp_nam / id, data = .)
-      
-      out_meta_quarter <- subset(df,exp==explist[i]) %>% 
-        mutate( id = 1:nrow(subset(df,exp==explist[i])) ) %>% 
-        metafor::rma.mv( logr, logr_var, method = "REML",level=50, control = list(stepadj=0.3),  random = ~ 1 | exp_nam / id, data = .)
-      
-      n_samples <- length(subset(df,exp==explist[i])$logr_var)
-      
-      df_box <- tibble(
-        exp=explist[i], middle = out_meta$b[1,1], ymin   = out_meta$ci.lb, ymax   = out_meta$ci.ub,
-        ymin_quarter=out_meta_quarter$ci.lb, ymax_quarter = out_meta_quarter$ci.ub,
-        variance_info ="Yes",no=n_samples,logr_var = (out_meta$se * sqrt(out_meta$k))^2)}
+  mylist <- list() 
+  for (i in 1:length(explist)){
+    mean_value <- mean(subset(df,exp==explist[i])$logr,na.rm=TRUE)
+    n_samples <- length(subset(df,exp==explist[i])$logr_var)
+    df_box <- tibble(
+      exp=explist[i], middle = mean_value,
+      ymin   = NA,
+      ymax   = NA,
+      ymin_quarter = NA,
+      ymax_quarter   = NA,
+      variance_info ="No",no=n_samples,logr_var = NA)
     mylist[[i]] <- df_box}
   output <- do.call("rbind",mylist)
   return(output)
@@ -297,6 +261,8 @@ params_modl <- list(
 
 forcing_path <- "/Users/yunpeng/data/gcme/kevin/forcing/climate/"
 vcmax25_warmingco2_siteinfo$elv <- vcmax25_warmingco2_siteinfo$z
+#for conversion
+vcmax25_warmingco2_siteinfo$warmQ_e2[vcmax25_warmingco2_siteinfo$exp=="riceface_japan_l_2008_3938_14057_w"] <- vcmax25_warmingco2_siteinfo$warmQ_e3[vcmax25_warmingco2_siteinfo$exp=="riceface_japan_l_2008_3938_14057_w"] 
 
 for (i in 1:nrow(vcmax25_warmingco2_siteinfo)){
   siteinfo_site <- vcmax25_warmingco2_siteinfo[i,c("sitename","lon","lat","elv","year_start","year_end")]
@@ -385,6 +351,8 @@ for (i in 1:nrow(vcmax25_warmingco2_siteinfo)){
   vcmax25_warmingco2_siteinfo$mean_vcmax25_elevated[i] <- mean_vcmax25_elevated
   vcmax25_warmingco2_siteinfo$mean_vcmax_ambient[i] <- mean_vcmax_ambient
   vcmax25_warmingco2_siteinfo$mean_vcmax_elevated[i] <- mean_vcmax_elevated
+  vcmax25_warmingco2_siteinfo$pred_vcmax_logr[i] <- log(vcmax25_warmingco2_siteinfo$mean_vcmax_elevated[i]/vcmax25_warmingco2_siteinfo$mean_vcmax_ambient[i])
+  vcmax25_warmingco2_siteinfo$pred_vcmax_coef[i] <- (log(vcmax25_warmingco2_siteinfo$mean_vcmax_elevated[i]/vcmax25_warmingco2_siteinfo$mean_vcmax_ambient[i]))/(log(vcmax25_warmingco2_siteinfo$co2_e[i]/vcmax25_warmingco2_siteinfo$co2_a[i]))
   vcmax25_warmingco2_siteinfo$pred_vcmax25_logr[i] <- log(vcmax25_warmingco2_siteinfo$mean_vcmax25_elevated[i]/vcmax25_warmingco2_siteinfo$mean_vcmax25_ambient[i])
   vcmax25_warmingco2_siteinfo$pred_vcmax25_coef[i] <- (log(vcmax25_warmingco2_siteinfo$mean_vcmax25_elevated[i]/vcmax25_warmingco2_siteinfo$mean_vcmax25_ambient[i]))/(log(vcmax25_warmingco2_siteinfo$co2_e[i]/vcmax25_warmingco2_siteinfo$co2_a[i]))
   
@@ -392,6 +360,8 @@ for (i in 1:nrow(vcmax25_warmingco2_siteinfo)){
   vcmax25_warmingco2_siteinfo$mean_jmax25_elevated[i] <- mean_jmax25_elevated
   vcmax25_warmingco2_siteinfo$mean_jmax_ambient[i] <- mean_jmax_ambient
   vcmax25_warmingco2_siteinfo$mean_jmax_elevated[i] <- mean_jmax_elevated
+  vcmax25_warmingco2_siteinfo$pred_jmax_logr[i] <- log(vcmax25_warmingco2_siteinfo$mean_jmax_elevated[i]/vcmax25_warmingco2_siteinfo$mean_jmax_ambient[i])
+  vcmax25_warmingco2_siteinfo$pred_jmax_coef[i] <- (log(vcmax25_warmingco2_siteinfo$mean_jmax_elevated[i]/vcmax25_warmingco2_siteinfo$mean_jmax_ambient[i]))/(log(vcmax25_warmingco2_siteinfo$co2_e[i]/vcmax25_warmingco2_siteinfo$co2_a[i]))
   vcmax25_warmingco2_siteinfo$pred_jmax25_logr[i] <- log(vcmax25_warmingco2_siteinfo$mean_jmax25_elevated[i]/vcmax25_warmingco2_siteinfo$mean_jmax25_ambient[i])
   vcmax25_warmingco2_siteinfo$pred_jmax25_coef[i] <- (log(vcmax25_warmingco2_siteinfo$mean_jmax25_elevated[i]/vcmax25_warmingco2_siteinfo$mean_jmax25_ambient[i]))/(log(vcmax25_warmingco2_siteinfo$co2_e[i]/vcmax25_warmingco2_siteinfo$co2_a[i]))
   
@@ -404,7 +374,7 @@ summary(vcmax25_warmingco2_siteinfo)
 #plot
 kevin2_final <- vcmax25_warmingco2_siteinfo
 
-csvfile <- paste("/Users/yunpeng/data/gcme/kevin/forcing/pred_vcmax.csv")
+csvfile <- paste("/Users/yunpeng/data/gcme/kevin/forcing/pred_vcmax_v2.csv")
 write.csv(kevin2_final, csvfile, row.names = TRUE)
 
 #create a function to divide them into specific cateory: cw, cf
@@ -418,18 +388,41 @@ kevin2_final$ecosystem[kevin2_final$ecosystem=="shrubland"] <- "forest"
 kevin2_c_vcmax <- subset(kevin2_final, treatment=="c" & response =="vcmax")
 kevin2_f_vcmax <- subset(kevin2_final, treatment=="f" & response =="vcmax")
 kevin2_cf_vcmax <- subset(kevin2_final, treatment=="cf" & response =="vcmax")
+kevin2_w_vcmax <- subset(kevin2_final, treatment=="w" & response =="vcmax")
 
 kevin2_c_jmax <- subset(kevin2_final, treatment=="c" & response =="jmax")
 kevin2_f_jmax <- subset(kevin2_final, treatment=="f" & response =="jmax")
 kevin2_cf_jmax <- subset(kevin2_final, treatment=="cf" & response =="jmax")
+kevin2_w_jmax <- subset(kevin2_final, treatment=="w" & response =="jmax")
 
 kevin_vcmax_plotmean <- agg_meta_sen_coef(kevin2_c_vcmax)
 
 kevin_jmax_plotmean <- agg_meta_sen_coef(kevin2_c_jmax)
 
+kevin_vcmax_w_plotmean <- agg_meta(kevin2_w_vcmax)
+kevin_jmax_w_plotmean <- agg_meta(kevin2_w_jmax)
+
+#warming - finanlise figures
+pred_vc_w_kevin <- aggregate(kevin2_w_vcmax,by=list(kevin2_w_vcmax$exp), FUN=mean, na.rm=TRUE)[,c("Group.1","pred_vcmax_logr")];names(pred_vc_w_kevin) <- c("exp","pred_vcmax")
+pred_j_w_kevin <- aggregate(kevin2_w_jmax,by=list(kevin2_w_jmax$exp), FUN=mean, na.rm=TRUE)[,c("Group.1","pred_jmax_logr")];names(pred_j_w_kevin) <- c("exp","pred_jmax")
+
+kevin_vj_w_final <-Reduce(function(x,y) merge(x = x, y = y, by = c("exp"),all.x=TRUE),
+                           list(pred_vc_w_kevin,pred_j_w_kevin,kevin_vcmax_w_plotmean[,c("exp","middle")],kevin_jmax_w_plotmean[,c("exp","middle","no")]))
+names(kevin_vj_w_final) <- c("exp","pred_vcmax","pred_jmax","obs_vcmax","obs_jmax","no")
+
+kevin_vj_w_final$pred_jmax_vcmax <- kevin_vj_w_final$pred_jmax- kevin_vj_w_final$pred_vcmax
+kevin_vj_w_final$obs_jmax_vcmax <- kevin_vj_w_final$obs_jmax- kevin_vj_w_final$obs_vcmax
+kevin_vj_w_final$ecosystem <- "grassland"
+
+csvfile <- paste("/Users/yunpeng/data/gcme/kevin_20220222/vcmaxjmax_warming_plotmean_v2.csv")
+write.csv(kevin_vj_w_final, csvfile, row.names = TRUE)
+
+
+
+
 #now, show prediction
-pred_vc_kevin <- aggregate(kevin2_c_vcmax,by=list(kevin2_c_vcmax$exp), FUN=mean, na.rm=TRUE)[,c("Group.1","pred_vcmax25_coef")];names(pred_vc_kevin) <- c("exp","pred_vcmax")
-pred_j_kevin <- aggregate(kevin2_c_jmax,by=list(kevin2_c_jmax$exp), FUN=mean, na.rm=TRUE)[,c("Group.1","pred_jmax25_coef")];names(pred_j_kevin) <- c("exp","pred_jmax")
+pred_vc_kevin <- aggregate(kevin2_c_vcmax,by=list(kevin2_c_vcmax$exp), FUN=mean, na.rm=TRUE)[,c("Group.1","pred_vcmax_coef")];names(pred_vc_kevin) <- c("exp","pred_vcmax")
+pred_j_kevin <- aggregate(kevin2_c_jmax,by=list(kevin2_c_jmax$exp), FUN=mean, na.rm=TRUE)[,c("Group.1","pred_jmax_coef")];names(pred_j_kevin) <- c("exp","pred_jmax")
 
 
 kevin_ecosystem <- as.data.frame(kevin2_c_vcmax %>% group_by(exp,ecosystem) %>% summarise(number=n()))
@@ -634,7 +627,7 @@ vcmax25_warmingco2_siteinfo$ecosystem[vcmax25_warmingco2_siteinfo$SiteID=="BioCO
 vcmax25_warmingco2_siteinfo$ecosystem[vcmax25_warmingco2_siteinfo$SiteID=="PhalarisGC"] <- "grassland"
 vcmax25_warmingco2_siteinfo$ecosystem[vcmax25_warmingco2_siteinfo$SiteID=="SwissFACE"] <- "grassland"
 
-csvfile <- paste("/Users/yunpeng/data/smith_keenan_gcb/gcb_co2/pred_vcmax.csv")
+csvfile <- paste("/Users/yunpeng/data/smith_keenan_gcb/gcb_co2/pred_vcmax_v2.csv")
 write.csv(vcmax25_warmingco2_siteinfo, csvfile, row.names = TRUE)
 
 #now, combine with Kevin:
@@ -676,10 +669,10 @@ Nfer_jmax$variance_info <- "No"
 vcmax_final <- dplyr::bind_rows(kevin_vcmax_final,smith_vcmax_final,Nfer_vcmax)
 jmax_final <- dplyr::bind_rows(kevin_jmax_final,smith_jmax_final,Nfer_jmax)
 
-csvfile <- paste("/Users/yunpeng/data/gcme/kevin_20220222/vcmax_plotmean.csv")
+csvfile <- paste("/Users/yunpeng/data/gcme/kevin_20220222/vcmax_plotmean_v2.csv")
 write.csv(vcmax_final, csvfile, row.names = TRUE)
 
-csvfile <- paste("/Users/yunpeng/data/gcme/kevin_20220222/jmax_plotmean.csv")
+csvfile <- paste("/Users/yunpeng/data/gcme/kevin_20220222/jmax_plotmean_v2.csv")
 write.csv(jmax_final, csvfile, row.names = TRUE)
 
 
@@ -693,97 +686,22 @@ jmax_final_exp <- merge(jmax_final,plot_j_name,by=c("exp"),all.x=TRUE)
 vcmax_final_exp$logr_se <- sqrt(vcmax_final_exp$logr_var)/sqrt(vcmax_final_exp$no)
 jmax_final_exp$logr_se <- sqrt(jmax_final_exp$logr_var)/sqrt(jmax_final_exp$no)
 
-#vcmax
-#observation
-final_vcmax <- subset(vcmax_final_exp,(variance_info)=="Yes")
-pft_vcmax <- agg_meta_plots(final_vcmax,"ecosystem")
-#prediction
-final_prediction_vc <- tibble(type_name="all",middle=mean(final_vcmax$pred_vcmax),ymin=quantile(final_vcmax$pred_vcmax, 0.025),ymax=quantile(final_vcmax$pred_vcmax, 0.975))
-out_meta <- final_vcmax %>% metafor::rma.mv( middle, logr_var, method = "REML", random = ~ 1 | exp_nam, slab = exp, control = list(stepadj=0.3), data = . )
-final_observation_vc <- tibble(type_name="all",middle=out_meta$b[1,1],ymin = out_meta$ci.lb, ymax= out_meta$ci.ub)
-
-a1 <- pft_vcmax %>%
-  ggplot( aes(x=type_name, y=middle)) + 
-  geom_crossbar(aes(x=type_name, y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5) +
-  geom_crossbar(aes(x=type_name, y=middle, ymin=ymin_quarter, ymax=ymax_quarter), alpha = 0.3, width = 0.5) +
-  geom_crossbar(data=final_prediction_vc,aes(x=type_name, y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5,color="red") +
-  geom_crossbar(data=final_observation_vc,aes(x=type_name, y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5,color="black") +
-  geom_point(data=final_vcmax,aes(x=ecosystem, y=middle, size= 1/logr_se), alpha = 0.6, width = 0.5) +
-  geom_hline( yintercept=0.0, size=0.5)+ ylim(-1,1)+
-  labs(x="", y=~paste(V[cmax], " sensitivity coefficient"),size=expression(paste("Standard Error"^{-1}))) +
-  theme_classic()+coord_flip()+theme(axis.text=element_text(size=12))
-
-#jmax
-#observation
-final_jmax <- subset(jmax_final_exp,(variance_info)=="Yes")
-pft_jmax <- agg_meta_plots(final_jmax,"ecosystem")
-#prediction
-final_prediction_j <- tibble(type_name="all",middle=mean(final_jmax$pred_jmax),ymin=quantile(final_jmax$pred_jmax, 0.025),ymax=quantile(final_jmax$pred_jmax, 0.975))
-out_meta2 <- final_jmax %>% metafor::rma.mv( middle, logr_var, method = "REML", random = ~ 1 | exp_nam, slab = exp, control = list(stepadj=0.3), data = . )
-final_observation_j <- tibble(type_name="all",middle=out_meta2$b[1,1],ymin = out_meta2$ci.lb, ymax= out_meta2$ci.ub)
-
-a2 <- pft_jmax %>%
-  ggplot( aes(x=type_name, y=middle)) + 
-  geom_crossbar(aes(x=type_name, y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5) +
-  geom_crossbar(aes(x=type_name, y=middle, ymin=ymin_quarter, ymax=ymax_quarter), alpha = 0.3, width = 0.5) +
-  geom_crossbar(data=final_prediction_j,aes(x=type_name, y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5,color="red") +
-  geom_crossbar(data=final_observation_j,aes(x=type_name, y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5,color="black") +
-  geom_point(data=final_jmax,aes(x=ecosystem, y=middle, size= 1/logr_se), alpha = 0.6, width = 0.5) +
-  geom_hline( yintercept=0.0, size=0.5)+ ylim(-1,1)+
-  labs(x="", y=~paste(J[max], " sensitivity coefficient"),size=expression(paste("Standard Error"^{-1}))) +
-  theme_classic()+coord_flip()+theme(axis.text=element_text(size=12))
-
-#jmax/vcmax response 
-final_vj <- merge(final_vcmax[,c("exp","ecosystem","middle","logr_var","pred_vcmax","exp_nam","no")],
-                  final_jmax[,c("exp","ecosystem","middle","logr_var","pred_jmax","exp_nam","no")], by = c("exp","ecosystem"),all.x=TRUE)
-final_vj <- na.omit(final_vj)
-
-final_vj$middle <- final_vj$middle.y-final_vj$middle.x
-final_vj$pred_vj <- final_vj$pred_jmax-final_vj$pred_vcmax
-final_vj$logr_var <- final_vj$logr_var.x^2+final_vj$logr_var.y^2-final_vj$logr_var.x*final_vj$logr_var.y
-final_vj$logr_se <- sqrt(final_vj$logr_var)/sqrt(final_vj$no.x)
-final_vj$exp_nam <- final_vj$exp_nam.x
-
-pft_vj <- agg_meta_plots(final_vj,"ecosystem")
-#prediction
-final_prediction_vj <- tibble(type_name="all",middle=mean(final_vj$pred_vj),ymin=quantile(final_vj$pred_vj, 0.025),ymax=quantile(final_vj$pred_vj, 0.975))
-out_meta3 <- final_vj %>% metafor::rma.mv( middle, logr_var, method = "REML", random = ~ 1 | exp_nam, slab = exp, control = list(stepadj=0.3), data = . )
-final_observation_vj <- tibble(type_name="all",middle=out_meta3$b[1,1],ymin = out_meta3$ci.lb, ymax= out_meta3$ci.ub)
-
-
-a3 <- pft_vj %>%
-  ggplot( aes(x=type_name, y=middle)) + 
-  geom_crossbar(aes(x=type_name, y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5) +
-  geom_crossbar(aes(x=type_name, y=middle, ymin=ymin_quarter, ymax=ymax_quarter), alpha = 0.3, width = 0.5) +
-  geom_crossbar(data=final_prediction_vj,aes(x=type_name, y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5,color="red") +
-  geom_crossbar(data=final_observation_vj,aes(x=type_name, y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5,color="black") +
-  geom_point(data=final_vj,aes(x=ecosystem, y=middle, size= 1/logr_se), alpha = 0.6, width = 0.5) +
-  geom_hline( yintercept=0.0, size=0.5)+ ylim(-1,1)+
-  labs(x="", y=~paste(J[max]/V[cmax], " sensitivity coefficient"),size=expression(paste("Standard Error"^{-1}))) +
-  theme_classic()+coord_flip()+theme(axis.text=element_text(size=12))
-
-plot_grid(a1,a2,a3,nrow=1,label_size = 15)+theme(plot.background=element_rect(fill="white", color="white"))
-ggsave(paste("~/data/output_gcme/colin/final_fig1.jpg",sep=""),width = 15, height = 5)
-
-#meta-analysis
-s1 <- metafor::forest(out_meta, xlab="Vcmax Sensitivity coefficient", mlab="", xlim=c(-1,1), cex=0.5)
-s2 <- metafor::forest(out_meta2, xlab="Jmax Sensitivity coefficient", mlab="", xlim=c(-1,1), cex=0.5)
-s3 <- metafor::forest(out_meta3, xlab="Jmax/Vcmax Sensitivity coefficient", mlab="", xlim=c(-1,1), cex=0.5)
 
 #Kevin + Smith
 vcmax_all <- subset(vcmax_final,is.na(pred_vcmax)==FALSE)
 vcmax_all$source <- "kevin"
 vcmax_all$source[vcmax_all$variance_info=="smith"] <- "smith"
 
-final_prediction_vc_all <- tibble(type_name="all",middle=mean(vcmax_all$pred_vcmax),ymin=quantile(vcmax_all$pred_vcmax, 0.25),ymax=quantile(vcmax_all$pred_vcmax, 0.75))
-final_observation_vc_all <- tibble(type_name="all",middle=mean(vcmax_all$middle),ymin=quantile(vcmax_all$middle, 0.25),ymax=quantile(vcmax_all$middle, 0.75))
+final_prediction_vc_all <- tibble(type_name="all",middle=median(vcmax_all$pred_vcmax),ymin=quantile(vcmax_all$pred_vcmax, 0.25),ymax=quantile(vcmax_all$pred_vcmax, 0.75))
+final_observation_vc_all <- tibble(type_name="all",middle=median(vcmax_all$middle),ymin=quantile(vcmax_all$middle, 0.25),ymax=quantile(vcmax_all$middle, 0.75))
 
 b1 <- vcmax_all %>%
   ggplot( aes(x=ecosystem, y=middle)) +
   geom_boxplot()+
   geom_crossbar(data=final_observation_vc_all,aes(x=type_name,y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5,color="black") +
   geom_crossbar(data=final_prediction_vc_all,aes(x=type_name,y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5,color="red") +
-  geom_point(aes(color=source),alpha = 0.6, width = 0.5,size=2) +
+  #geom_point(aes(color=source),alpha = 0.6, width = 0.5,size=2) +
+  geom_point(alpha = 0.6, width = 0.5,size=2) +
   geom_hline( yintercept=0.0, size=0.5)+ ylim(-1,1)+
   labs(x="", y="Vcmax response",size=expression(paste("Standard Error"^{-1}))) +
   theme_classic()+coord_flip()+theme(axis.text=element_text(size=12))
@@ -792,15 +710,16 @@ jmax_all <- subset(jmax_final,is.na(pred_jmax)==FALSE &is.na(middle)==FALSE )
 jmax_all$source <- "kevin"
 jmax_all$source[jmax_all$variance_info=="smith"] <- "smith"
 
-final_prediction_j_all <- tibble(type_name="all",middle=mean(jmax_all$pred_jmax),ymin=quantile(jmax_all$pred_jmax, 0.25),ymax=quantile(jmax_all$pred_jmax, 0.75))
-final_observation_j_all <- tibble(type_name="all",middle=mean(jmax_all$middle),ymin=quantile(jmax_all$middle, 0.25),ymax=quantile(jmax_all$middle, 0.75))
+final_prediction_j_all <- tibble(type_name="all",middle=median(jmax_all$pred_jmax),ymin=quantile(jmax_all$pred_jmax, 0.25),ymax=quantile(jmax_all$pred_jmax, 0.75))
+final_observation_j_all <- tibble(type_name="all",middle=median(jmax_all$middle),ymin=quantile(jmax_all$middle, 0.25),ymax=quantile(jmax_all$middle, 0.75))
 
 b2 <- jmax_all %>%
   ggplot( aes(x=ecosystem, y=middle)) +
   geom_boxplot()+
   geom_crossbar(data=final_observation_j_all,aes(x=type_name,y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5,color="black") +
   geom_crossbar(data=final_prediction_j_all,aes(x=type_name,y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5,color="red") +
-  geom_point(aes(color=source),alpha = 0.6, width = 0.5,size=2) +
+  #geom_point(aes(color=source),alpha = 0.6, width = 0.5,size=2) +
+  geom_point(alpha = 0.6, width = 0.5,size=2) +
   geom_hline( yintercept=0.0, size=0.5)+ ylim(-1,1)+
   labs(x="", y="Jmax response",size=expression(paste("Standard Error"^{-1}))) +
   theme_classic()+coord_flip()+theme(axis.text=element_text(size=12))
@@ -812,20 +731,21 @@ final_vj_all <- na.omit(final_vj_all)
 final_vj_all$middle <- final_vj_all$middle.y-final_vj_all$middle.x
 final_vj_all$pred_vj <- final_vj_all$pred_jmax-final_vj_all$pred_vcmax
 
-final_prediction_vj_all <- tibble(type_name="all",middle=mean(final_vj_all$pred_vj),ymin=quantile(final_vj_all$pred_vj, 0.25),ymax=quantile(final_vj_all$pred_vj, 0.75))
-final_observation_vj_all <- tibble(type_name="all",middle=mean(final_vj_all$middle),ymin=quantile(final_vj_all$middle, 0.25),ymax=quantile(final_vj_all$middle, 0.75))
+final_prediction_vj_all <- tibble(type_name="all",middle=median(final_vj_all$pred_vj),ymin=quantile(final_vj_all$pred_vj, 0.25),ymax=quantile(final_vj_all$pred_vj, 0.75))
+final_observation_vj_all <- tibble(type_name="all",middle=median(final_vj_all$middle),ymin=quantile(final_vj_all$middle, 0.25),ymax=quantile(final_vj_all$middle, 0.75))
 
 b3 <- final_vj_all %>%
   ggplot( aes(x=ecosystem, y=middle)) +
   geom_boxplot()+
   geom_crossbar(data=final_observation_vj_all,aes(x=type_name,y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5,color="black") +
   geom_crossbar(data=final_prediction_vj_all,aes(x=type_name,y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5,color="red") +
-  geom_point(aes(color=source),alpha = 0.6, width = 0.5,size=2) +
+  #geom_point(aes(color=source),alpha = 0.6, width = 0.5,size=2) +
+  geom_point(alpha = 0.6, width = 0.5,size=2) +
   geom_hline( yintercept=0.0, size=0.5)+ ylim(-1,1)+
   labs(x="", y="Jmax/Vcmax response",size=expression(paste("Standard Error"^{-1}))) +
   theme_classic()+coord_flip()+theme(axis.text=element_text(size=12))
 b3
 
 plot_grid(b1,b2,b3,nrow=1,label_size = 15)+theme(plot.background=element_rect(fill="white", color="white"))
-ggsave(paste("~/data/output_gcme/colin/final_fig1_alternative.jpg",sep=""),width = 15, height = 5)
+ggsave(paste("~/data/output_gcme/colin/final_fig1_alternative_v2.jpg",sep=""),width = 15, height = 5)
 

@@ -88,35 +88,18 @@ agg_meta_sen_coef <- function(df){
   df$logr <- df$sen_coef
   df$logr_var <- df$sen_coef_var
   df$logr_se <- df$sen_coef_se
-  #some are just all NA for original data's standard deviation - needs division -> in this way just calculate normal mean, lower and upper band
-  for (i in 1:length(explist)){ # if over half of samples doens't have variance, or N =1 then we should not rely on this anyways.
-    if (sum(is.na(subset(df,exp==explist[i])$logr_var),na.rm=TRUE)/length(is.na(subset(df,exp==explist[i])$logr_var)) >=threshold |
-        length(subset(df,exp==explist[i])$logr_var) ==1){
-      mean_value <- mean(subset(df,exp==explist[i])$logr,na.rm=TRUE)
-      n_samples <- length(subset(df,exp==explist[i])$logr_var)
-      df_box <- tibble(
-        exp=explist[i], middle = mean_value,
-        ymin   = NA,
-        ymax   = NA,
-        ymin_quarter = NA,
-        ymax_quarter   = NA,
-        variance_info ="No",no=n_samples,logr_var=NA)
-    } else {
-      #where year is random factor
-      out_meta <-  subset(df,exp==explist[i]) %>% 
-        mutate( id = 1:nrow(subset(df,exp==explist[i])) ) %>% 
-        metafor::rma.mv( logr, logr_var, method = "REML", control = list(stepadj=0.3),  random = ~ 1 | exp_nam / id, data = .)
-      
-      out_meta_quarter <- subset(df,exp==explist[i]) %>% 
-        mutate( id = 1:nrow(subset(df,exp==explist[i])) ) %>% 
-        metafor::rma.mv( logr, logr_var, method = "REML",level=50, control = list(stepadj=0.3),  random = ~ 1 | exp_nam / id, data = .)
-      
-      n_samples <- length(subset(df,exp==explist[i])$logr_var)
-      
-      df_box <- tibble(
-        exp=explist[i], middle = out_meta$b[1,1], ymin   = out_meta$ci.lb, ymax   = out_meta$ci.ub,
-        ymin_quarter=out_meta_quarter$ci.lb, ymax_quarter = out_meta_quarter$ci.ub,
-        variance_info ="Yes",no=n_samples,logr_var = (out_meta$se * sqrt(out_meta$k))^2)}
+  #all using mean value
+  for (i in 1:length(explist)){
+    
+  mean_value <- mean(subset(df,exp==explist[i])$logr,na.rm=TRUE)
+  n_samples <- length(subset(df,exp==explist[i])$logr_var)
+  df_box <- tibble(
+    exp=explist[i], middle = mean_value,
+    ymin   = NA,
+    ymax   = NA,
+    ymin_quarter = NA,
+    ymax_quarter   = NA,
+    variance_info ="No",no=n_samples,logr_var=NA)
     mylist[[i]] <- df_box}
   output <- do.call("rbind",mylist)
   return(output)
@@ -126,36 +109,17 @@ agg_meta_sen_coef <- function(df){
 agg_meta <- function(df){
   threshold <- 0.5
   explist <- unique(df$exp)
-  mylist <- list() #create an empty list
-  #some are just all NA for original data's standard deviation - needs division -> in this way just calculate normal mean, lower and upper band
-  for (i in 1:length(explist)){ # if over half of samples doens't have variance, or N =1 then we should not rely on this anyways.
-    if (sum(is.na(subset(df,exp==explist[i])$logr_var),na.rm=TRUE)/length(is.na(subset(df,exp==explist[i])$logr_var)) >=threshold |
-        length(subset(df,exp==explist[i])$logr_var) ==1){
-      mean_value <- mean(subset(df,exp==explist[i])$logr,na.rm=TRUE)
-      n_samples <- length(subset(df,exp==explist[i])$logr_var)
-      df_box <- tibble(
-        exp=explist[i], middle = mean_value,
-        ymin   = NA,
-        ymax   = NA,
-        ymin_quarter = NA,
-        ymax_quarter   = NA,
-        variance_info ="No",no=n_samples,logr_var = NA)
-    } else {
-      #where year is random factor
-      out_meta <-  subset(df,exp==explist[i]) %>% 
-        mutate( id = 1:nrow(subset(df,exp==explist[i])) ) %>% 
-        metafor::rma.mv( logr, logr_var, method = "REML", control = list(stepadj=0.3),  random = ~ 1 | exp_nam / id, data = .)
-      
-      out_meta_quarter <- subset(df,exp==explist[i]) %>% 
-        mutate( id = 1:nrow(subset(df,exp==explist[i])) ) %>% 
-        metafor::rma.mv( logr, logr_var, method = "REML",level=50, control = list(stepadj=0.3),  random = ~ 1 | exp_nam / id, data = .)
-      
-      n_samples <- length(subset(df,exp==explist[i])$logr_var)
-      
-      df_box <- tibble(
-        exp=explist[i], middle = out_meta$b[1,1], ymin   = out_meta$ci.lb, ymax   = out_meta$ci.ub,
-        ymin_quarter=out_meta_quarter$ci.lb, ymax_quarter = out_meta_quarter$ci.ub,
-        variance_info ="Yes",no=n_samples,logr_var = (out_meta$se * sqrt(out_meta$k))^2)}
+  mylist <- list() 
+  for (i in 1:length(explist)){
+    mean_value <- mean(subset(df,exp==explist[i])$logr,na.rm=TRUE)
+    n_samples <- length(subset(df,exp==explist[i])$logr_var)
+    df_box <- tibble(
+      exp=explist[i], middle = mean_value,
+      ymin   = NA,
+      ymax   = NA,
+      ymin_quarter = NA,
+      ymax_quarter   = NA,
+      variance_info ="No",no=n_samples,logr_var = NA)
     mylist[[i]] <- df_box}
   output <- do.call("rbind",mylist)
   return(output)
@@ -212,8 +176,8 @@ kevin_othervars$exp_nam <- kevin_othervars$site
 
 
 #filter plots
-vcmax_plot <- read.csv("/Users/yunpeng/data/gcme/kevin_20220222/vcmax_plotmean.csv")$exp
-jmax_plot <- read.csv("/Users/yunpeng/data/gcme/kevin_20220222/jmax_plotmean.csv")$exp
+vcmax_plot <- read.csv("/Users/yunpeng/data/gcme/kevin_20220222/vcmax_plotmean_v2.csv")$exp
+jmax_plot <- read.csv("/Users/yunpeng/data/gcme/kevin_20220222/jmax_plotmean_v2.csv")$exp
 photo_plot <- unique(c(vcmax_plot,jmax_plot,c("duke2_f","euroface4_pa_cf","euroface4_pe_cf","euroface4_pn_cf","biforface_c")))
 kevin_othervars_cf <- kevin_othervars %>% filter(exp %in% photo_plot)
 #convert plot properly 
@@ -428,10 +392,10 @@ total_biomass_n_plot <- combine_co2_c(logr_c_total_biomass_n,logr_f_total_biomas
 wood_n_plot <- combine_co2_c(logr_c_wood_n,logr_f_wood_n,logr_cf_wood_n,"wood_n")
 soil_potential_net_n_mineralization_plot <- combine_co2_c(logr_c_soil_potential_net_n_mineralization,logr_f_soil_potential_net_n_mineralization,logr_cf_soil_potential_net_n_mineralization,"soil_potential_net_n_mineralization")
 
-vcmax_all_plot <- read.csv("/Users/yunpeng/data/gcme/kevin_20220222/vcmax_plotmean.csv")[,c("ecosystem","exp","middle","condition","variance_info")]
+vcmax_all_plot <- read.csv("/Users/yunpeng/data/gcme/kevin_20220222/vcmax_plotmean_v2.csv")[,c("ecosystem","exp","middle","condition","variance_info")]
 vcmax_all_plot$condition[is.na(vcmax_all_plot$condition)==TRUE] <- "co2"
 names(vcmax_all_plot) <- c("ecosystem","exp","vcmax","condition","variance_info")
-jmax_all_plot <- read.csv("/Users/yunpeng/data/gcme/kevin_20220222/jmax_plotmean.csv")[,c("exp","middle","condition")]
+jmax_all_plot <- read.csv("/Users/yunpeng/data/gcme/kevin_20220222/jmax_plotmean_v2.csv")[,c("exp","middle","condition")]
 jmax_all_plot$condition[is.na(jmax_all_plot$condition)==TRUE] <- "co2"
 names(jmax_all_plot) <- c("exp","jmax","condition")
 
@@ -541,18 +505,20 @@ final_mean$ecm_level <- final_mean$ecm_type
 final_mean$ecm_level[final_mean$ecm_type=="Nfix"] <- "N-fixing"
 final_mean$ecm_level[final_mean$condition=="Fertilization"] <- "High-N"
 
+#corret one outlier of bgb_coarse
+final_mean$bgb_coarse[final_mean$bgb_coarse< -5] <- NA
+final_mean$bgb[final_mean$bgb< -5] <- NA
 
 #add two plots from Cesar -->after adding them --becoming weaker!
 #Cesar_anpp <- read.csv("/Users/yunpeng/data/gcme/cesar/ANPP.csv")
-#phace <- log(112.6493/111.8533)/log(600/384)
-#Aspen <- (log(669.6334/517.9303)/log(550/360) + log(621.7131/429.4247)/log(550/360))/2
+phace <- log(112.6493/111.8533)/log(600/384)
+Aspen <- (log(669.6334/517.9303)/log(550/360) + log(621.7131/429.4247)/log(550/360))/2
 
 #further look
+final_mean$anpp[final_mean$exp=="phace_c"] <- phace
+final_mean$anpp[final_mean$exp=="rhine-aspenface_c"] <- Aspen
 
-#final_mean$anpp[final_mean$exp=="phace_c"] <- phace
-#final_mean$anpp[final_mean$exp=="rhine-aspenface_c"] <- Aspen
-
-csvfile <- paste("/Users/yunpeng/data/gcme/kevin/final_mean.csv")
+csvfile <- paste("/Users/yunpeng/data/gcme/kevin/final_mean_v2.csv")
 write.csv(final_mean, csvfile, row.names = TRUE)
 
 
@@ -572,7 +538,8 @@ final_mean$ecosystem_level[final_mean$ecosystem_level=="forest"] <- "Others"
 final_mean$ecosystem_level[final_mean$ecosystem_level=="grassland"] <- "Others"
 final_mean$ecosystem_level[final_mean$ecosystem_level=="cropland"] <- "Others"
 
-labs(title =~paste(V[cmax25]))
+
+
 for(i in c(1:length(vcmax_select))){
   p[[i]] <- ggplot(final_mean,aes_string(x=vcmax_select[i], y="vcmax")) +
     geom_hline(yintercept=0)+geom_vline(xintercept=0)+
@@ -589,64 +556,37 @@ s[[1]] <- ggplot(final_mean,aes_string(x="soil_mineral_N", y="vcmax")) +
   labs(y="vcmax")+
   theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"),legend.position="none")
 
-#create legend situation
-a1 <- ggplot(final_mean,aes_string(x=vcmax_select[3], y="vcmax")) +
-  geom_hline(yintercept=0)+geom_vline(xintercept=0)+
-  geom_point(aes(color=ecosystem_level),size=3)+
-  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
-  geom_smooth(color="black",method="lm",se=F)+labs(y="vcmax")+
-  theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"),
-        legend.title=element_blank(),legend.text = element_text(size=20))
+#plot_grid(p[[1]],p[[2]],p[[3]],p[[4]],p[[5]],p[[6]],p[[7]],p[[12]],s[[1]],nrow=3,label_size = 15)+theme(plot.background=element_rect(fill="white", color="white"))
+#ggsave(paste("~/data/output_gcme/colin/fig2_vcmax_v2.jpg",sep=""),width = 15, height = 15)
 
-b1 <- as_ggplot(get_legend(a1))
 
-p[[1]] <- ggplot(final_mean,aes_string(x=vcmax_select[1], y="vcmax")) +
-  geom_hline(yintercept=0)+geom_vline(xintercept=0)+
-  geom_point(aes(color=ecosystem_level),size=3)+
-  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
-  geom_smooth(color="black",method="lm",se=F)+labs(y=~paste(V[cmax]))+labs(x=~paste(J[max]))+
-  theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"),legend.position="none")
 
-p[[2]] <- ggplot(final_mean,aes_string(x=vcmax_select[2], y="vcmax")) +
-  geom_hline(yintercept=0)+geom_vline(xintercept=0)+
-  geom_point(aes(color=ecosystem_level),size=3)+
-  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
-  geom_smooth(color="black",method="lm",se=F)+labs(y=~paste(V[cmax]))+labs(x=~paste(N[mass]))+
-  theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"),legend.position="none")
+#for egu
+a1 <- ggplot(final_mean,aes_string(x="jmax", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
+  labs(y=~paste(V[cmax]))+labs(x=~paste(J[cmax]))
+a2 <- ggplot(final_mean,aes_string(x="nmass", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
+  labs(y=~paste(V[cmax]))+labs(x=~paste(N[mass]))
+a3 <- ggplot(final_mean,aes_string(x="LMA", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
+  labs(y=~paste(V[cmax]))+labs(x=~paste(LMA))
+a4 <- ggplot(final_mean,aes_string(x="anpp", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
+  labs(y=~paste(V[cmax]))+labs(x=~paste(ANPP))
+a5 <- ggplot(final_mean,aes_string(x="bnpp", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
+  labs(y=~paste(V[cmax]))+labs(x=~paste(BNPP))
+a6 <- ggplot(final_mean,aes_string(x="root_shoot_ratio", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
+  labs(y=~paste(V[cmax]))+labs(x=~paste(Root/Shoot))
+a7 <- ggplot(final_mean,aes_string(x="litter_biomass", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
+  labs(y=~paste(V[cmax]))+labs(x=~paste("litter_biomass"))
+a8 <- ggplot(final_mean,aes_string(x="soil_mineral_N", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
+  labs(y=~paste(V[cmax]))+labs(x=~paste("Soil inorganic N"))
 
-p[[3]] <- ggplot(final_mean,aes_string(x=vcmax_select[3], y="vcmax")) +
-  geom_hline(yintercept=0)+geom_vline(xintercept=0)+
-  geom_point(aes(color=ecosystem_level),size=3)+
-  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
-  geom_smooth(color="black",method="lm",se=F)+labs(y=~paste(V[cmax]))+labs(x=~paste(ANPP))+
-  theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"),legend.position="none")
+final1_legend <- ggplot(final_mean,aes_string(x="soil_mineral_N", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(text = element_text(size=30),axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"))+
+  labs(y=~paste(V[cmax]))+labs(x=~paste("Soil inorganic N"))+scale_colour_discrete(" ")
 
-p[[6]] <- ggplot(final_mean,aes_string(x=vcmax_select[6], y="vcmax")) +
-  geom_hline(yintercept=0)+geom_vline(xintercept=0)+
-  geom_point(aes(color=ecosystem_level),size=3)+
-  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
-  geom_smooth(color="black",method="lm",se=F)+labs(y=~paste(V[cmax]))+labs(x=~paste(BNPP))+
-  theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"),legend.position="none")
+legend_info <- as_ggplot(get_legend(final1_legend))
 
-p[[4]] <- ggplot(final_mean,aes_string(x=vcmax_select[4], y="vcmax")) +
-  geom_hline(yintercept=0)+geom_vline(xintercept=0)+
-  geom_point(aes(color=ecosystem_level),size=3)+
-  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
-  geom_smooth(color="black",method="lm",se=F)+labs(y=~paste(V[cmax]))+labs(x=~paste(Root / Shoot))+
-  theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"),legend.position="none")
-
-s[[1]] <- ggplot(final_mean,aes_string(x="soil_mineral_N", y="vcmax")) +
-  geom_hline(yintercept=0)+geom_vline(xintercept=0)+
-  geom_point(aes(color=ecosystem_level),size=3)+ 
-  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
-  labs(y=~paste(V[cmax]))+labs(x=~paste("Soil Mineral N"))+
-  theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"),legend.position="none")
-
-plot_grid(p[[1]],p[[2]],p[[3]],b1,
-          p[[6]],p[[4]],s[[1]],b1,nrow=2,label_size = 15,
-          rel_widths = c(6/20, 6/20,6/20,2/20))+
+plot_grid(a1,a2,a3,a4,a5,a6,a7,a8,legend_info,nrow=3,label_size = 15)+
   theme(plot.background=element_rect(fill="white", color="white"))
-ggsave(paste("~/data/output_gcme/colin/fig2_vcmax.jpg",sep=""),width = 20, height = 10)
+ggsave(paste("~/data/output_gcme/colin/fig2_MS.jpg",sep=""),width = 15, height = 15)
 
 #site distribution
 kevin <- unique(read.csv("/Users/yunpeng/data/gcme/kevin/orig_vcmax/JunkePeng_11252021.csv")[,c("lon","lat")])
@@ -673,28 +613,17 @@ for(i in c(1:length(jmax_select))){
     geom_point(aes(color=condition),size=3)+
     stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
     geom_smooth(color="black",method="lm",se=F)+labs(y="jmax")+
-    theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"))}
+    theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"),legend.position="none")}
 
 
-plot_grid(b[[2]],b[[8]],b[[10]],b[[4]],b[[3]],b[[9]],
-          nrow=2,label_size = 15)+theme(plot.background=element_rect(fill="white", color="white"))
-ggsave(paste("~/data/output_gcme/colin/final_fig2_jmax.jpg",sep=""),width = 20, height = 20)
-
-
-plot_grid(p[[1]],p[[2]],p[[4]],p[[3]],p[[5]],b[[2]],b[[4]],b[[3]],b[[9]],
-          nrow=3,label_size = 15)+theme(plot.background=element_rect(fill="white", color="white"))
-ggsave(paste("~/data/output_gcme/colin/fig2_final.jpg",sep=""),width = 20, height = 15)
-
-plot_grid(p[[22]],p[[23]],s[[1]],b[[10]],b[[8]],s[[2]],
-          nrow=2,label_size = 15)+theme(plot.background=element_rect(fill="white", color="white"))
-ggsave(paste("~/data/output_gcme/colin/figs1_final.jpg",sep=""),width = 20, height = 10)
+#plot_grid(b[[2]],b[[3]],b[[5]],b[[6]],b[[7]],b[[8]],b[[9]],s[[2]], nrow=3,label_size = 15)+theme(plot.background=element_rect(fill="white", color="white"))
+#ggsave(paste("~/data/output_gcme/colin/final_fig2_jmax_v2.jpg",sep=""),width = 20, height = 20)
 
 
 ###Addition 1: three ways to calculate soil mineral N
-
 #three ways to focus on mineral N vs. vcmax
 #fig.1 sum-up method
-
+'''
 s[[1]] <- ggplot(final_mean,aes_string(x="soil_mineral_N", y="vcmax")) +
   geom_hline(yintercept=0)+geom_vline(xintercept=0)+
   geom_point(size=3)+ #or type
@@ -726,12 +655,6 @@ s2 <- ggplot(test,aes_string(x="middle", y="vcmax")) +
   theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"))
 s2
 
-ggplot(subset(test,exp!="giface_c" & exp!="brandbjerg_c"& exp!="new_zealand_face_c"),aes_string(x="middle", y="vcmax")) +
-  geom_hline(yintercept=0)+geom_vline(xintercept=0)+
-  geom_point(size=3)+
-  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
-  geom_smooth(color="black",method="lm",se=F)+labs(x="mineral soil N")+geom_text(aes(label=exp,hjust=0, vjust=-1,check_overlap = F))+
-  theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"))
 
 #fig3, combing all under aggreagtion method
 n1 <- agg_meta_sen_coef(response_ratio_v2(kevin_othervars_cf %>%filter(response %in%c("soil_nh4-n"))%>% filter(treatment %in%c("c"))))[,c("exp","middle")]
@@ -769,11 +692,10 @@ s3 <- ggplot(subset(method3,is.na(middle)==FALSE),aes_string(x="middle", y="vcma
   geom_smooth(color="black",method="lm",se=F)+labs(x="mineral soil N")+
   theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"))
 s3
-
-#above, needs to include old data? See beni's code
+'''
 
 #new part - warming, fertilization and light
-kevin_othervars_wsf <- subset(kevin_othervars, (treatment=="c"|treatment=="w"|treatment=="s"|treatment=="f"|treatment=="i"|treatment=="d")&is.na(exp)==FALSE)
+kevin_othervars_wsf <- subset(kevin_othervars, is.na(exp)==FALSE)
 
 ###pre-processing: 
 #anpp and anpp_grain are both anpp.
@@ -785,6 +707,9 @@ nmass_wsf <- subset(kevin_othervars_wsf,response=="leaf_n") %>% filter(Unit %in%
 nmass_wsf$response <- "nmass"
 logr_w_nmass <- as_tibble(response_ratio_v2(subset(nmass_wsf,treatment=="w")));
 all_logr_c_nmass <- as_tibble(response_ratio_v2(subset(nmass_wsf,treatment=="c")))
+logr_d_nmass <- as_tibble(response_ratio_v2(subset(nmass_wsf,treatment=="d")));
+logr_f_nmass <- as_tibble(response_ratio_v2(subset(nmass_wsf,treatment=="f")))
+
 
 #bnpp - make sure data between them are not mixed.
 kevin_othervars_wsf$output[kevin_othervars_wsf$response=="coarse_root_production"|
@@ -800,39 +725,31 @@ bnpp_dataset$response <- "bnpp"
 
 all_logr_c_bnpp <- as_tibble(response_ratio_v2(subset(bnpp_dataset,treatment=="c")));
 logr_w_bnpp <- as_tibble(response_ratio_v2(subset(bnpp_dataset,treatment=="w")))
+logr_f_bnpp <- as_tibble(response_ratio_v2(subset(bnpp_dataset,treatment=="f")))
+logr_d_bnpp <- as_tibble(response_ratio_v2(subset(bnpp_dataset,treatment=="d")))
 
 #create a column to combine exp and exp_nam
 exp_name <- unique(kevin_othervars[,c("exp","exp_nam")])
 
-#check numbers of sites and variables 
-varname2 <- kevin_othervars_wsf%>% group_by(response)  %>% summarise(number = n())
-
 #other vars - all created now
-for (i in 1:nrow(varname2)) {
-  tryCatch({
-    varname2a <- varname2$response[i]
-    
-    df_c <- subset(kevin_othervars_wsf,treatment=="c" & response==varname2a)
-    assign(paste("all_logr_c_", varname2a,sep=""), as_tibble(response_ratio_v2(df_c)))
-    
-    df_w <- subset(kevin_othervars_wsf,treatment=="w" & response==varname2a)
-    assign(paste("logr_w_", varname2a,sep=""), as_tibble(response_ratio_v2(df_w)))
-    
-    df_s <- subset(kevin_othervars_wsf,treatment=="s"& response==varname2a)
-    assign(paste("logr_s_", varname2a,sep=""), as_tibble(response_ratio_v2(df_s)))
-    
-    df_f <- subset(kevin_othervars_wsf,treatment=="f" & response==varname2a)
-    assign(paste("logr_f_", varname2a,sep=""), as_tibble(response_ratio_v2(df_f)))
-    
-    df_i <- subset(kevin_othervars_wsf,treatment=="i" & response==varname2a)
-    assign(paste("logr_i_", varname2a,sep=""), as_tibble(response_ratio_v2(df_i)))
-    
-    df_d <- subset(kevin_othervars_wsf,treatment=="d" & response==varname2a)
-    assign(paste("logr_d_", varname2a,sep=""), as_tibble(response_ratio_v2(df_d)))
-  }, error=function(e){})} 
+unique(subset(kevin_othervars_wsf,response=="vcmax")$treatment)
 
+logr_f_vcmax <- subset(kevin_othervars_wsf,treatment=="f" & response=="vcmax")
+logr_d_vcmax <- subset(kevin_othervars_wsf,treatment=="d" & response=="vcmax")
+logr_w_vcmax <- subset(kevin_othervars_wsf,treatment=="w" & response=="vcmax")
 
+logr_w_jmax <- subset(kevin_othervars_wsf,treatment=="w" & response=="jmax")
+logr_f_jmax <- subset(kevin_othervars_wsf,treatment=="f" & response=="jmax")
+logr_d_jmax <- subset(kevin_othervars_wsf,treatment=="d" & response=="jmax")
 
+logr_f_anpp <- subset(kevin_othervars_wsf,treatment=="f" & response=="anpp")
+logr_d_anpp <- subset(kevin_othervars_wsf,treatment=="d" & response=="anpp")
+logr_w_anpp <- subset(kevin_othervars_wsf,treatment=="w" & response=="anpp")
+
+logr_f_root_shoot_ratio <- subset(kevin_othervars_wsf,treatment=="f" & response=="root_shoot_ratio")
+logr_d_root_shoot_ratio <- subset(kevin_othervars_wsf,treatment=="d" & response=="root_shoot_ratio")
+logr_w_root_shoot_ratio <- subset(kevin_othervars_wsf,treatment=="w" & response=="root_shoot_ratio")
+logr_c_root_shoot_ratio <- subset(kevin_othervars_wsf,treatment=="c" & response=="root_shoot_ratio")
 
 #create a function, with a input of list of variable, and output a potential figure
 
@@ -846,15 +763,10 @@ output_point <- function(list_of_variable){
     data1 <- assign(test[i], get(test[i]))
     a1 <- agg_meta(response_ratio_v2(data1))
     a2 <- merge(a1[,c("middle","logr_var","exp","no")],exp_name,by=c("exp"),all.x=TRUE)
-    mean_percentage <- median(a2$logr_var/a2$middle,na.rm=TRUE)
-    a2$logr_var[is.na(a2$logr_var==TRUE)] <- abs(a2$middle[is.na(a2$logr_var==TRUE)]*mean_percentage)
-    a2$logr_se <- sqrt(a2$logr_var)/sqrt(a2$no)
-    a2$type_name <- data1$response[1]
-    a2$exp_nam[is.na(a2$exp_nam)==TRUE] <- a2$exp[is.na(a2$exp_nam)==TRUE]
-    a2$exp_nam[is.na(a2$exp_nam)==TRUE] <- "unknown"
+
+    a2$type_name <- test[i]
     
-    out_meta2 <- a2 %>% metafor::rma.mv( middle, logr_var, method = "REML", random = ~ 1 | exp_nam, slab = exp, control = list(stepadj=0.3), data = . )
-    output2 <- tibble(type_name=data1$response[1],middle=out_meta2$b[1,1],ymin = out_meta2$ci.lb, ymax= out_meta2$ci.ub)
+    output2 <- tibble(test[i],middle=mean(a1$middle,na.rm=TRUE))
     
     point_list[[i]] <- a2
     boxplot_list[[i]] <- output2
@@ -863,135 +775,237 @@ output_point <- function(list_of_variable){
   boxplot_list_final <- do.call("rbind",boxplot_list)
   return(point_list_final)
 }
-output_boxplot <- function(list_of_variable){
-  test <- list_of_variable
-  point_list <- list() 
-  boxplot_list <- list() 
-  for (i in 1:length(test)){ 
+
+vcmax_point <- output_point(c("logr_c_vcmax","logr_f_vcmax","logr_d_vcmax","logr_w_vcmax"))
+
+vc_points <- vcmax_point %>% ggplot( aes(x=type_name, y=middle)) + geom_boxplot()+
+  geom_point(alpha = 0.6, width = 0.5) +geom_hline( yintercept=0.0, size=0.5)+ ylim(-1,1)+
+  labs(y="vcmax",x=" ") + theme_classic()+coord_flip()+theme(axis.text=element_text(size=12))
+
+jmax_point <- output_point(c("logr_c_jmax","logr_f_jmax","logr_d_jmax","logr_w_jmax"))
+
+j_points <- jmax_point %>% ggplot( aes(x=type_name, y=middle)) + geom_boxplot()+
+  geom_point(alpha = 0.6, width = 0.5) +geom_hline( yintercept=0.0, size=0.5)+ ylim(-1,1)+
+  labs(y="jmax",x=" ") + theme_classic()+coord_flip()+theme(axis.text=element_text(size=12))
+
+
+#now, additionally, shading
+walker <- read.csv("/Users/yunpeng/data/leaf_traits/Walker/LEAF_PHOTOSYNTHESIS_TRAITS_1224/data/Leaf_Photosynthesis_Traits.csv")
+
+#vcmax
+light_vcmax <- subset(walker,Treatment_light!="not applicable") %>% 
+  group_by(lon,lat,species,Treatment_light)  %>% summarise(mean = mean(Vcmax))
+
+light1 <- subset(light_vcmax,Treatment_light=="shade"|Treatment_light=="sun")
+light1a <- merge(subset(light1,Treatment_light=="shade"),subset(light1,Treatment_light=="sun"),
+      by=c("lon","lat","species"),all.x=TRUE)
+light1a$middle <- log(light1a$mean.y/light1a$mean.x)
+light1a$type_name <- "shade_to_sun"
+
+light2 <- subset(light_vcmax,Treatment_light=="high"|Treatment_light=="low")
+light2a <- merge(subset(light2,Treatment_light=="low"),subset(light2,Treatment_light=="high"),
+                 by=c("lon","lat","species"),all.x=TRUE)
+light2a$middle <- log(light2a$mean.y/light2a$mean.x)
+light2a$type_name <- "low_to_high_light"
+
+#light3 <- subset(light_vcmax,Treatment_light=="lower"|Treatment_light=="middle"|Treatment_light=="upper")
+#light3a <-Reduce(function(x,y) merge(x = x, y = y,by=c("lon","lat","species"),all.x=TRUE),
+#                    list(subset(light3,Treatment_light=="lower"),subset(light3,Treatment_light=="middle"),subset(light3,Treatment_light=="upper")))
+#light3a$middle <- log(light3a$mean/light3a$mean.x) # divide upper to lower - not considering middle
+#light3a$type_name <- "lower_to_upper_canopy"
+
+light_vcmax_points <- dplyr::bind_rows(light1a[,c("lon","lat","species","middle","type_name")],
+                 light2a[,c("lon","lat","species","middle","type_name")]) 
+
+light_vcmax_fig <- light_vcmax_points %>% ggplot( aes(x=type_name, y=middle)) + geom_boxplot()+
+  geom_point(alpha = 0.6, width = 0.5) +geom_hline( yintercept=0.0, size=0.5)+ ylim(-1,1)+
+  labs(y="light effect on vcmax",x=" ") + theme_classic()+coord_flip()+theme(axis.text=element_text(size=12))
+
+#jmax
+light_jmax <- subset(walker,Treatment_light!="not applicable" & Jmax>0) %>% 
+  group_by(lon,lat,species,Treatment_light)  %>% summarise(mean = mean(Jmax))
+
+light1 <- subset(light_jmax,Treatment_light=="shade"|Treatment_light=="sun")
+light1a <- merge(subset(light1,Treatment_light=="shade"),subset(light1,Treatment_light=="sun"),
+                 by=c("lon","lat","species"),all.x=TRUE)
+light1a$middle <- log(light1a$mean.y/light1a$mean.x)
+light1a$type_name <- "shade_to_sun"
+
+light2 <- subset(light_jmax,Treatment_light=="high"|Treatment_light=="low")
+light2a <- merge(subset(light2,Treatment_light=="low"),subset(light2,Treatment_light=="high"),
+                 by=c("lon","lat","species"),all.x=TRUE)
+light2a$middle <- log(light2a$mean.y/light2a$mean.x)
+light2a$type_name <- "low_to_high_light"
+
+#light3 <- subset(light_jmax,Treatment_light=="lower"|Treatment_light=="middle"|Treatment_light=="upper")
+#light3a <-Reduce(function(x,y) merge(x = x, y = y,by=c("lon","lat","species"),all.x=TRUE),
+#                 list(subset(light3,Treatment_light=="lower"),subset(light3,Treatment_light=="middle"),subset(light3,Treatment_light=="upper")))
+#light3a$middle <- log(light3a$mean/light3a$mean.x) # divide upper to lower - not considering middle
+#light3a$type_name <- "lower_to_upper_canopy"
+
+light_jmax_points <- dplyr::bind_rows(light1a[,c("lon","lat","species","middle","type_name")],
+                                light2a[,c("lon","lat","species","middle","type_name")]) 
+#when it is 0, it means both are -10000, removed it
+light_jmax_fig <- light_jmax_points %>% ggplot( aes(x=type_name, y=middle)) + geom_boxplot()+
+  geom_point(alpha = 0.6, width = 0.5) +geom_hline( yintercept=0.0, size=0.5)+ ylim(-1,1)+
+  labs(y="light effect on jmax",x=" ") + theme_classic()+coord_flip()+theme(axis.text=element_text(size=12))
+
+#combine
+warming <- read.csv("/Users/yunpeng/data/gcme/kevin_20220222/vcmaxjmax_warming_plotmean_v2.csv")
+warming$treatment <- "warming"
+
+vcmax_dry <- subset(vcmax_point,type_name=="logr_d_vcmax")
+jmax_dry <- subset(jmax_point,type_name=="logr_d_jmax")
+vj_dry<- (merge(vcmax_dry[,c("exp","middle")],jmax_dry[,c("exp","middle")],
+              by=c("exp"),all.x=TRUE,all.y=TRUE))
+names(vj_dry) <- c("exp","obs_vcmax","obs_jmax")
+vj_dry$obs_jmax_vcmax <- vj_dry$obs_jmax - vj_dry$obs_vcmax
+vj_dry$treatment <- "drying";vj_dry$pred_vcmax <- NA ;vj_dry$pred_jmax <- NA ;vj_dry$pred_jmax_vcmax <- NA 
     
-    data1 <- assign(test[i], get(test[i]))
-    a1 <- agg_meta(response_ratio_v2(data1))
-    a2 <- merge(a1[,c("middle","logr_var","exp","no")],exp_name,by=c("exp"),all.x=TRUE)
-    mean_percentage <- median(a2$logr_var/a2$middle,na.rm=TRUE)
-    a2$logr_var[is.na(a2$logr_var==TRUE)] <- abs(a2$middle[is.na(a2$logr_var==TRUE)]*mean_percentage)
-    a2$logr_se <- sqrt(a2$logr_var)/sqrt(a2$no)
-    a2$type_name <- data1$response[1]
-    a2$exp_nam[is.na(a2$exp_nam)==TRUE] <- a2$exp[is.na(a2$exp_nam)==TRUE]
-    a2$exp_nam[is.na(a2$exp_nam)==TRUE] <- "unknown"
-    
-    out_meta2 <- a2 %>% metafor::rma.mv( middle, logr_var, method = "REML", random = ~ 1 | exp_nam, slab = exp, control = list(stepadj=0.3), data = . )
-    output2 <- tibble(type_name=data1$response[1],middle=out_meta2$b[1,1],ymin = out_meta2$ci.lb, ymax= out_meta2$ci.ub)
-    
-    point_list[[i]] <- a2
-    boxplot_list[[i]] <- output2
-  }
-  point_list_final <- do.call("rbind",point_list)
-  boxplot_list_final <- do.call("rbind",boxplot_list)
-  return(boxplot_list_final)
+vcmax_fer <- subset(vcmax_point,type_name=="logr_f_vcmax");vcmax_fer$treatment <- "fertilization"
+jmax_fer <- subset(jmax_point,type_name=="logr_f_jmax");jmax_fer$treatment <- "fertilization"
+vj_fer<- (merge(vcmax_fer[,c("exp","middle")],jmax_fer[,c("exp","middle")],
+                by=c("exp"),all.x=TRUE,all.y=TRUE))
+names(vj_fer) <- c("exp","obs_vcmax","obs_jmax")
+vj_fer$obs_jmax_vcmax <- vj_fer$obs_jmax - vj_fer$obs_vcmax
+vj_fer$treatment <- "fertilization";vj_fer$pred_vcmax <- NA ;vj_fer$pred_jmax <- NA ;vj_fer$pred_jmax_vcmax <- NA 
+
+light_vcmax_points$exp <- paste(light_vcmax_points$lon,light_vcmax_points$lat,light_vcmax_points$species,sep="_")
+light_jmax_points$exp <- paste(light_jmax_points$lon,light_jmax_points$lat,light_jmax_points$species,sep="_")
+vj_light <- (merge(light_vcmax_points[,c("exp","middle","type_name")],light_jmax_points[,c("exp","middle","type_name")],
+                by=c("exp","type_name"),all.x=TRUE,all.y=TRUE))
+names(vj_light) <- c("exp","type_name","obs_vcmax","obs_jmax")
+
+vj_light$obs_jmax_vcmax <- vj_light$obs_jmax - vj_light$obs_vcmax
+vj_light$treatment <- "light";vj_light$pred_vcmax <- NA ;vj_light$pred_jmax <- NA ;vj_light$pred_jmax_vcmax <- NA 
+
+ymin_max <- function(vj_all){
+  vj_all$ymin_vc_obs <- quantile(vj_all$obs_vcmax, 0.25,na.rm=T)
+  vj_all$ymax_vc_obs <- quantile(vj_all$obs_vcmax, 0.75,na.rm=T)
+  vj_all$mean_vc_obs <- median(vj_all$obs_vcmax,na.rm=T)
+  
+  vj_all$ymin_j_obs <- quantile(vj_all$obs_jmax, 0.25,na.rm=T)
+  vj_all$ymax_j_obs <- quantile(vj_all$obs_jmax, 0.75,na.rm=T)
+  vj_all$mean_j_obs <- median(vj_all$obs_jmax,na.rm=T)
+  
+  vj_all$ymin_jv_obs <- quantile(vj_all$obs_jmax_vcmax, 0.25,na.rm=T)
+  vj_all$ymax_jv_obs <- quantile(vj_all$obs_jmax_vcmax, 0.75,na.rm=T)
+  vj_all$mean_jv_obs <- median(vj_all$obs_jmax_vcmax,na.rm=T)
+  
+  vj_all$ymin_vc_pred <- quantile(vj_all$pred_vcmax, 0.25,na.rm=T)
+  vj_all$ymax_vc_pred <- quantile(vj_all$pred_vcmax, 0.75,na.rm=T)
+  vj_all$mean_vc_pred <- median(vj_all$pred_vcmax,na.rm=T)
+  
+  vj_all$ymin_j_pred <- quantile(vj_all$pred_jmax, 0.25,na.rm=T)
+  vj_all$ymax_j_pred <- quantile(vj_all$pred_jmax, 0.75,na.rm=T)
+  vj_all$mean_j_pred <- median(vj_all$pred_jmax,na.rm=T)
+  
+  vj_all$ymin_jv_pred <- quantile(vj_all$pred_jmax_vcmax, 0.25,na.rm=T)
+  vj_all$ymax_jv_pred <- quantile(vj_all$pred_jmax_vcmax, 0.75,na.rm=T)
+  vj_all$mean_jv_pred <- median(vj_all$pred_jmax_vcmax,na.rm=T)
+  
+  return(vj_all[1,c("treatment","ymin_vc_obs","ymax_vc_obs","mean_vc_obs",
+                    "ymin_j_obs","ymax_j_obs","mean_j_obs",
+                    "ymin_jv_obs","ymax_jv_obs","mean_jv_obs",
+                    "ymin_vc_pred","ymax_vc_pred","mean_vc_pred",
+                    "ymin_j_pred","ymax_j_pred","mean_j_pred",
+                    "ymin_jv_pred","ymax_jv_pred","mean_jv_pred")])
 }
 
-#for co2 sen coef
-output_point_co2 <- function(list_of_variable){
-  test <- list_of_variable
-  point_list <- list() 
-  boxplot_list <- list() 
-  for (i in 1:length(test)){ 
-    
-    data1 <- assign(test[i], get(test[i]))
-    a1 <- agg_meta_sen_coef(response_ratio_v2(data1))
-    a2 <- merge(a1[,c("middle","logr_var","exp","no")],exp_name,by=c("exp"),all.x=TRUE)
-    mean_percentage <- median(a2$logr_var/a2$middle,na.rm=TRUE)
-    #fill missing log_var at plot-mean
-    a2$logr_var[is.na(a2$logr_var==TRUE)] <- abs(a2$middle[is.na(a2$logr_var==TRUE)]*mean_percentage)
-    a2$logr_se <- sqrt(a2$logr_var)/sqrt(a2$no)
-    a2$type_name <- data1$response[1]
-    #fill missing co2 exp_name
-    a2$exp_nam[is.na(a2$exp_nam)==TRUE] <- a2$exp[is.na(a2$exp_nam)==TRUE]
-    a2$exp_nam[is.na(a2$exp_nam)==TRUE] <- "unknown"
-    
-    out_meta2 <- a2 %>% metafor::rma.mv( middle, logr_var, method = "REML", random = ~ 1 | exp_nam, slab = exp, control = list(stepadj=0.3), data = . )
-    output2 <- tibble(type_name=data1$response[1],middle=out_meta2$b[1,1],ymin = out_meta2$ci.lb, ymax= out_meta2$ci.ub)
-    
-    point_list[[i]] <- a2
-    boxplot_list[[i]] <- output2
-  }
-  point_list_final <- do.call("rbind",point_list)
-  boxplot_list_final <- do.call("rbind",boxplot_list)
-  return(point_list_final)
-}
-output_boxplot_co2 <- function(list_of_variable){
-  test <- list_of_variable
-  point_list <- list() 
-  boxplot_list <- list() 
-  for (i in 1:length(test)){ 
-    
-    data1 <- assign(test[i], get(test[i]))
-    a1 <- agg_meta_sen_coef(response_ratio_v2(data1))
-    a2 <- merge(a1[,c("middle","logr_var","exp","no")],exp_name,by=c("exp"),all.x=TRUE)
-    mean_percentage <- median(a2$logr_var/a2$middle,na.rm=TRUE)
-    a2$logr_var[is.na(a2$logr_var==TRUE)] <- abs(a2$middle[is.na(a2$logr_var==TRUE)]*mean_percentage)
-    a2$logr_se <- sqrt(a2$logr_var)/sqrt(a2$no)
-    a2$type_name <- data1$response[1]
-    a2$exp_nam[is.na(a2$exp_nam)==TRUE] <- a2$exp[is.na(a2$exp_nam)==TRUE]
-    a2$exp_nam[is.na(a2$exp_nam)==TRUE] <- "unknown"
-    
-    out_meta2 <- a2 %>% metafor::rma.mv( middle, logr_var, method = "REML", random = ~ 1 | exp_nam, slab = exp, control = list(stepadj=0.3), data = . )
-    output2 <- tibble(type_name=data1$response[1],middle=out_meta2$b[1,1],ymin = out_meta2$ci.lb, ymax= out_meta2$ci.ub)
-    
-    point_list[[i]] <- a2
-    boxplot_list[[i]] <- output2
-  }
-  point_list_final <- do.call("rbind",point_list)
-  boxplot_list_final <- do.call("rbind",boxplot_list)
-  return(boxplot_list_final)
-}
+box_warming <- ymin_max(warming)
+box_dry <- ymin_max(vj_dry)
+box_fer <- ymin_max(vj_fer)
+box_light <- ymin_max(vj_light)
+box_type <- dplyr::bind_rows(box_warming,box_dry,box_fer,box_light)
 
-warming_point <- output_point(c("logr_w_vcmax","logr_w_jmax","logr_w_anpp","logr_w_bnpp","logr_w_npp","logr_w_gpp","logr_w_nmass","logr_w_root_shoot_ratio"))
-warming_boxplot <- output_boxplot(c("logr_w_vcmax","logr_w_jmax","logr_w_anpp","logr_w_bnpp","logr_w_npp","logr_w_gpp","logr_w_nmass","logr_w_root_shoot_ratio"))
-warming_boxplot$type_name <- factor(warming_boxplot$type_name, levels = warming_boxplot$type_name)
+vj_all <- dplyr::bind_rows(warming,vj_dry,vj_fer,vj_light)
 
-b2 <- warming_boxplot %>% ggplot( aes(x=type_name, y=middle)) + geom_crossbar(aes(x=type_name, y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5,color="black") +
-  geom_point(data=warming_point,aes(x=type_name, y=middle, size= 1/logr_se), alpha = 0.6, width = 0.5) +geom_hline( yintercept=0.0, size=0.5)+ ylim(-1,1)+
-  labs(y="Response ratio (warming)",x=" ",size=expression(paste("Standard Error"^{-1}))) + theme_classic()+coord_flip()+theme(axis.text=element_text(size=12))
+others_v <- vj_all %>%
+  ggplot( aes(x=treatment, y=obs_vcmax)) +
+  geom_boxplot(width = 0.5)+
+  geom_crossbar(data=box_type,aes(x=treatment,y=mean_vc_obs, ymin=ymin_vc_obs, ymax=ymax_vc_obs), alpha = 0.6, width = 0.5,color="black") +
+  geom_crossbar(data=box_type,aes(x=treatment,y=mean_vc_pred, ymin=ymin_vc_pred, ymax=ymax_vc_pred), alpha = 0.6, width = 0.5,color="red") +
+  #geom_point(aes(color=source),alpha = 0.6, width = 0.5,size=2) +
+  geom_point(alpha = 0.6, width = 0.5,size=2) +
+  geom_hline( yintercept=0.0, size=0.5)+ ylim(-1,1)+
+  labs(x="", y="Vcmax response") +
+  theme_classic()+coord_flip()+theme(axis.text=element_text(size=12))
 
-#co2 - preprocessing
-all_logr_c_anpp$exp_nam[is.na(all_logr_c_anpp$exp_nam)==TRUE] <- all_logr_c_anpp$exp[is.na(all_logr_c_anpp$exp_nam)==TRUE]
+others_j <- vj_all %>%
+  ggplot( aes(x=treatment, y=obs_jmax)) +
+  geom_boxplot(width = 0.5)+
+  geom_crossbar(data=box_type,aes(x=treatment,y=mean_j_obs, ymin=ymin_j_obs, ymax=ymax_j_obs), alpha = 0.6, width = 0.5,color="black") +
+  geom_crossbar(data=box_type,aes(x=treatment,y=mean_j_pred, ymin=ymin_j_pred, ymax=ymax_j_pred), alpha = 0.6, width = 0.5,color="red") +
+  #geom_point(aes(color=source),alpha = 0.6, width = 0.5,size=2) +
+  geom_point(alpha = 0.6, width = 0.5,size=2) +
+  geom_hline( yintercept=0.0, size=0.5)+ ylim(-1,1)+
+  labs(x="", y="Jmax response") +
+  theme_classic()+coord_flip()+theme(axis.text=element_text(size=12))
 
-co2_point <- output_point_co2(c("logr_c_vcmax","logr_c_jmax","all_logr_c_anpp","all_logr_c_bnpp","all_logr_c_npp","all_logr_c_gpp","all_logr_c_nmass","all_logr_c_root_shoot_ratio"))
-co2_boxplot <- output_boxplot_co2(c("logr_c_vcmax","logr_c_jmax","all_logr_c_anpp","all_logr_c_bnpp","all_logr_c_npp","all_logr_c_gpp","all_logr_c_nmass","all_logr_c_root_shoot_ratio"))
-co2_boxplot$type_name <- factor(co2_boxplot$type_name, levels = co2_boxplot$type_name)
+others_jv <- vj_all %>%
+  ggplot( aes(x=treatment, y=obs_jmax_vcmax)) +
+  geom_boxplot(width = 0.5)+
+  geom_crossbar(data=box_type,aes(x=treatment,y=mean_jv_obs, ymin=ymin_jv_obs, ymax=ymax_jv_obs), alpha = 0.6, width = 0.5,color="black") +
+  geom_crossbar(data=box_type,aes(x=treatment,y=mean_jv_pred, ymin=ymin_jv_pred, ymax=ymax_jv_pred), alpha = 0.6, width = 0.5,color="red") +
+  #geom_point(aes(color=source),alpha = 0.6, width = 0.5,size=2) +
+  geom_point(alpha = 0.6, width = 0.5,size=2) +
+  geom_hline( yintercept=0.0, size=0.5)+ ylim(-1,1)+
+  labs(x="", y="Jmax/Vcmax response") +
+  theme_classic()+coord_flip()+theme(axis.text=element_text(size=12))
 
-b1 <- co2_boxplot %>% ggplot( aes(x=type_name, y=middle)) + geom_crossbar(aes(x=type_name, y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5,color="black") +
-  geom_point(data=co2_point,aes(x=type_name, y=middle, size= 1/logr_se), alpha = 0.6, width = 0.5) +geom_hline( yintercept=0.0, size=0.5)+ ylim(-1,1)+
-  labs(y="Sensitivity coefficient (CO2)",x=" ",size=expression(paste("Standard Error"^{-1}))) + theme_classic()+coord_flip()+theme(axis.text=element_text(size=12))
-
-plot_grid(b1,b2,nrow=1,label_size = 15)+
-  theme(plot.background=element_rect(fill="white", color="white"))
-ggsave(paste("~/data/output_gcme/colin/final_fig3.jpg",sep=""),width = 15, height = 10)
+plot_grid(others_v,others_j,others_jv,nrow=1,label_size = 15)+theme(plot.background=element_rect(fill="white", color="white"))
+ggsave(paste("~/data/output_gcme/colin/final_fig1b_alternative_v2.jpg",sep=""),width = 15, height = 5)
 
 
+#N-fertilized under CO2 experiment
+Nfer_vcmax <- subset(walker,Treatment_N!="not applicable" &Treatment_CO2!="not applicable" & Vcmax>0) %>% 
+  group_by(lon,lat,species,Treatment_N,Treatment_CO2)  %>% summarise(mean = mean(Vcmax))
 
-#check how N fer changed vcmax, jmax...
+highN_vcmax <- merge(subset(Nfer_vcmax,Treatment_N=="high"&Treatment_CO2=="amb"),
+                            subset(Nfer_vcmax,Treatment_N=="high"&Treatment_CO2=="ele"),
+                 by=c("lon","lat","species","Treatment_N"),all.x=TRUE)
 
-nfer <- final_mean %>% filter(exp %in%c("duke2_cf","euroface4_pa_cf","euroface4_pe_cf","euroface4_pn_cf","new_zealand_face_cf",
-                                "duke2_c","euroface4_pa_c","euroface4_pe_c","euroface4_pn_c","new_zealand_face_c"))
+highN_vcmax$middle <- log(highN_vcmax$mean.y/highN_vcmax$mean.x)
 
-nfer <- final_mean %>% filter(exp %in%c("duke2_cf","euroface4_pa_cf","euroface4_pe_cf","euroface4_pn_cf",
-                                        "duke2_c","euroface4_pa_c","euroface4_pe_c","euroface4_pn_c"))
+highN_vcmax$type_name <- "CO2 response at high N"
+highN_vcmax$site_species <- paste(highN_vcmax$lon,highN_vcmax$lat,highN_vcmax$species,sep="_")
 
-test2 <- final_mean
-logr_c_vcmax[grep("trifolium", logr_c_vcmax$dominant_species),]$exp
+lowN_vcmax <- merge(subset(Nfer_vcmax,Treatment_N=="low"&Treatment_CO2=="amb"),
+                     subset(Nfer_vcmax,Treatment_N=="low"&Treatment_CO2=="ele"),
+                     by=c("lon","lat","species","Treatment_N"),all.x=TRUE)
 
-test2$condition[test2$exp=="swissface_trifolium2_c"] <- "N-fixing"
-test2$condition[test2$exp=="rhine-aspenface_c"] <- "N-fixing"
+lowN_vcmax$middle <- log(lowN_vcmax$mean.y/lowN_vcmax$mean.x)
 
-ggplot(test2,aes_string(x="jmax", y="vcmax")) +
-  geom_hline(yintercept=0)+geom_vline(xintercept=0)+
-  geom_point(aes(color=condition),size=3)+
-  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
-  geom_text(data=subset(nfer,condition=="co2"),aes(label=exp))+
-  geom_smooth(color="black",method="lm",se=F)+labs(x="jmax")+
-  theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"))
+lowN_vcmax$type_name <- "CO2 response at low N"
+lowN_vcmax$site_species <- paste(lowN_vcmax$lon,lowN_vcmax$lat,lowN_vcmax$species,sep="_")
 
-ggsave(paste("~/data/output_gcme/colin/final_fig4.jpg",sep=""),width = 15, height = 10)
+nfer_gcme <- final_mean %>% filter(exp %in%c("duke2_cf","euroface4_pa_cf","euroface4_pe_cf","euroface4_pn_cf","new_zealand_face_cf",
+                                             "duke2_c","euroface4_pa_c","euroface4_pe_c","euroface4_pn_c","new_zealand_face_c"))
+nfer_gcme2 <- nfer_gcme[,c("vcmax","condition","exp")]
+names(nfer_gcme2) <- c("middle","type_name","site_species")
+nfer_gcme2$type_name[nfer_gcme2$type_name=="co2"] <- "CO2 response without N"
+nfer_gcme2$type_name[nfer_gcme2$type_name=="Fertilization"] <- "CO2 response at high N"
+nfer_gcme2$site_species <- c("duke2","duke2","euroface-pa","euroface-pa",
+                             "euroface-pe","euroface-pe","euroface-pn","euroface-pn",
+                             "new_zealand","new_zealand")
 
+vcmax_co2nfer_points <- dplyr::bind_rows(lowN_vcmax[,c("site_species","middle","type_name")],
+                                       highN_vcmax[,c("site_species","middle","type_name")],
+                                       nfer_gcme2) 
+
+
+vcmax_co2nfer_fig <- vcmax_co2nfer_points %>% ggplot( aes(x=site_species, y=middle)) + 
+  geom_point(aes(color=type_name),size=3) +geom_hline( yintercept=0.0, size=0.5)+
+  labs(y="CO2 effect on vcmax at Fertilized points",x=" ") + theme_classic()+coord_flip()+theme(axis.text=element_text(size=12))
+
+ggsave(paste("~/data/output_gcme/colin/final_fig_v4.jpg",sep=""),width = 20, height = 10)
+
+#check final_mean for PCA
+final2 <- final_mean[,c("exp","lai","vcmax","jmax","narea","LMA","nmass","bnpp","anpp","root_shoot_ratio")]
+final2$count_na <- rowSums(is.na(final2))
+final3 <- subset(final2,count_na<6)
+final3 <- unique(final3[order(final3$count_na),])
+head(final3)
+summary(final3)
+#check
+aa <- subset(kevin_othervars,exp=="eucface_c")%>% group_by(response,dominant_species,sampling_year,sampling_date)  %>% summarise(number = n())
