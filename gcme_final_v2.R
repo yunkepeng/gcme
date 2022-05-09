@@ -619,81 +619,6 @@ for(i in c(1:length(jmax_select))){
 #plot_grid(b[[2]],b[[3]],b[[5]],b[[6]],b[[7]],b[[8]],b[[9]],s[[2]], nrow=3,label_size = 15)+theme(plot.background=element_rect(fill="white", color="white"))
 #ggsave(paste("~/data/output_gcme/colin/final_fig2_jmax_v2.jpg",sep=""),width = 20, height = 20)
 
-
-###Addition 1: three ways to calculate soil mineral N
-#three ways to focus on mineral N vs. vcmax
-#fig.1 sum-up method
-'''
-s[[1]] <- ggplot(final_mean,aes_string(x="soil_mineral_N", y="vcmax")) +
-  geom_hline(yintercept=0)+geom_vline(xintercept=0)+
-  geom_point(size=3)+ #or type
-  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
-  labs(y="vcmax")+geom_text(aes(label=exp,hjust=0, vjust=-1,check_overlap = F))+
-  theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"))
-
-s[[1]]
-
-#fig2, combing all variables together
-c("soil_nh4-n","soil_no3-n","soil_in")
-c("soil_solution_mineral_n","soil_solution_nh4","soil_solution_no3")
-soil_min_c <- kevin_othervars_cf %>%
-  filter(response %in%c("soil_nh4-n","soil_no3-n","soil_in"))%>%
-  filter(treatment %in%c("c"))
-
-new_soil_min <- agg_meta_sen_coef(response_ratio_v2(soil_min_c))
-test<- (merge(final_mean,new_soil_min[,c("exp","middle")],by=c("exp"),all.x=TRUE))
-
-test$middle[test$exp=="popface_pa_c"] <- new_popface$soil_mineral_N[new_popface$exp=="popface_pa"]
-test$middle[test$exp=="popface_pe_c"] <- new_popface$soil_mineral_N[new_popface$exp=="popface_pe"]
-test$middle[test$exp=="popface_pn_c"] <- new_popface$soil_mineral_N[new_popface$exp=="popface_pn"]
-
-s2 <- ggplot(test,aes_string(x="middle", y="vcmax")) +
-  geom_hline(yintercept=0)+geom_vline(xintercept=0)+
-  geom_point(size=3)+
-  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
-  geom_smooth(color="black",method="lm",se=F)+labs(x="mineral soil N")+geom_text(aes(label=exp,hjust=0, vjust=-1,check_overlap = F))+
-  theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"))
-s2
-
-
-#fig3, combing all under aggreagtion method
-n1 <- agg_meta_sen_coef(response_ratio_v2(kevin_othervars_cf %>%filter(response %in%c("soil_nh4-n"))%>% filter(treatment %in%c("c"))))[,c("exp","middle")]
-n1$name<- "soil_nh4_dry"
-n2 <- agg_meta_sen_coef(response_ratio_v2(kevin_othervars_cf %>%filter(response %in%c("soil_no3-n"))%>% filter(treatment %in%c("c"))))[,c("exp","middle")]
-n2$name<- "soil_no3_dry"
-n3 <- agg_meta_sen_coef(response_ratio_v2(kevin_othervars_cf %>%filter(response %in%c("soil_in"))%>% filter(treatment %in%c("c"))))[,c("exp","middle")]
-n3$name <- "soil_mineral_N"
-n4 <- agg_meta_sen_coef(response_ratio_v2(kevin_othervars_cf %>%filter(response %in%c("soil_solution_mineral_n"))%>% filter(treatment %in%c("c"))))[,c("exp","middle")]
-n4$name <- "soil_solution_mineral_N"
-n5 <- agg_meta_sen_coef(response_ratio_v2(kevin_othervars_cf %>%filter(response %in%c("soil_solution_nh4"))%>% filter(treatment %in%c("c"))))[,c("exp","middle")]
-n5$name <- "soil_nh4_solution"
-n6 <- agg_meta_sen_coef(response_ratio_v2(kevin_othervars_cf %>%filter(response %in%c("soil_solution_no3"))%>% filter(treatment %in%c("c"))))[,c("exp","middle")]
-n6$name <- "soil_no3_solution"
-
-n_all <- dplyr::bind_rows(n1,n2,n3,n4,n5,n6)
-
-method3 <- merge(final_mean,n_all,by=c("exp"),all.x=TRUE)
-method3$middle[method3$exp=="popface_pa_c"] <- new_popface$soil_mineral_N[new_popface$exp=="popface_pa"]
-method3$middle[method3$exp=="popface_pe_c"] <- new_popface$soil_mineral_N[new_popface$exp=="popface_pe"]
-method3$middle[method3$exp=="popface_pn_c"] <- new_popface$soil_mineral_N[new_popface$exp=="popface_pn"]
-
-s3 <- ggplot(method3,aes_string(x="middle", y="vcmax")) +
-  geom_hline(yintercept=0)+geom_vline(xintercept=0)+
-  geom_point(aes(color=name),size=3)+
-  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
-  geom_smooth(color="black",method="lm",se=F)+labs(x="mineral soil N")+
-  theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"))
-s3
-
-s3 <- ggplot(subset(method3,is.na(middle)==FALSE),aes_string(x="middle", y="vcmax")) +
-  geom_hline(yintercept=0)+geom_vline(xintercept=0)+
-  geom_point(aes(color=exp),size=3)+
-  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
-  geom_smooth(color="black",method="lm",se=F)+labs(x="mineral soil N")+
-  theme(axis.text=element_text(size=20),axis.title=element_text(size=20,face="bold"))
-s3
-'''
-
 #new part - warming, fertilization and light
 kevin_othervars_wsf <- subset(kevin_othervars, is.na(exp)==FALSE)
 
@@ -998,7 +923,7 @@ vcmax_co2nfer_fig <- vcmax_co2nfer_points %>% ggplot( aes(x=site_species, y=midd
   geom_point(aes(color=type_name),size=3) +geom_hline( yintercept=0.0, size=0.5)+
   labs(y="CO2 effect on vcmax at Fertilized points",x=" ") + theme_classic()+coord_flip()+theme(axis.text=element_text(size=12))
 
-ggsave(paste("~/data/output_gcme/colin/final_fig_v4.jpg",sep=""),width = 20, height = 10)
+
 
 #check final_mean for PCA
 final2 <- final_mean[,c("exp","lai","vcmax","jmax","narea","LMA","nmass","bnpp","anpp","root_shoot_ratio")]
