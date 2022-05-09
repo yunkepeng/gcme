@@ -883,6 +883,7 @@ ggsave(paste("~/data/output_gcme/colin/final_fig1b_alternative_v2.jpg",sep=""),w
 
 
 #N-fertilized under CO2 experiment
+#vcmax
 Nfer_vcmax <- subset(walker,Treatment_N!="not applicable" &Treatment_CO2!="not applicable" & Vcmax>0) %>% 
   group_by(lon,lat,species,Treatment_N,Treatment_CO2)  %>% summarise(mean = mean(Vcmax))
 
@@ -918,12 +919,129 @@ vcmax_co2nfer_points <- dplyr::bind_rows(lowN_vcmax[,c("site_species","middle","
                                        highN_vcmax[,c("site_species","middle","type_name")],
                                        nfer_gcme2) 
 
-
 vcmax_co2nfer_fig <- vcmax_co2nfer_points %>% ggplot( aes(x=site_species, y=middle)) + 
   geom_point(aes(color=type_name),size=3) +geom_hline( yintercept=0.0, size=0.5)+
   labs(y="CO2 effect on vcmax at Fertilized points",x=" ") + theme_classic()+coord_flip()+theme(axis.text=element_text(size=12))
 
+a1 <- subset(vcmax_co2nfer_points,type_name=="CO2 response at high N")[,c("middle","site_species")]
+a2 <- subset(vcmax_co2nfer_points,type_name=="CO2 response at low N")[,c("middle","site_species")]
+a3 <- subset(vcmax_co2nfer_points,type_name=="CO2 response without N")[,c("middle","site_species")]
 
+final_nfer_c <- Reduce(function(x,y) merge(x = x, y = y,by=c("site_species"),all.x=TRUE),list(a1,a2,a3))
+names(final_nfer_c) <- c("exp","high_N","low_N","without_N")
+final_nfer_c$final_N_high <- final_nfer_c$high_N
+final_nfer_c$final_N_low <- final_nfer_c$low_N
+final_nfer_c$final_N_low[is.na(final_nfer_c$without_N)==F] <- final_nfer_c$without_N[is.na(final_nfer_c$without_N)==F]
+
+#now, jmax
+Nfer_jmax <- subset(walker,Treatment_N!="not applicable" &Treatment_CO2!="not applicable" & Jmax>0) %>% 
+  group_by(lon,lat,species,Treatment_N,Treatment_CO2)  %>% summarise(mean = mean(Jmax))
+
+highN_jmax <- merge(subset(Nfer_jmax,Treatment_N=="high"&Treatment_CO2=="amb"),
+                     subset(Nfer_jmax,Treatment_N=="high"&Treatment_CO2=="ele"),
+                     by=c("lon","lat","species","Treatment_N"),all.x=TRUE)
+
+highN_jmax$middle <- log(highN_jmax$mean.y/highN_jmax$mean.x)
+
+highN_jmax$type_name <- "CO2 response at high N"
+highN_jmax$site_species <- paste(highN_jmax$lon,highN_jmax$lat,highN_jmax$species,sep="_")
+
+lowN_jmax <- merge(subset(Nfer_jmax,Treatment_N=="low"&Treatment_CO2=="amb"),
+                    subset(Nfer_jmax,Treatment_N=="low"&Treatment_CO2=="ele"),
+                    by=c("lon","lat","species","Treatment_N"),all.x=TRUE)
+
+lowN_jmax$middle <- log(lowN_jmax$mean.y/lowN_jmax$mean.x)
+
+lowN_jmax$type_name <- "CO2 response at low N"
+lowN_jmax$site_species <- paste(lowN_jmax$lon,lowN_jmax$lat,lowN_jmax$species,sep="_")
+
+nfer_gcme <- final_mean %>% filter(exp %in%c("duke2_cf","euroface4_pa_cf","euroface4_pe_cf","euroface4_pn_cf",
+                                             "duke2_c","euroface4_pa_c","euroface4_pe_c","euroface4_pn_c"))
+
+nfer_gcme2 <- nfer_gcme[,c("jmax","condition","exp")]
+names(nfer_gcme2) <- c("middle","type_name","site_species")
+nfer_gcme2$type_name[nfer_gcme2$type_name=="co2"] <- "CO2 response without N"
+nfer_gcme2$type_name[nfer_gcme2$type_name=="Fertilization"] <- "CO2 response at high N"
+nfer_gcme2$site_species <- c("duke2","duke2","euroface-pa","euroface-pa",
+                             "euroface-pe","euroface-pe","euroface-pn","euroface-pn")
+
+jmax_co2nfer_points <- dplyr::bind_rows(lowN_jmax[,c("site_species","middle","type_name")],
+                                         highN_jmax[,c("site_species","middle","type_name")],
+                                         nfer_gcme2) 
+
+b1 <- subset(jmax_co2nfer_points,type_name=="CO2 response at high N")[,c("middle","site_species")]
+b2 <- subset(jmax_co2nfer_points,type_name=="CO2 response at low N")[,c("middle","site_species")]
+b3 <- subset(jmax_co2nfer_points,type_name=="CO2 response without N")[,c("middle","site_species")]
+
+final_nfer_j <- Reduce(function(x,y) merge(x = x, y = y,by=c("site_species"),all.x=TRUE),list(b1,b2,b3))
+names(final_nfer_j) <- c("exp","high_N","low_N","without_N")
+final_nfer_j$final_N_high <- final_nfer_j$high_N
+final_nfer_j$final_N_low <- final_nfer_j$low_N
+final_nfer_j$final_N_low[is.na(final_nfer_j$without_N)==F] <- final_nfer_j$without_N[is.na(final_nfer_j$without_N)==F]
+
+final_nfer_vj <- merge(final_nfer_c[,c("exp","final_N_high","final_N_low")],
+                    final_nfer_j[,c("exp","final_N_high","final_N_low")],
+                    by=c("exp"),all.x=TRUE,all.y=TRUE)
+names(final_nfer_vj) <- c("exp","vcmax_high","vcmax_low","jmax_high","jmax_low")
+
+final_nfer_vj$jv_high <- final_nfer_vj$jmax_high-final_nfer_vj$vcmax_high
+final_nfer_vj$jv_low <- final_nfer_vj$jmax_low -final_nfer_vj$vcmax_low
+final_nfer_vj$treatment <- "Nfer+co2"
+
+box1 <- tibble(treatment = "Nfer+co2",middle=median(final_nfer_vj$vcmax_high),ymin=quantile(final_nfer_vj$vcmax_high, 0.25),
+                            ymax=quantile(final_nfer_vj$vcmax_high, 0.75))
+box2 <- tibble(treatment = "Nfer+co2",middle=median(final_nfer_vj$vcmax_low),ymin=quantile(final_nfer_vj$vcmax_low, 0.25),
+               ymax=quantile(final_nfer_vj$vcmax_low, 0.75))
+
+f1 <- final_nfer_vj %>%
+  ggplot( aes(x=treatment, y=vcmax_high)) +
+  geom_boxplot(width = 0.5,color="red")+
+  geom_boxplot(aes(x=treatment, y=vcmax_low),width = 0.5,color="blue")+
+  geom_crossbar(data=box1,aes(x=treatment,y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5,color="red") +
+  geom_crossbar(data=box2,aes(x=treatment,y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5,color="blue") +
+  geom_point(alpha = 0.6, width = 0.5,size=2,color="red") +
+  geom_point(aes(x=treatment, y=vcmax_low),alpha = 0.6, width = 0.5,size=2,color="blue")  +
+  geom_hline( yintercept=0.0, size=0.5)+ ylim(-1,1)+
+  labs(x="", y="Vcmax response") +
+  theme_classic()+coord_flip()+theme(axis.text=element_text(size=12))
+
+
+box3 <- tibble(treatment = "Nfer+co2",middle=median(final_nfer_vj$jmax_high,na.rm = T),ymin=quantile(final_nfer_vj$jmax_high, 0.25,na.rm = T),
+               ymax=quantile(final_nfer_vj$jmax_high, 0.75,na.rm = T))
+box4 <- tibble(treatment = "Nfer+co2",middle=median(final_nfer_vj$jmax_low,na.rm = T),ymin=quantile(final_nfer_vj$jmax_low, 0.25,na.rm = T),
+               ymax=quantile(final_nfer_vj$jmax_low, 0.75,na.rm = T))
+
+f2 <- final_nfer_vj %>%
+  ggplot( aes(x=treatment, y=jmax_high)) +
+  geom_boxplot(width = 0.5,color="red")+
+  geom_boxplot(aes(x=treatment, y=jmax_low),width = 0.5,color="blue")+
+  geom_crossbar(data=box3,aes(x=treatment,y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5,color="red") +
+  geom_crossbar(data=box4,aes(x=treatment,y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5,color="blue") +
+  geom_point(alpha = 0.6, width = 0.5,size=2,color="red") +
+  geom_point(aes(x=treatment, y=jmax_low),alpha = 0.6, width = 0.5,size=2,color="blue")  +
+  geom_hline( yintercept=0.0, size=0.5)+ ylim(-1,1)+
+  labs(x="", y="Jmax response") +
+  theme_classic()+coord_flip()+theme(axis.text=element_text(size=12))
+
+box5 <- tibble(treatment = "Nfer+co2",middle=median(final_nfer_vj$jv_high,na.rm = T),ymin=quantile(final_nfer_vj$jv_high, 0.25,na.rm = T),
+               ymax=quantile(final_nfer_vj$jv_high, 0.75,na.rm = T))
+box6 <- tibble(treatment = "Nfer+co2",middle=median(final_nfer_vj$jv_low,na.rm = T),ymin=quantile(final_nfer_vj$jv_low, 0.25,na.rm = T),
+               ymax=quantile(final_nfer_vj$jv_low, 0.75,na.rm = T))
+
+f3 <- final_nfer_vj %>%
+  ggplot( aes(x=treatment, y=jv_high)) +
+  geom_boxplot(width = 0.5,color="red")+
+  geom_boxplot(aes(x=treatment, y=jv_low),width = 0.5,color="blue")+
+  geom_crossbar(data=box5,aes(x=treatment,y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5,color="red") +
+  geom_crossbar(data=box6,aes(x=treatment,y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5,color="blue") +
+  geom_point(alpha = 0.6, width = 0.5,size=2,color="red") +
+  geom_point(aes(x=treatment, y=jv_low),alpha = 0.6, width = 0.5,size=2,color="blue")  +
+  geom_hline( yintercept=0.0, size=0.5)+ ylim(-1,1)+
+  labs(x="", y="Jmax/Vcmax response") +
+  theme_classic()+coord_flip()+theme(axis.text=element_text(size=12))
+
+plot_grid(f1,f2,f3,nrow=1,label_size = 15)+theme(plot.background=element_rect(fill="white", color="white"))
+ggsave(paste("~/data/output_gcme/colin/final_fig1c_alternative_v2.jpg",sep=""),width = 15, height = 5)
 
 #check final_mean for PCA
 final2 <- final_mean[,c("exp","lai","vcmax","jmax","narea","LMA","nmass","bnpp","anpp","root_shoot_ratio")]
