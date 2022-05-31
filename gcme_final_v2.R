@@ -481,7 +481,7 @@ smith_all_plotmean$exp <- tolower(smith_all_plotmean$exp)
 smith_all_plotmean$ecm_type[smith_all_plotmean$exp=="grassotc"] <- "Nfix" # 2 N-fixing vs. 4 AM
 smith_all_plotmean$ecm_type[smith_all_plotmean$exp=="rhine-aspenface_c"] <- "ECM" # two ECM > 1 AM
 smith_all_plotmean$ecm_type[smith_all_plotmean$exp=="macchia"] <- "AM" # two AM > 1 ECM
-
+coord_smith <- unique(smith_all_plotmean[,c("exp","lon","lat","z")])
 ecm_smith <- unique(smith_all_plotmean[,c("exp","ecm_type")])
 
 ecm_all <- unique(rbind(ecm_smith,ecm_csv))
@@ -559,7 +559,12 @@ s[[1]] <- ggplot(final_mean,aes_string(x="soil_mineral_N", y="vcmax")) +
 #plot_grid(p[[1]],p[[2]],p[[3]],p[[4]],p[[5]],p[[6]],p[[7]],p[[12]],s[[1]],nrow=3,label_size = 15)+theme(plot.background=element_rect(fill="white", color="white"))
 #ggsave(paste("~/data/output_gcme/colin/fig2_vcmax_v2.jpg",sep=""),width = 15, height = 15)
 
-
+#test
+names(final_mean)
+ggplot(final_mean,aes_string(x="soil_mineral_N", y="vcmax")) +
+  geom_hline(yintercept=0)+geom_vline(xintercept=0)+
+  geom_point(aes(color=ecosystem_level),size=3)+ #or type
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))
 
 #for egu
 a1 <- ggplot(final_mean,aes_string(x="jmax", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
@@ -1050,5 +1055,53 @@ final3 <- subset(final2,count_na<6)
 final3 <- unique(final3[order(final3$count_na),])
 head(final3)
 summary(final3)
+
+#include lon/lat - remove one repoeated data
+coord_all <- dplyr::bind_rows(coord_smith,unique((read.csv("/Users/yunpeng/data/gcme/kevin/forcing/pred_vcmax_v2.csv")[,c("lon","lat","z","exp")])))
+subset(coord_all,exp=="new_zealand_face_c")
+coord_all$z[coord_all$z==16 & coord_all$exp=="new_zealand_face_c"] <- NA
+coord_all <- na.omit(coord_all)
+
+final4 <- merge(final3,coord_all,by=c("exp"),all.x=TRUE)
+
 #check
 aa <- subset(kevin_othervars,exp=="eucface_c")%>% group_by(response,dominant_species,sampling_year,sampling_date)  %>% summarise(number = n())
+
+
+###eucface - LAI
+#from https://onlinelibrary.wiley.com/doi/full/10.1111/gcb.13151?casa_token=6CKcWQ_OHHwAAAAA%3AEsLJPJXb45rz2WxE807-NvACiQmFkELScHJiV_eaRUEPd0psT7co5ZnJp8Mo7CKaPFt4H6dkKe8XqZFXJw
+eucface_lai_df <- read.csv("/Users/yunpeng/data/Duursma_gcb/EucFACE_DUURSMA_GCB_LEAFAREAINDEX/data/FACE_RA_P0037_GAPFRACLAI_20121026-20150225_L2.csv")
+#150 as given in paper, also consistent with our df
+subset(logr_c_vcmax,exp=="eucface_c")$co2_e[1];subset(logr_c_vcmax,exp=="eucface_c")$co2_a[1]
+eucface_lai <- log(mean(subset(eucface_lai_df,treatment=="elevated")$LAI,na.rm=TRUE)/mean(subset(eucface_lai_df,treatment=="ambient")$LAI,na.rm=TRUE))/log(540/394)
+
+###biocon_c - LAI
+#LMA, everything is LMA (g/cm2) now, though shown as cm2/g - converting to g/m2
+#lma: g/m2
+lma_a <-10000*mean(subset(logr_c_LMA,exp=="biocon_c"&Unit=="cm2/g")$ambient)
+lma_e <-10000*mean(subset(logr_c_LMA,exp=="biocon_c"&Unit=="cm2/g")$elevated,na.rm=TRUE)
+check <- subset(kevin_othervars,exp=="biocon_c")%>% group_by(response,Unit)  %>% summarise(number = n())
+#agb: g/m2
+agb_a <- mean(subset(kevin_othervars,exp=="biocon_c" & response=="agb" & Unit=="g_m2")$ambient)
+agb_e <- mean(subset(kevin_othervars,exp=="biocon_c" & response=="agb" & Unit=="g_m2")$elevated)
+agb_a/lma_a;agb_e/lma_e # looks ok
+subset(logr_c_vcmax,exp=="biocon_c")$co2_a;subset(logr_c_vcmax,exp=="biocon_c")$co2_e
+biocon_lai <- log((agb_e/lma_e)/(agb_a/lma_a))/log(570/367)
+
+#??? biocon_c - root/shoot
+check
+
+###brandbjerg_c
+#LAI
+
+#anpp
+
+
+#df_only <- read_csv("~/data/gcme/data_received_190325/NewData_wide_CORRECTED2.csv") %>%
+#  mutate( ambient_Sd  = as.numeric(ambient_Sd),  ambient_Se  = as.numeric(ambient_Se), 
+#          elevated_Sd = as.numeric(elevated_Sd), elevated_Se = as.numeric(elevated_Se) )
+#df_only$exp <- tolower(df_only$prev_name)
+#df_only$response <- df_only$Data_type
+#2. convert to lower case
+#check <- subset(df_only,exp=="biocon_c")%>% group_by(response)  %>% summarise(number = n())
+

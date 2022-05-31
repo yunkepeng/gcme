@@ -1,4 +1,4 @@
-library(rsofun)
+#library(rsofun)
 library(dplyr)
 library(ggplot2)
 library(patchwork)
@@ -124,6 +124,22 @@ forcing$site_info[[1]]$date_end <- df1$date[length(df1$date)]
 forcing$params_siml[[1]]$firstyeartrend <- 1997
 forcing$params_siml[[1]]$nyeartrend <- 2
 
+#new
+forcing <- rsofun::p_model_drivers
+forcing$forcing[[1]]$ppfd <- rep(df1$ppfd,4)
+forcing$forcing[[1]]$temp <- rep(df1$temp,4)
+forcing$forcing[[1]]$prec <- rep(df1$prec,4)
+forcing$forcing[[1]]$vpd <- rep(df1$vpd,4)
+forcing$forcing[[1]]$ccov_int <- rep(df1$ccov_int,4)
+forcing$forcing[[1]]$ccov <- rep(df1$ccov,4)
+forcing$forcing[[1]]$snow <- rep(df1$snow,4)
+forcing$forcing[[1]]$rain <- rep(df1$rain,4)
+forcing$forcing[[1]]$fapar <- rep(df1$fapar,4)
+forcing$forcing[[1]]$co2 <- rep(df1$co2,4)
+forcing$forcing[[1]]$doy <- 1:length(forcing$forcing[[1]]$ppfd)
+forcing$forcing[[1]]$tmin <- rep(df1$tmin,4)
+forcing$forcing[[1]]$tmax <- rep(df1$tmax,4)
+
 tmp <- forcing %>% 
   mutate(forcing = purrr::map(forcing, ~mutate(., 
                                                fharv = 0.0,
@@ -138,5 +154,3 @@ output <- runread_pmodel_f(
   tmp,
   par = pars
 )
-
-summary(output$data[[1]])
