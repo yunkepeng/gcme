@@ -104,11 +104,21 @@ pars <- list(
   
 )
 
-#check problem sites
+####This sites NOT work in runread_pmodel_f
 df1 <- read.csv("/Users/yunpeng/data/gcme/kevin/forcing/climate_small/kevin_final1.csv")
-#df1 <- read.csv("/Users/yunpeng/data/gcme/kevin/forcing/climate_small/kevin_final2.csv")
-#df1 <- read.csv("/Users/yunpeng/data/gcme/kevin/forcing/climate_small/kevin_final6.csv")
-#df1 <- read.csv("/Users/yunpeng/data/gcme/kevin/forcing/climate_small/kevin_final11.csv")
+df1 <- read.csv("/Users/yunpeng/data/gcme/kevin/forcing/climate_small/kevin_final2.csv")
+df1 <- read.csv("/Users/yunpeng/data/gcme/kevin/forcing/climate_small/kevin_final6.csv")
+df1 <- read.csv("/Users/yunpeng/data/gcme/kevin/forcing/climate_small/kevin_final11.csv")
+
+####This sites DO work in runread_pmodel_f
+#df1 <- read.csv("/Users/yunpeng/data/gcme/kevin/forcing/climate_small/kevin_final3.csv")
+#df1 <- read.csv("/Users/yunpeng/data/gcme/kevin/forcing/climate_small/kevin_final4.csv")
+#df1 <- read.csv("/Users/yunpeng/data/gcme/kevin/forcing/climate_small/kevin_final5.csv")
+#df1 <- read.csv("/Users/yunpeng/data/gcme/kevin/forcing/climate_small/kevin_final7.csv")
+#df1 <- read.csv("/Users/yunpeng/data/gcme/kevin/forcing/climate_small/kevin_final8.csv")
+#df1 <- read.csv("/Users/yunpeng/data/gcme/kevin/forcing/climate_small/kevin_final9.csv")
+#df1 <- read.csv("/Users/yunpeng/data/gcme/kevin/forcing/climate_small/kevin_final10.csv")
+
 
 df1$date <- as.Date(df1$date);df1$doy <- 1:length(df1$date)
 
