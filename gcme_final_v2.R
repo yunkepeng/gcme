@@ -1064,6 +1064,8 @@ coord_all <- na.omit(coord_all)
 
 final4 <- merge(final3,coord_all,by=c("exp"),all.x=TRUE)
 
+unique(final4[,c("lon","lat","z")])
+
 #check
 aa <- subset(kevin_othervars,exp=="eucface_c")%>% group_by(response,dominant_species,sampling_year,sampling_date)  %>% summarise(number = n())
 

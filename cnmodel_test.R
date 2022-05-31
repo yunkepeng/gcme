@@ -104,9 +104,12 @@ pars <- list(
   
 )
 
-#another test
+#check problem sites
 df1 <- read.csv("/Users/yunpeng/data/gcme/kevin/forcing/climate_small/kevin_final1.csv")
-#1,2,6,11 doens't work
+#df1 <- read.csv("/Users/yunpeng/data/gcme/kevin/forcing/climate_small/kevin_final2.csv")
+#df1 <- read.csv("/Users/yunpeng/data/gcme/kevin/forcing/climate_small/kevin_final6.csv")
+#df1 <- read.csv("/Users/yunpeng/data/gcme/kevin/forcing/climate_small/kevin_final11.csv")
+
 df1$date <- as.Date(df1$date);df1$doy <- 1:length(df1$date)
 
 ###ambient
