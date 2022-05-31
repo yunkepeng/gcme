@@ -1,4 +1,4 @@
-#library(rsofun)
+library(rsofun)
 library(dplyr)
 library(ggplot2)
 library(patchwork)
@@ -104,53 +104,24 @@ pars <- list(
   
 )
 
-df1 <- read.csv("~/data/gcme/kevin/forcing/climate/kevin5.csv")
-df1$date <- as.Date(df1$date)
-df1$doy <- 1:length(df1$date)
+#another test
+df1 <- read.csv("/Users/yunpeng/data/gcme/test_kevin45.csv")
+df1$date <- as.Date(df1$date);df1$doy <- 1:length(df1$date)
 
+###ambient
 forcing <- rsofun::p_model_drivers
+library(dplyr)
 forcing$forcing[[1]] <- as_tibble(df1[,c("date","temp","prec","vpd","ppfd","patm","ccov_int","ccov","snow","rain","fapar","co2","doy","tmin","tmax")])
-
-#compare current forcing data vs. rsofun::p_model_drivers - everything is consistent here.
-summary(rsofun::p_model_drivers$forcing[[1]])
-summary(forcing$forcing[[1]])
-
-forcing$sitename <- "kevin5"
-forcing$site_info[[1]]$lon <- -115.92
-forcing$site_info[[1]]$lat <- 36.82
-forcing$site_info[[1]]$elv <- 970
+forcing$sitename <- df1$sitename[1]
+forcing$site_info[[1]]$lon <- df1$lon[1]
+forcing$site_info[[1]]$lat <- df1$lat[1]
+forcing$site_info[[1]]$elv <-  df1$elv[1]
 forcing$site_info[[1]]$date_start <- df1$date[1]
 forcing$site_info[[1]]$date_end <- df1$date[length(df1$date)]
-forcing$params_siml[[1]]$firstyeartrend <- 1997
-forcing$params_siml[[1]]$nyeartrend <- 2
-
-#new
-forcing <- rsofun::p_model_drivers
-forcing$forcing[[1]]$ppfd <- rep(df1$ppfd,4)
-forcing$forcing[[1]]$temp <- rep(df1$temp,4)
-forcing$forcing[[1]]$prec <- rep(df1$prec,4)
-forcing$forcing[[1]]$vpd <- rep(df1$vpd,4)
-forcing$forcing[[1]]$ccov_int <- rep(df1$ccov_int,4)
-forcing$forcing[[1]]$ccov <- rep(df1$ccov,4)
-forcing$forcing[[1]]$snow <- rep(df1$snow,4)
-forcing$forcing[[1]]$rain <- rep(df1$rain,4)
-forcing$forcing[[1]]$fapar <- rep(df1$fapar,4)
-forcing$forcing[[1]]$co2 <- rep(df1$co2,4)
-forcing$forcing[[1]]$doy <- 1:length(forcing$forcing[[1]]$ppfd)
-forcing$forcing[[1]]$tmin <- rep(df1$tmin,4)
-forcing$forcing[[1]]$tmax <- rep(df1$tmax,4)
-
-tmp <- forcing %>% 
-  mutate(forcing = purrr::map(forcing, ~mutate(., 
-                                               fharv = 0.0,
-                                               dno3 = 0.1,
-                                               dnh4 = 0.1)))
-
-## no spinup, 1 year transient run
+forcing$params_siml[[1]]$firstyeartrend <- 2001
+forcing$params_siml[[1]]$nyeartrend <- 10
+tmp <- forcing %>% mutate(forcing = purrr::map(forcing, ~mutate(., fharv = 0.0, dno3 = 0.1,dnh4 = 0.1)))
 tmp$params_siml[[1]]$spinupyears <- 1500
-tmp$params_siml[[1]]$recycle <- 5
-
-output <- runread_pmodel_f(
-  tmp,
-  par = pars
-)
+tmp$params_siml[[1]]$recycle <- 1
+modlist1 <- runread_pmodel_f(tmp,par = pars)#ambient
+modlist1 <- as.data.frame(modlist1$data[[1]])
