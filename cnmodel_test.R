@@ -105,7 +105,8 @@ pars <- list(
 )
 
 #another test
-df1 <- read.csv("/Users/yunpeng/data/gcme/test_kevin45.csv")
+df1 <- read.csv("/Users/yunpeng/data/gcme/kevin/forcing/climate_small/kevin_final1.csv")
+#1,2,6,11 doens't work
 df1$date <- as.Date(df1$date);df1$doy <- 1:length(df1$date)
 
 ###ambient
@@ -118,8 +119,8 @@ forcing$site_info[[1]]$lat <- df1$lat[1]
 forcing$site_info[[1]]$elv <-  df1$elv[1]
 forcing$site_info[[1]]$date_start <- df1$date[1]
 forcing$site_info[[1]]$date_end <- df1$date[length(df1$date)]
-forcing$params_siml[[1]]$firstyeartrend <- 2001
-forcing$params_siml[[1]]$nyeartrend <- 10
+forcing$params_siml[[1]]$firstyeartrend <- 1991
+forcing$params_siml[[1]]$nyeartrend <- 20
 tmp <- forcing %>% mutate(forcing = purrr::map(forcing, ~mutate(., fharv = 0.0, dno3 = 0.1,dnh4 = 0.1)))
 tmp$params_siml[[1]]$spinupyears <- 1500
 tmp$params_siml[[1]]$recycle <- 1
