@@ -728,6 +728,9 @@ walker <- read.csv("/Users/yunpeng/data/leaf_traits/Walker/LEAF_PHOTOSYNTHESIS_T
 light_vcmax <- subset(walker,Treatment_light!="not applicable") %>% 
   group_by(lon,lat,species,Treatment_light)  %>% summarise(mean = mean(Vcmax))
 
+subset(walker,Treatment_light!="not applicable") %>% 
+  group_by(lon,lat,species,Treatment_light,Irradiance)  %>% summarise(mean = mean(Vcmax))
+
 light1 <- subset(light_vcmax,Treatment_light=="shade"|Treatment_light=="sun")
 light1a <- merge(subset(light1,Treatment_light=="shade"),subset(light1,Treatment_light=="sun"),
       by=c("lon","lat","species"),all.x=TRUE)
