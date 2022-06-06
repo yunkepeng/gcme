@@ -1345,7 +1345,7 @@ ncomp <- estim_ncpPCA(final6)
 res.imp <- imputePCA(final6, ncp = ncomp$ncp)
 res.pca <- PCA(res.imp$completeObs)
 
-summary(lm(vcmax~anpp,final5))
+summary(lm(vcmax~lai,final5))
 
 resMIPCA <- MIPCA(final6, ncp = 2, nboot = 200)
 plot(resMIPCA)
@@ -1356,7 +1356,12 @@ ncomp <- estim_ncpPCA(test)
 res.imp <- imputePCA(test, ncp = ncomp$ncp)
 res.pca <- PCA(res.imp$completeObs)
 
+#light effect
+light_vcmax_points
+subset(kevin_othervars,treatment=="s")
+check <-subset(kevin_othervars,treatment=="s") %>% group_by(exp,lon,lat,response)  %>% summarise(number = n())
 
+check <-subset(kevin_othervars,treatment=="f" & (response=="vcmax")) %>% group_by(exp,lon,lat,response)  %>% summarise(number = n())
 
 #df_only <- read_csv("~/data/gcme/data_received_190325/NewData_wide_CORRECTED2.csv") %>%
 #  mutate( ambient_Sd  = as.numeric(ambient_Sd),  ambient_Se  = as.numeric(ambient_Se), 
