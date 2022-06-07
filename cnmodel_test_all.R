@@ -118,10 +118,10 @@ for (i in wrong_sites){
   modlist1 <- runread_pmodel_f(tmp,par = pars)#ambient
   modlist1 <- as.data.frame(modlist1$data[[1]])
   plot_level$vcmax25[i] <- max(modlist1$vcmax25,na.rm=TRUE)*1000000
-  plot_level$lai[i] <- max(modlist1$lai,na.rm=TRUE)*1000000
-  plot_level$npp[i] <- max(modlist1$npp,na.rm=TRUE)*1000000
-  plot_level$narea[i] <- max(modlist1$narea,na.rm=TRUE)*1000000
-  plot_level$lma[i] <- max(modlist1$lma,na.rm=TRUE)*1000000
+  plot_level$lai[i] <- max(modlist1$lai,na.rm=TRUE)
+  plot_level$npp[i] <- max(modlist1$npp,na.rm=TRUE)
+  plot_level$narea[i] <- max(modlist1$narea,na.rm=TRUE)
+  plot_level$lma[i] <- max(modlist1$lma,na.rm=TRUE)
 }
 
 #this plots work well
@@ -149,10 +149,10 @@ for (i in correct_sites){
   modlist1 <- runread_pmodel_f(tmp,par = pars)#ambient
   modlist1 <- as.data.frame(modlist1$data[[1]])
   plot_level$vcmax25[i] <- max(modlist1$vcmax25,na.rm=TRUE)*1000000
-  plot_level$lai[i] <- max(modlist1$lai,na.rm=TRUE)*1000000
-  plot_level$npp[i] <- max(modlist1$npp,na.rm=TRUE)*1000000
-  plot_level$narea[i] <- max(modlist1$narea,na.rm=TRUE)*1000000
-  plot_level$lma[i] <- max(modlist1$lma,na.rm=TRUE)*1000000
+  plot_level$lai[i] <- max(modlist1$lai,na.rm=TRUE)
+  plot_level$npp[i] <- max(modlist1$npp,na.rm=TRUE)
+  plot_level$narea[i] <- max(modlist1$narea,na.rm=TRUE)
+  plot_level$lma[i] <- max(modlist1$lma,na.rm=TRUE)
 }
 
 
