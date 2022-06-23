@@ -210,9 +210,9 @@ light_vcmax_points <- dplyr::bind_rows(light1a[,c("lon","lat","species","middle"
 
 light_vcmax_points <- merge(light_vcmax_points,light_walker, by=c("lon","lat"),all.x=TRUE)
 
-light_vcmax_points %>% ggplot( aes(x=type_name, y=middle)) + geom_boxplot()+
+l1 <- light_vcmax_points %>% ggplot( aes(x=type_name, y=middle)) + geom_boxplot()+
   geom_boxplot(aes(x=type_name, y=pred_vcmax25_logr),color="red")+
-  geom_point(alpha = 0.6, width = 0.5) +geom_hline( yintercept=0.0, size=0.5)+ ylim(-1,1)+
+  geom_point(alpha = 0.6, width = 0.5) +geom_hline( yintercept=0.0, size=0.5)+ ylim(-0.5,1)+
   labs(y="light effect on vcmax",x=" ") + theme_classic()+coord_flip()+theme(axis.text=element_text(size=12))
 
 
@@ -238,9 +238,9 @@ light_jmax_points <- dplyr::bind_rows(light1a[,c("lon","lat","species","middle",
 light_jmax_points <- merge(light_jmax_points,light_walker, by=c("lon","lat"),all.x=TRUE)
 
 #when it is 0, it means both are -10000, removed it
-light_jmax_points %>% ggplot( aes(x=type_name, y=middle)) + geom_boxplot()+
+l2 <- light_jmax_points %>% ggplot( aes(x=type_name, y=middle)) + geom_boxplot()+
   geom_boxplot(aes(x=type_name, y=pred_jmax25_logr),color="red")+
-  geom_point(alpha = 0.6, width = 0.5) +geom_hline( yintercept=0.0, size=0.5)+ ylim(-1,1)+
+  geom_point(alpha = 0.6, width = 0.5) +geom_hline( yintercept=0.0, size=0.5)+ ylim(-0.5,1)+
   labs(y="light effect on jmax",x=" ") + theme_classic()+coord_flip()+theme(axis.text=element_text(size=12))
 
 #ratio
@@ -248,7 +248,12 @@ jvratio <- merge(light_jmax_points[,c("lon","lat","species","middle","pred_jmax2
 jvratio$jv_obs <- jvratio$middle.x-jvratio$middle.y
 jvratio$jv_pred <- jvratio$pred_jmax25_logr.x-jvratio$pred_vcmax25_logr
 
-jvratio %>% ggplot( aes(x=type_name, y=jv_obs)) + geom_boxplot()+
+l3 <- jvratio %>% ggplot( aes(x=type_name, y=jv_obs)) + geom_boxplot()+
   geom_boxplot(aes(x=type_name, y=jv_pred),color="red")+
-  geom_point(alpha = 0.6, width = 0.5) +geom_hline( yintercept=0.0, size=0.5)+ ylim(-1,1)+
+  geom_point(alpha = 0.6, width = 0.5) +geom_hline( yintercept=0.0, size=0.5)+ ylim(-0.5,1)+
   labs(y="light effect on jmax/vcmax",x=" ") + theme_classic()+coord_flip()+theme(axis.text=element_text(size=12))
+
+plot_grid(l1,l2,l3,nrow=1,label_size = 15)+
+  theme(plot.background=element_rect(fill="white", color="white"))
+
+ggsave(paste("~/data/output_gcme/colin/light1.jpg",sep=""),width = 15, height = 5)

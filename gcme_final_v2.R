@@ -28,6 +28,7 @@ library(MAd)
 library(Hmisc)
 library("missMDA")
 library(FactoMineR)
+library(plotrix)
 
 #update function (if SD shown NA in plot - then relying on percentage of other samples within the same plot)
 #AND --> convert logr or logr_var = 0 is NA
@@ -512,7 +513,7 @@ final_mean$bgb_coarse[final_mean$bgb_coarse< -5] <- NA
 final_mean$bgb[final_mean$bgb< -5] <- NA
 
 #add two plots from Cesar -->after adding them --becoming weaker!
-#Cesar_anpp <- read.csv("/Users/yunpeng/data/gcme/cesar/ANPP.csv")
+Cesar_anpp <- read.csv("/Users/yunpeng/data/gcme/cesar/ANPP.csv")
 phace <- log(112.6493/111.8533)/log(600/384)
 Aspen <- (log(669.6334/517.9303)/log(550/360) + log(621.7131/429.4247)/log(550/360))/2
 
@@ -567,33 +568,6 @@ ggplot(final_mean,aes_string(x="soil_mineral_N", y="vcmax")) +
   geom_hline(yintercept=0)+geom_vline(xintercept=0)+
   geom_point(aes(color=ecosystem_level),size=3)+ #or type
   stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))
-
-#for egu
-a1 <- ggplot(final_mean,aes_string(x="jmax", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
-  labs(y=~paste(V[cmax]))+labs(x=~paste(J[cmax]))
-a2 <- ggplot(final_mean,aes_string(x="nmass", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
-  labs(y=~paste(V[cmax]))+labs(x=~paste(N[mass]))
-a3 <- ggplot(final_mean,aes_string(x="LMA", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
-  labs(y=~paste(V[cmax]))+labs(x=~paste(LMA))
-a4 <- ggplot(final_mean,aes_string(x="anpp", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
-  labs(y=~paste(V[cmax]))+labs(x=~paste(ANPP))
-a5 <- ggplot(final_mean,aes_string(x="bnpp", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
-  labs(y=~paste(V[cmax]))+labs(x=~paste(BNPP))
-a6 <- ggplot(final_mean,aes_string(x="root_shoot_ratio", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
-  labs(y=~paste(V[cmax]))+labs(x=~paste(Root/Shoot))
-a7 <- ggplot(final_mean,aes_string(x="litter_biomass", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
-  labs(y=~paste(V[cmax]))+labs(x=~paste("litter_biomass"))
-a8 <- ggplot(final_mean,aes_string(x="soil_mineral_N", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
-  labs(y=~paste(V[cmax]))+labs(x=~paste("Soil inorganic N"))
-
-final1_legend <- ggplot(final_mean,aes_string(x="soil_mineral_N", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(text = element_text(size=30),axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"))+
-  labs(y=~paste(V[cmax]))+labs(x=~paste("Soil inorganic N"))+scale_colour_discrete(" ")
-
-legend_info <- as_ggplot(get_legend(final1_legend))
-
-plot_grid(a1,a2,a3,a4,a5,a6,a7,a8,legend_info,nrow=3,label_size = 15)+
-  theme(plot.background=element_rect(fill="white", color="white"))
-ggsave(paste("~/data/output_gcme/colin/fig2_MS.jpg",sep=""),width = 15, height = 15)
 
 #site distribution
 kevin <- unique(read.csv("/Users/yunpeng/data/gcme/kevin/orig_vcmax/JunkePeng_11252021.csv")[,c("lon","lat")])
@@ -996,58 +970,59 @@ names(final_nfer_vj) <- c("exp","vcmax_high","vcmax_low","jmax_high","jmax_low")
 
 final_nfer_vj$jv_high <- final_nfer_vj$jmax_high-final_nfer_vj$vcmax_high
 final_nfer_vj$jv_low <- final_nfer_vj$jmax_low -final_nfer_vj$vcmax_low
-final_nfer_vj$treatment <- "Nfer+co2"
+final_nfer_vj$treatment <- "N fertilization"
+final_nfer_vj$treatment2 <- "Non N fertilization"
 
-box1 <- tibble(treatment = "Nfer+co2",middle=median(final_nfer_vj$vcmax_high),ymin=quantile(final_nfer_vj$vcmax_high, 0.25),
+box1 <- tibble(treatment = "N fertilization",middle=median(final_nfer_vj$vcmax_high),ymin=quantile(final_nfer_vj$vcmax_high, 0.25),
                             ymax=quantile(final_nfer_vj$vcmax_high, 0.75))
-box2 <- tibble(treatment = "Nfer+co2",middle=median(final_nfer_vj$vcmax_low),ymin=quantile(final_nfer_vj$vcmax_low, 0.25),
+box2 <- tibble(treatment = "Non N fertilization",middle=median(final_nfer_vj$vcmax_low),ymin=quantile(final_nfer_vj$vcmax_low, 0.25),
                ymax=quantile(final_nfer_vj$vcmax_low, 0.75))
 
 f1 <- final_nfer_vj %>%
   ggplot( aes(x=treatment, y=vcmax_high)) +
-  geom_boxplot(width = 0.5,color="red")+
-  geom_boxplot(aes(x=treatment, y=vcmax_low),width = 0.5,color="blue")+
-  geom_crossbar(data=box1,aes(x=treatment,y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5,color="red") +
-  geom_crossbar(data=box2,aes(x=treatment,y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5,color="blue") +
-  geom_point(alpha = 0.6, width = 0.5,size=2,color="red") +
-  geom_point(aes(x=treatment, y=vcmax_low),alpha = 0.6, width = 0.5,size=2,color="blue")  +
-  geom_hline( yintercept=0.0, size=0.5)+ ylim(-1,1)+
+  geom_boxplot(aes(x=treatment, y=vcmax_high),width = 0.5,color="blue")+
+  geom_boxplot(aes(x=treatment2, y=vcmax_low),width = 0.5,color="orange")+
+  geom_crossbar(data=box1,aes(x=treatment,y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5,color="blue") +
+  geom_crossbar(data=box2,aes(x=treatment,y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5,color="orange") +
+  geom_point(aes(x=treatment, y=vcmax_high),alpha = 0.6, width = 0.5,size=2,color="blue") +
+  geom_point(aes(x=treatment2, y=vcmax_low),alpha = 0.6, width = 0.5,size=2,color="orange")  +
+  geom_hline( yintercept=0.0, size=0.5)+ ylim(-1,0.5)+
   labs(x="", y="Vcmax response") +
   theme_classic()+coord_flip()+theme(axis.text=element_text(size=12))
 
 
-box3 <- tibble(treatment = "Nfer+co2",middle=median(final_nfer_vj$jmax_high,na.rm = T),ymin=quantile(final_nfer_vj$jmax_high, 0.25,na.rm = T),
+box3 <- tibble(treatment = "N fertilization",middle=median(final_nfer_vj$jmax_high,na.rm = T),ymin=quantile(final_nfer_vj$jmax_high, 0.25,na.rm = T),
                ymax=quantile(final_nfer_vj$jmax_high, 0.75,na.rm = T))
-box4 <- tibble(treatment = "Nfer+co2",middle=median(final_nfer_vj$jmax_low,na.rm = T),ymin=quantile(final_nfer_vj$jmax_low, 0.25,na.rm = T),
+box4 <- tibble(treatment = "Non N fertilization",middle=median(final_nfer_vj$jmax_low,na.rm = T),ymin=quantile(final_nfer_vj$jmax_low, 0.25,na.rm = T),
                ymax=quantile(final_nfer_vj$jmax_low, 0.75,na.rm = T))
 
 f2 <- final_nfer_vj %>%
-  ggplot( aes(x=treatment, y=jmax_high)) +
-  geom_boxplot(width = 0.5,color="red")+
-  geom_boxplot(aes(x=treatment, y=jmax_low),width = 0.5,color="blue")+
-  geom_crossbar(data=box3,aes(x=treatment,y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5,color="red") +
-  geom_crossbar(data=box4,aes(x=treatment,y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5,color="blue") +
-  geom_point(alpha = 0.6, width = 0.5,size=2,color="red") +
-  geom_point(aes(x=treatment, y=jmax_low),alpha = 0.6, width = 0.5,size=2,color="blue")  +
-  geom_hline( yintercept=0.0, size=0.5)+ ylim(-1,1)+
+  ggplot( aes(x=treatment, y=vcmax_high)) +
+  geom_boxplot(aes(x=treatment, y=jmax_high),width = 0.5,color="blue")+
+  geom_boxplot(aes(x=treatment2, y=jmax_low),width = 0.5,color="orange")+
+  geom_crossbar(data=box3,aes(x=treatment,y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5,color="blue") +
+  geom_crossbar(data=box4,aes(x=treatment,y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5,color="orange") +
+  geom_point(aes(x=treatment, y=vcmax_high),alpha = 0.6, width = 0.5,size=2,color="blue") +
+  geom_point(aes(x=treatment2, y=vcmax_low),alpha = 0.6, width = 0.5,size=2,color="orange")  +
+  geom_hline( yintercept=0.0, size=0.5)+ ylim(-1,0.5)+
   labs(x="", y="Jmax response") +
   theme_classic()+coord_flip()+theme(axis.text=element_text(size=12))
 
-box5 <- tibble(treatment = "Nfer+co2",middle=median(final_nfer_vj$jv_high,na.rm = T),ymin=quantile(final_nfer_vj$jv_high, 0.25,na.rm = T),
+box5 <- tibble(treatment = "N fertilization",middle=median(final_nfer_vj$jv_high,na.rm = T),ymin=quantile(final_nfer_vj$jv_high, 0.25,na.rm = T),
                ymax=quantile(final_nfer_vj$jv_high, 0.75,na.rm = T))
-box6 <- tibble(treatment = "Nfer+co2",middle=median(final_nfer_vj$jv_low,na.rm = T),ymin=quantile(final_nfer_vj$jv_low, 0.25,na.rm = T),
+box6 <- tibble(treatment = "Non N fertilization",middle=median(final_nfer_vj$jv_low,na.rm = T),ymin=quantile(final_nfer_vj$jv_low, 0.25,na.rm = T),
                ymax=quantile(final_nfer_vj$jv_low, 0.75,na.rm = T))
 
 f3 <- final_nfer_vj %>%
   ggplot( aes(x=treatment, y=jv_high)) +
-  geom_boxplot(width = 0.5,color="red")+
-  geom_boxplot(aes(x=treatment, y=jv_low),width = 0.5,color="blue")+
-  geom_crossbar(data=box5,aes(x=treatment,y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5,color="red") +
-  geom_crossbar(data=box6,aes(x=treatment,y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5,color="blue") +
-  geom_point(alpha = 0.6, width = 0.5,size=2,color="red") +
-  geom_point(aes(x=treatment, y=jv_low),alpha = 0.6, width = 0.5,size=2,color="blue")  +
-  geom_hline( yintercept=0.0, size=0.5)+ ylim(-1,1)+
-  labs(x="", y="Jmax/Vcmax response") +
+  geom_boxplot(aes(x=treatment, y=jv_high),width = 0.5,color="blue")+
+  geom_boxplot(aes(x=treatment2, y=jv_low),width = 0.5,color="orange")+
+  geom_crossbar(data=box5,aes(x=treatment,y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5,color="blue") +
+  geom_crossbar(data=box6,aes(x=treatment,y=middle, ymin=ymin, ymax=ymax), alpha = 0.6, width = 0.5,color="orange") +
+  geom_point(aes(x=treatment, y=jv_high),alpha = 0.6, width = 0.5,size=2,color="blue") +
+  geom_point(aes(x=treatment2, y=jv_low),alpha = 0.6, width = 0.5,size=2,color="orange")  +
+  geom_hline( yintercept=0.0, size=0.5)+ ylim(-1,0.5)+
+  labs(x="", y="Jmax / Vcmax response") +
   theme_classic()+coord_flip()+theme(axis.text=element_text(size=12))
 
 plot_grid(f1,f2,f3,nrow=1,label_size = 15)+theme(plot.background=element_rect(fill="white", color="white"))
@@ -1143,15 +1118,24 @@ bgb_a <- mean(subset(kevin_othervars,exp=="facts_ii_face3_pt_c" & response=="bgb
 bgb_e <- mean(subset(kevin_othervars,exp=="facts_ii_face3_pt_c" & response=="bgb" & Unit=="g_m2")$elevated)
 agb_a <- mean(subset(kevin_othervars,exp=="facts_ii_face3_pt_c" & response=="agb" & Unit=="g_m2")$ambient)
 agb_e <- mean(subset(kevin_othervars,exp=="facts_ii_face3_pt_c" & response=="agb" & Unit=="g_m2")$elevated)
-facts_ii_face3_pt_c_root_shoot <- log((bgb_e/agb_e)/(bgb_a/agb_a))/log(560/367)
+co2_a <- mean(c(subset(kevin_othervars,exp=="facts_ii_face3_pt_c" & response=="bgb" & Unit=="g_m2")$co2_a,subset(kevin_othervars,exp=="facts_ii_face3_pt_c" & response=="agb" & Unit=="g_m2")$co2_a))
+co2_e <- mean(c(subset(kevin_othervars,exp=="facts_ii_face3_pt_c" & response=="bgb" & Unit=="g_m2")$co2_e,subset(kevin_othervars,exp=="facts_ii_face3_pt_c" & response=="agb" & Unit=="g_m2")$co2_e))
+
+facts_ii_face3_pt_c_root_shoot <- log((bgb_e/agb_e)/(bgb_a/agb_a))/log(co2_e/co2_a)
 
 #new_zealand
 check <- subset(kevin_othervars,exp=="new_zealand_face_c")%>% group_by(response,Unit)  %>% summarise(number = n())
 #??? root/shoot = bgb/agb?
-bgb_a <- mean(subset(kevin_othervars,exp=="new_zealand_face_c" & response=="bgb" & Unit=="g_m2")$ambient)
-bgb_e <- mean(subset(kevin_othervars,exp=="new_zealand_face_c" & response=="bgb" & Unit=="g_m2")$elevated)
-agb_a <- mean(subset(kevin_othervars,exp=="new_zealand_face_c" & response=="agb" & Unit=="g_m2")$ambient)
-agb_e <- mean(subset(kevin_othervars,exp=="new_zealand_face_c" & response=="agb" & Unit=="g_m2")$elevated)
+#using g/g is better because it is completely mass unit with reasonable values
+bgb_a <-subset(kevin_othervars,exp=="new_zealand_face_c" & response=="bgb_c")$ambient
+bgb_e <- subset(kevin_othervars,exp=="new_zealand_face_c" & response=="bgb_c")$elevated
+agb_a <- subset(kevin_othervars,exp=="new_zealand_face_c" & response=="agb_c")$ambient
+agb_e <-subset(kevin_othervars,exp=="new_zealand_face_c" & response=="agb_c")$elevated
+
+#bgb_a <- mean(subset(kevin_othervars,exp=="new_zealand_face_c" & response=="bgb" & Unit=="g_m2")$ambient)
+#bgb_e <- mean(subset(kevin_othervars,exp=="new_zealand_face_c" & response=="bgb" & Unit=="g_m2")$elevated)
+#agb_a <- mean(subset(kevin_othervars,exp=="new_zealand_face_c" & response=="agb" & Unit=="g_m2" & citation=="allard_et_al_2005")$ambient)
+#agb_e <- mean(subset(kevin_othervars,exp=="new_zealand_face_c" & response=="agb" & Unit=="g_m2" & citation=="allard_et_al_2005")$elevated)
 new_zealand_c_root_shoot <- log((bgb_e/agb_e)/(bgb_a/agb_a))/log(475/364)
 
 #LAI from LMA and agb
@@ -1177,8 +1161,8 @@ Carea_e <- mean(subset(kevin_othervars,exp=="duke_c" & response=="leaf_c" & Unit
 duke_c_lma <- log((Carea_e/Cmass_e)/(Carea_a/Cmass_a))/log(563/363)
 
 #??? root/shoot = bgb/agb?
-bgb_a <- mean(subset(kevin_othervars,exp=="duke_c" & response=="bgb" & Unit=="g_m2")$ambient)
-bgb_e <- mean(subset(kevin_othervars,exp=="duke_c" & response=="bgb" & Unit=="g_m2")$elevated)
+bgb_a <- mean(subset(kevin_othervars,exp=="duke_c" & response=="bgb" & Unit=="g_m2" &co2_a==363)$ambient)
+bgb_e <- mean(subset(kevin_othervars,exp=="duke_c" & response=="bgb" & Unit=="g_m2"&co2_e==563)$elevated)
 agb_a <- mean(subset(kevin_othervars,exp=="duke_c" & response=="agb" & Unit=="gc_m2"& citation=="schlesinger_and_lichter_2001")$ambient) # too keep column constant
 agb_e <- mean(subset(kevin_othervars,exp=="duke_c" & response=="agb" & Unit=="gc_m2" & citation=="schlesinger_and_lichter_2001")$elevated)
 duke_c_root_shoot <- log((bgb_e/agb_e)/(bgb_a/agb_a))/log(563/363)
@@ -1188,8 +1172,8 @@ check <- subset(kevin_othervars,exp=="duke2_c")%>% group_by(response,Unit)  %>% 
 
 ###duke2_c
 #??? root/shoot = bgb/agb?
-bgb_a <- mean(subset(kevin_othervars,exp=="duke2_c" & response=="bgb" & Unit=="g_m2")$ambient)
-bgb_e <- mean(subset(kevin_othervars,exp=="duke2_c" & response=="bgb" & Unit=="g_m2")$elevated)
+bgb_a <- mean(subset(kevin_othervars,exp=="duke2_c" & response=="bgb" & Unit=="g_m2" & co2_a==363)$ambient)
+bgb_e <- mean(subset(kevin_othervars,exp=="duke2_c" & response=="bgb" & Unit=="g_m2" & co2_e==563)$elevated)
 agb_a <- mean(subset(kevin_othervars,exp=="duke2_c" & response=="agb" & Unit=="g_m2")$ambient,na.rm=TRUE)
 agb_e <- mean(subset(kevin_othervars,exp=="duke2_c" & response=="agb" & Unit=="g_m2")$elevated,na.rm=TRUE)
 duke2_c_root_shoot <- log((bgb_e/agb_e)/(bgb_a/agb_a))/log(563/363)
@@ -1248,10 +1232,10 @@ check <- subset(kevin_othervars,exp=="facts_ii_face4_bp_c")%>% group_by(response
 check <- subset(kevin_othervars,exp=="nevada_desert_face_c")%>% group_by(response,Unit)  %>% summarise(number = n())
 # it is Scrubland, so can be considered as grassland
 
-#anpp, unit is wrong. But comments sound reasonable: monitoring_incremental_changes_in_stem_length_over_each_growing_season._tissue_harvests_were_used_to_create_treatment-specific_regression_equations_for_each_species_that_converted_shoot_length_to_total_shoot_biomass_(dry_weight)
-anpp_a <- mean(subset(kevin_othervars,exp=="nevada_desert_face_c"&response=="anpp")$ambient)
-anpp_e <- mean(subset(kevin_othervars,exp=="nevada_desert_face_c"&response=="anpp")$elevated)
-nevada_desert_face_c_anpp <- log((anpp_e/anpp_a))/log(550/364)
+#anpp, unit is wrong. so not used
+#anpp_a <- mean(subset(kevin_othervars,exp=="nevada_desert_face_c"&response=="anpp")$ambient)
+#anpp_e <- mean(subset(kevin_othervars,exp=="nevada_desert_face_c"&response=="anpp")$elevated)
+#nevada_desert_face_c_anpp <- log((anpp_e/anpp_a))/log(550/364)
 
 #Leaf area obtained from https://link.springer.com/content/pdf/10.1007/s10021-005-0124-4.pdf Housman D. C., Naumburg E., Huxman T.E., Charlet T.N., Nowak R.S., Smith S.D. (2006) Increase in Desert Shrub Produvtivity under Elevated Carbon Dioxide Vary with Water Availability. Ecosystems 9: 374-385
 #only has ratio of LA
@@ -1259,7 +1243,7 @@ LA_ratio <- mean(1.18,0.92,1.06,1.28,1.10,1.33)
 leafCN_ratio <- mean(subset(kevin_othervars,exp=="nevada_desert_face_c"&response=="leaf_cn")$elevated/subset(kevin_othervars,exp=="nevada_desert_face_c"&response=="leaf_cn")$ambient)
 leafNmass_ratio <- mean(subset(kevin_othervars,exp=="nevada_desert_face_c"&response=="leaf_n")$elevated/subset(kevin_othervars,exp=="nevada_desert_face_c"&response=="leaf_n")$ambient)
 
-LMA_ratio <- leafNmass_ratio*leafCN_ratio/LA_ratio
+LMA_ratio <- LA_ratio/(leafNmass_ratio*leafCN_ratio)
 narea_ratio <- LMA_ratio*leafNmass_ratio
 nevada_desert_face_c_lma <- log(LMA_ratio)/log(550/364)
 nevada_desert_face_c_narea <- log(narea_ratio)/log(550/364)
@@ -1306,10 +1290,9 @@ check <- subset(kevin_othervars,exp=="soyfacetobacco9_c")%>% group_by(response,U
 #narea = nmass * LMA
 soyfacetobacco9_narea <- final4$nmass[final4$exp=="soyfacetobacco9_c"] + final4$LMA[final4$exp=="soyfacetobacco9_c"]
 
-
 #include all!
-final5 <- final4 
-#final5 <- final2
+#final5 <- final4 
+final5 <- final_mean
 final5$lai[final5$exp=="eucface_c"] <- eucface_lai
 final5$lai[final5$exp=="biocon_c"] <- biocon_lai
 final5$lai[final5$exp=="euroface4_pa_c"] <- euroface4_pa_lai
@@ -1325,14 +1308,16 @@ final5$root_shoot_ratio[final5$exp=="duke_c"] <- duke_c_root_shoot
 final5$root_shoot_ratio[final5$exp=="duke2_c"] <- duke2_c_root_shoot
 final5$root_shoot_ratio[final5$exp=="mi_c"] <- mi_root_shoot
 
-final5$anpp[final5$exp=="euroface4_pa_c"] <- popface_pa_c_ANPP
-final5$anpp[final5$exp=="euroface4_pn_c"] <- popface_pn_c_ANPP
-final5$anpp[final5$exp=="euroface4_pe_c"] <- popface_pe_c_ANPP
+#this can be imputed - as it was derived from literatures well
 final5$anpp[final5$exp=="duke2_c"] <- duke2_c_anpp
-final5$anpp[final5$exp=="nevada_desert_face_c"] <- nevada_desert_face_c_anpp
-
-final5$bnpp[final5$exp=="euroface4_pn_c"] <- euroface4_pn_bnpp
 final5$bnpp[final5$exp=="duke2_c"] <- duke2_c_bnpp
+final5$bnpp[final5$exp=="euroface4_pn_c"] <- euroface4_pn_bnpp
+
+#anpp, bnpp not imputed now - since their unit are somewhere wrong (gc/m2)
+#final5$anpp[final5$exp=="euroface4_pa_c"] <- popface_pa_c_ANPP
+#final5$anpp[final5$exp=="euroface4_pn_c"] <- popface_pn_c_ANPP
+#final5$anpp[final5$exp=="euroface4_pe_c"] <- popface_pe_c_ANPP
+#final5$anpp[final5$exp=="nevada_desert_face_c"] <- nevada_desert_face_c_anpp
 
 final5$LMA[final5$exp=="duke_c"] <- duke_c_lma
 final5$LMA[final5$exp=="euroface4_pe_c"] <- euroface4_pe_lma
@@ -1342,22 +1327,102 @@ final5$LMA[final5$exp=="soyfacesoy1_c"] <- soyfacesoy1_lma
 final5$narea[final5$exp=="soyfacesoy2_c"] <- soyfacesoy2_narea
 final5$narea[final5$exp=="nevada_desert_face_c"] <- nevada_desert_face_c_narea
 final5$narea[final5$exp=="soyfacetobacco9_c"] <- soyfacetobacco9_narea
-final5 <- subset(final5,exp!="duke2_cf")
-final6 <- final5[,c("lai","vcmax","jmax","narea","LMA","nmass","bnpp","anpp","root_shoot_ratio")]
-ncomp <- estim_ncpPCA(final6)
-res.imp <- imputePCA(final6, ncp = ncomp$ncp)
-res.pca <- PCA(res.imp$completeObs)
 
-summary(lm(vcmax~lai,final5))
+final_mean2 <- final5
+#final_mean2$anpp[final_mean2$exp=="phace_c"] <- NA
+#final_mean2$anpp[final_mean2$exp=="rhine-aspenface_c"] <- NA
+#final_mean2$anpp[final_mean2$exp=="mi_c"] <- NA
 
-resMIPCA <- MIPCA(final6, ncp = 2, nboot = 200)
-plot(resMIPCA)
+#euro-three, duke, nevada_desert, phace, aspen
 
-#test - without filling any missing values
-test <- final2[,c("lai","vcmax","jmax","narea","LMA","nmass","bnpp","anpp","root_shoot_ratio")]
+a1 <- ggplot(final_mean2,aes_string(x="jmax", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
+  labs(y=~paste(V[cmax]))+labs(x=~paste(J[cmax]))
+a2 <- ggplot(final_mean2,aes_string(x="nmass", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
+  labs(y=~paste(V[cmax]))+labs(x=~paste(N[mass]))
+a3 <- ggplot(final_mean2,aes_string(x="LMA", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
+  labs(y=~paste(V[cmax]))+labs(x=~paste(LMA))
+a4 <- ggplot(final_mean2,aes_string(x="anpp", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
+  labs(y=~paste(V[cmax]))+labs(x=~paste(ANPP))
+a5 <- ggplot(final_mean2,aes_string(x="bnpp", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
+  labs(y=~paste(V[cmax]))+labs(x=~paste(BNPP))
+a6 <- ggplot(final_mean2,aes_string(x="root_shoot_ratio", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
+  labs(y=~paste(V[cmax]))+labs(x=~paste(Root/Shoot))
+a7 <- ggplot(final_mean2,aes_string(x="lai", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
+  labs(y=~paste(V[cmax]))+labs(x=~paste("lai"))
+a8 <- ggplot(final_mean2,aes_string(x="soil_mineral_N", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
+  labs(y=~paste(V[cmax]))+labs(x=~paste("Soil inorganic N"))
+a9 <- ggplot(final_mean2,aes_string(x="narea", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
+  labs(y=~paste(V[cmax]))+labs(x=~paste("Narea"))
+final1_legend <- ggplot(final_mean2,aes_string(x="soil_mineral_N", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(text = element_text(size=30),axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"))+
+  labs(y=~paste(V[cmax]))+labs(x=~paste("Soil inorganic N"))+scale_colour_discrete(" ")
+
+legend_info <- as_ggplot(get_legend(final1_legend))
+
+plot_grid(a1,a2,a3,a9,a4,a5,a7,a6,a8,nrow=3,label_size = 15)+
+  theme(plot.background=element_rect(fill="white", color="white"))
+ggsave(paste("~/data/output_gcme/colin/test2.jpg",sep=""),width = 15, height = 15)
+  
+#
+test <- final_mean2[,c("lai","vcmax","jmax","narea","LMA","nmass","bnpp","anpp","root_shoot_ratio")]
 ncomp <- estim_ncpPCA(test)
 res.imp <- imputePCA(test, ncp = ncomp$ncp)
 res.pca <- PCA(res.imp$completeObs)
+ggsave(paste("~/data/output_gcme/colin/test2_pca.jpg",sep=""),width = 5, height = 5)
+
+#create a table for values and SE
+mean(final_mean2$vcmax,na.rm=TRUE);std.error(final_mean2$vcmax)
+mean(final_mean2$jmax,na.rm=TRUE);std.error(final_mean2$jmax)
+mean(final_mean2$narea,na.rm=TRUE);std.error(final_mean2$narea)
+mean(final_mean2$LMA,na.rm=TRUE);std.error(final_mean2$LMA)
+mean(final_mean2$nmass,na.rm=TRUE);std.error(final_mean2$nmass)
+mean(final_mean2$bnpp,na.rm=TRUE);std.error(final_mean2$bnpp)
+mean(final_mean2$anpp,na.rm=TRUE);std.error(final_mean2$anpp)
+mean(final_mean2$root_shoot_ratio,na.rm=TRUE);std.error(final_mean2$root_shoot_ratio)
+mean(final_mean2$soil_mineral_N,na.rm=TRUE);std.error(final_mean2$soil_mineral_N)
+
+t.test(final_mean2$vcmax, mu = 0)
+t.test(final_mean2$jmax, mu = 0)
+t.test(final_mean2$narea, mu = 0)
+t.test(final_mean2$LMA, mu = 0)
+t.test(final_mean2$nmass, mu = 0)
+t.test(final_mean2$bnpp, mu = 0)
+t.test(final_mean2$anpp, mu = 0)
+t.test(final_mean2$root_shoot_ratio, mu = 0)
+t.test(final_mean2$soil_mineral_N, mu = 0)
+
+#test - without filling any missing values
+a1 <- ggplot(final_mean,aes_string(x="jmax", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
+  labs(y=~paste(V[cmax]))+labs(x=~paste(J[cmax]))
+a2 <- ggplot(final_mean,aes_string(x="nmass", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
+  labs(y=~paste(V[cmax]))+labs(x=~paste(N[mass]))
+a3 <- ggplot(final_mean,aes_string(x="LMA", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
+  labs(y=~paste(V[cmax]))+labs(x=~paste(LMA))
+a4 <- ggplot(final_mean,aes_string(x="anpp", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
+  labs(y=~paste(V[cmax]))+labs(x=~paste(ANPP))
+a5 <- ggplot(final_mean,aes_string(x="bnpp", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
+  labs(y=~paste(V[cmax]))+labs(x=~paste(BNPP))
+a6 <- ggplot(final_mean,aes_string(x="root_shoot_ratio", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
+  labs(y=~paste(V[cmax]))+labs(x=~paste(Root/Shoot))
+a7 <- ggplot(final_mean,aes_string(x="lai", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
+  labs(y=~paste(V[cmax]))+labs(x=~paste("lai"))
+a8 <- ggplot(final_mean,aes_string(x="soil_mineral_N", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
+  labs(y=~paste(V[cmax]))+labs(x=~paste("Soil inorganic N"))
+a9 <- ggplot(final_mean,aes_string(x="narea", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
+  labs(y=~paste(V[cmax]))+labs(x=~paste("Narea"))
+final1_legend <- ggplot(final_mean,aes_string(x="soil_mineral_N", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(text = element_text(size=30),axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"))+
+  labs(y=~paste(V[cmax]))+labs(x=~paste("Soil inorganic N"))+scale_colour_discrete(" ")
+
+legend_info <- as_ggplot(get_legend(final1_legend))
+
+plot_grid(a1,a2,a3,a4,a5,a6,a9,a8,a7,nrow=3,label_size = 15)+
+  theme(plot.background=element_rect(fill="white", color="white"))
+ggsave(paste("~/data/output_gcme/colin/test1.jpg",sep=""),width = 15, height = 15)
+
+test <- final_mean[,c("lai","vcmax","jmax","narea","LMA","nmass","bnpp","anpp","root_shoot_ratio")]
+ncomp <- estim_ncpPCA(test)
+res.imp <- imputePCA(test, ncp = ncomp$ncp)
+res.pca <- PCA(res.imp$completeObs)
+ggsave(paste("~/data/output_gcme/colin/test1_pca.jpg",sep=""),width = 5, height = 5)
 
 #light effect
 light_vcmax_points
