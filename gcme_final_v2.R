@@ -1379,6 +1379,7 @@ mean(final_mean2$bnpp,na.rm=TRUE);std.error(final_mean2$bnpp)
 mean(final_mean2$anpp,na.rm=TRUE);std.error(final_mean2$anpp)
 mean(final_mean2$root_shoot_ratio,na.rm=TRUE);std.error(final_mean2$root_shoot_ratio)
 mean(final_mean2$soil_mineral_N,na.rm=TRUE);std.error(final_mean2$soil_mineral_N)
+mean(final_mean2$lai,na.rm=TRUE);std.error(final_mean2$lai)
 
 t.test(final_mean2$vcmax, mu = 0)
 t.test(final_mean2$jmax, mu = 0)
@@ -1389,6 +1390,7 @@ t.test(final_mean2$bnpp, mu = 0)
 t.test(final_mean2$anpp, mu = 0)
 t.test(final_mean2$root_shoot_ratio, mu = 0)
 t.test(final_mean2$soil_mineral_N, mu = 0)
+t.test(final_mean2$lai, mu = 0)
 
 #test - without filling any missing values
 a1 <- ggplot(final_mean,aes_string(x="jmax", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
