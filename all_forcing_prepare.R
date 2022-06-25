@@ -134,3 +134,8 @@ for (i in 1:(nrow(siteinfo_final))){
   print(i)    
 }
 
+#add one more site (33.59,–101.90)
+smith_light1 <- tibble(sitename="smith_light1",lon= -101.90,lat= 33.59,elv=NA,year_start=1991,year_end=2010)
+df_etopo <- ingest(smith_light1,source = "etopo1",dir = "~/data/etopo/" )
+smith_light1$elv <- as.numeric(as.data.frame(df_etopo$data))
+#and prepared for forcing....
