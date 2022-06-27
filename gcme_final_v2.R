@@ -1361,7 +1361,12 @@ legend_info <- as_ggplot(get_legend(final1_legend))
 plot_grid(a1,a2,a3,a9,a4,a5,a7,a6,a8,nrow=3,label_size = 15)+
   theme(plot.background=element_rect(fill="white", color="white"))
 ggsave(paste("~/data/output_gcme/colin/test2.jpg",sep=""),width = 15, height = 15)
-  
+
+#have a look at without new zealand
+ggplot(subset(final_mean2,exp!="mi_c"),aes_string(x="anpp", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
+  labs(y=~paste(V[cmax]))+labs(x=~paste(ANPP))
+ggplot(subset(final_mean2,exp!="mi_c"),aes_string(x="bnpp", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
+  labs(y=~paste(V[cmax]))+labs(x=~paste(ANPP))
 #
 test <- final_mean2[,c("lai","vcmax","jmax","narea","LMA","nmass","bnpp","anpp","root_shoot_ratio")]
 ncomp <- estim_ncpPCA(test)
