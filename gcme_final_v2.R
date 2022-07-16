@@ -990,6 +990,12 @@ f1 <- final_nfer_vj %>%
   labs(x="", y="Vcmax response") +
   theme_classic()+coord_flip()+theme(axis.text=element_text(size=12))
 
+#check anova
+anova1 <- as.data.frame(cbind(as.numeric(c(final_nfer_vj$vcmax_high,final_nfer_vj$vcmax_low)),as.numeric(c(final_nfer_vj$jmax_high,final_nfer_vj$jmax_low)),as.numeric(c(final_nfer_vj$jv_high,final_nfer_vj$jv_low)),c(final_nfer_vj$treatment,final_nfer_vj$treatment2)))
+names(anova1) <- c("vcmax","jmax","jv","group")
+summary(aov(vcmax ~ group, data = anova1))
+summary(aov(jmax ~ group, data = anova1))
+summary(aov(jv ~ group, data = anova1))
 
 box3 <- tibble(treatment = "N fertilization",middle=median(final_nfer_vj$jmax_high,na.rm = T),ymin=quantile(final_nfer_vj$jmax_high, 0.25,na.rm = T),
                ymax=quantile(final_nfer_vj$jmax_high, 0.75,na.rm = T))
@@ -1360,7 +1366,7 @@ legend_info <- as_ggplot(get_legend(final1_legend))
 
 plot_grid(a1,a2,a3,a9,a4,a5,a7,a6,a8,nrow=3,label_size = 15)+
   theme(plot.background=element_rect(fill="white", color="white"))
-ggsave(paste("~/data/output_gcme/colin/test2.jpg",sep=""),width = 15, height = 15)
+ggsave(paste("~/data/output_gcme/colin/final_bivariate.jpg",sep=""),width = 15, height = 15)
 
 #have a look at without new zealand
 ggplot(subset(final_mean2,exp!="mi_c"),aes_string(x="anpp", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
@@ -1372,7 +1378,7 @@ test <- final_mean2[,c("lai","vcmax","jmax","narea","LMA","nmass","bnpp","anpp",
 ncomp <- estim_ncpPCA(test)
 res.imp <- imputePCA(test, ncp = ncomp$ncp)
 res.pca <- PCA(res.imp$completeObs)
-ggsave(paste("~/data/output_gcme/colin/test2_pca.jpg",sep=""),width = 5, height = 5)
+ggsave(paste("~/data/output_gcme/colin/final_pca.jpg",sep=""),width = 5, height = 5)
 
 #create a table for values and SE
 mean(final_mean2$vcmax,na.rm=TRUE);std.error(final_mean2$vcmax)
@@ -1397,52 +1403,129 @@ t.test(final_mean2$root_shoot_ratio, mu = 0)
 t.test(final_mean2$soil_mineral_N, mu = 0)
 t.test(final_mean2$lai, mu = 0)
 
-#test - without filling any missing values
-a1 <- ggplot(final_mean,aes_string(x="jmax", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
-  labs(y=~paste(V[cmax]))+labs(x=~paste(J[cmax]))
-a2 <- ggplot(final_mean,aes_string(x="nmass", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
-  labs(y=~paste(V[cmax]))+labs(x=~paste(N[mass]))
-a3 <- ggplot(final_mean,aes_string(x="LMA", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
-  labs(y=~paste(V[cmax]))+labs(x=~paste(LMA))
-a4 <- ggplot(final_mean,aes_string(x="anpp", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
+#test - without filling any missing values - using final mean and conduct bi-variate and PCA again
+
+#add soil pleco - too less information
+pleco_soil <- read.csv("/Users/yunpeng/data/gcme/kevin/orig_leaf/pleco_soil.csv")
+pleco_soil <- pleco_soil[,c("exp","pre_soil_n_.g.g.","pre_soil_c.n", "pre_total_p_.g.kg.")]
+names(pleco_soil) <- c("exp","soil_N","soil_CN","soil_total_P")
+pleco_soil$soil_N <- as.numeric(pleco_soil$soil_N)
+pleco_soil$soil_CN <- as.numeric(pleco_soil$soil_CN)
+pleco_soil$soil_total_P <- as.numeric(pleco_soil$soil_total_P)
+pleco_soil_sm <- aggregate(pleco_soil,by=list(pleco_soil$exp), FUN=mean, na.rm=TRUE)[,c("Group.1","soil_N","soil_CN","soil_total_P")]
+names(pleco_soil_sm) <- c("exp","soil_N","soil_CN","soil_total_P")
+final_mean2_soil <- merge(final_mean2,pleco_soil_sm,by = c("exp"),all.x=TRUE)
+
+
+#check soil mineral N - ambient condition
+#soil mineral N in dry-mass: 7+1
+#7 plots: nh4 + no3
+soil_nh4 <- subset(kevin_othervars_cf,response=="soil_nh4-n") %>% group_by(exp,Unit) %>% summarise(co2_a = mean(co2_a), co2_e = mean(co2_e), ambient = mean(ambient), elevated = mean(elevated))
+soil_no3 <- subset(kevin_othervars_cf,response=="soil_no3-n") %>% group_by(exp,Unit) %>% summarise(co2_a = mean(co2_a), co2_e = mean(co2_e),ambient = mean(ambient), elevated = mean(elevated))
+soil_nh4no3 <- na.omit(merge(soil_nh4,soil_no3,by=c("exp","Unit"),all.x=TRUE))
+soil_nh4no3$ambient <- (soil_nh4no3$ambient.x+soil_nh4no3$ambient.y)
+soil_nh4no3 <- soil_nh4no3[,c("exp","Unit","ambient")]
+soil_nh4no3$soil_type <- "NH4 + NO3"
+
+#1 plot: soil_in
+soil_in <- subset(kevin_othervars_cf,response=="soil_in" & exp=="facts_ii_face3_pt_c") %>% group_by(exp,Unit) %>% summarise(co2_a = mean(co2_a), co2_e = mean(co2_e), ambient = mean(ambient), elevated = mean(elevated))
+soil_in <- soil_in[,c("exp","Unit","ambient")]
+soil_in$soil_type <- "inorganic mineral N"
+
+#add popface's soil 
+old_data <- read_csv("~/data/gcme/data_received_190325/NewData_wide_CORRECTED2.csv") %>%
+  mutate( ambient_Sd  = as.numeric(ambient_Sd),  ambient_Se  = as.numeric(ambient_Se), 
+          elevated_Sd = as.numeric(elevated_Sd), elevated_Se = as.numeric(elevated_Se),
+          co2_a  = as.numeric(co2_a),  co2_e  = as.numeric(co2_e), 
+          ambient  = as.numeric(ambient),  elevated  = as.numeric(elevated))
+
+old_data$exp <- tolower(old_data$exp_nam)
+popface <-subset(old_data, (exp_nam=="POPFACE_pa"|exp_nam=="POPFACE_pe"|exp_nam=="POPFACE_pn")&Data_type=="soil_mineral_N")
+popface_sm <-popface %>% group_by(exp,Unit) %>% summarise(co2_a = mean(co2_a), co2_e = mean(co2_e), ambient = mean(ambient), elevated = mean(elevated))
+popface_sm <- popface_sm[,c("exp","Unit","ambient")]
+popface_sm$soil_type <- "inorganic mineral N"
+popface_sm$exp <- c("popface_pa_c","popface_pe_c","popface_pn_c")
+
+final_soilN <- rbind(soil_nh4no3,soil_in,popface_sm)
+final_soilN$log_soil_mineral_N <- log(final_soilN$ambient)
+#unit looks somewhere reasonable - all in ug/g
+
+final_soilN_mean <- aggregate(final_soilN,by=list(final_soilN$exp,final_soilN$soil_type), FUN=mean, na.rm=TRUE)[,c("Group.1","Group.2","log_soil_mineral_N")]
+names(final_soilN_mean) <- c("exp","soil_type","log_soil_mineral_N")
+final_mean2_soil_true <- merge(final_mean2,final_soilN_mean,by = c("exp"),all.x=TRUE)
+
+#additional
+
+aa1 <- ggplot(final_mean2_soil_true,aes_string(x="log_soil_mineral_N", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=soil_type),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=20,face="bold"))+
+  labs(y=~paste(V[cmax]))+labs(x=~paste("ln soil inorganic N (ug/g) at ambient condition"))
+aa1
+plot_grid(aa1)+theme(plot.background=element_rect(fill="white", color="white"))
+ggsave(paste("~/data/output_gcme/colin/soil1.jpg",sep=""),width = 8, height = 5)
+
+#one very high values is at heathland (brandbjerg)
+#four colored values are in inorganic minearal N
+
+#now - for bi-variate relationship
+b1 <- ggplot(final_mean2,aes_string(x="anpp", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
   labs(y=~paste(V[cmax]))+labs(x=~paste(ANPP))
-a5 <- ggplot(final_mean,aes_string(x="bnpp", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
+b2 <- ggplot(final_mean2,aes_string(x="bnpp", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
   labs(y=~paste(V[cmax]))+labs(x=~paste(BNPP))
-a6 <- ggplot(final_mean,aes_string(x="root_shoot_ratio", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
+b3 <- ggplot(final_mean2,aes_string(x="root_shoot_ratio", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
   labs(y=~paste(V[cmax]))+labs(x=~paste(Root/Shoot))
-a7 <- ggplot(final_mean,aes_string(x="lai", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
+b4 <- ggplot(final_mean2,aes_string(x="lai", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
   labs(y=~paste(V[cmax]))+labs(x=~paste("lai"))
-a8 <- ggplot(final_mean,aes_string(x="soil_mineral_N", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
+b5 <- ggplot(final_mean2,aes_string(x="soil_mineral_N", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
   labs(y=~paste(V[cmax]))+labs(x=~paste("Soil inorganic N"))
-a9 <- ggplot(final_mean,aes_string(x="narea", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
-  labs(y=~paste(V[cmax]))+labs(x=~paste("Narea"))
-final1_legend <- ggplot(final_mean,aes_string(x="soil_mineral_N", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(text = element_text(size=30),axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"))+
-  labs(y=~paste(V[cmax]))+labs(x=~paste("Soil inorganic N"))+scale_colour_discrete(" ")
 
-legend_info <- as_ggplot(get_legend(final1_legend))
+c1 <- ggplot(final_mean2,aes_string(x="anpp", y="jmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
+  labs(y=~paste(J[cmax]))+labs(x=~paste(ANPP))
+c2 <- ggplot(final_mean2,aes_string(x="bnpp", y="jmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
+  labs(y=~paste(J[cmax]))+labs(x=~paste(BNPP))
+c3 <- ggplot(final_mean2,aes_string(x="root_shoot_ratio", y="jmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
+  labs(y=~paste(J[cmax]))+labs(x=~paste(Root/Shoot))
+c4 <- ggplot(final_mean2,aes_string(x="lai", y="jmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
+  labs(y=~paste(J[cmax]))+labs(x=~paste("lai"))
+c5 <- ggplot(final_mean2,aes_string(x="soil_mineral_N", y="jmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
+  labs(y=~paste(J[cmax]))+labs(x=~paste("Soil inorganic N"))
 
-plot_grid(a1,a2,a3,a4,a5,a6,a9,a8,a7,nrow=3,label_size = 15)+
+d1 <- ggplot(final_mean2,aes_string(x="anpp", y="nmass")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
+  labs(y=~paste(nmass))+labs(x=~paste(ANPP))
+d2 <- ggplot(final_mean2,aes_string(x="bnpp", y="nmass")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
+  labs(y=~paste(nmass))+labs(x=~paste(BNPP))
+d3 <- ggplot(final_mean2,aes_string(x="root_shoot_ratio", y="nmass")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
+  labs(y=~paste(nmass))+labs(x=~paste(Root/Shoot))
+d4 <- ggplot(final_mean2,aes_string(x="lai", y="nmass")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
+  labs(y=~paste(nmass))+labs(x=~paste("lai"))
+d5 <- ggplot(final_mean2,aes_string(x="soil_mineral_N", y="nmass")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
+  labs(y=~paste(nmass))+labs(x=~paste("Soil inorganic N"))
+
+e1 <- ggplot(final_mean2,aes_string(x="anpp", y="narea")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
+  labs(y=~paste(narea))+labs(x=~paste(ANPP))
+e2 <- ggplot(final_mean2,aes_string(x="bnpp", y="narea")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
+  labs(y=~paste(narea))+labs(x=~paste(BNPP))
+e3 <- ggplot(final_mean2,aes_string(x="root_shoot_ratio", y="narea")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
+  labs(y=~paste(narea))+labs(x=~paste(Root/Shoot))
+e4 <- ggplot(final_mean2,aes_string(x="lai", y="narea")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
+  labs(y=~paste(narea))+labs(x=~paste("lai"))
+e5 <- ggplot(final_mean2,aes_string(x="soil_mineral_N", y="narea")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
+  labs(y=~paste(narea))+labs(x=~paste("Soil inorganic N"))
+
+f1 <- ggplot(final_mean2,aes_string(x="anpp", y="LMA")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
+  labs(y=~paste(LMA))+labs(x=~paste(ANPP))
+f2 <- ggplot(final_mean2,aes_string(x="bnpp", y="LMA")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
+  labs(y=~paste(LMA))+labs(x=~paste(BNPP))
+f3 <- ggplot(final_mean2,aes_string(x="root_shoot_ratio", y="LMA")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
+  labs(y=~paste(LMA))+labs(x=~paste(Root/Shoot))
+f4 <- ggplot(final_mean2,aes_string(x="lai", y="LMA")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
+  labs(y=~paste(LMA))+labs(x=~paste("lai"))
+f5 <- ggplot(final_mean2,aes_string(x="soil_mineral_N", y="LMA")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+geom_smooth(color="black",method="lm",se=F)+theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
+  labs(y=~paste(LMA))+labs(x=~paste("Soil inorganic N"))
+
+plot_grid(b1,b2,b3,b4,b5,
+          c1,c2,c3,c4,c5,
+          d1,d2,d3,d4,d5,
+          e1,e2,e3,e4,e5,
+          f1,f2,f3,f4,f5,
+          nrow=5)+
   theme(plot.background=element_rect(fill="white", color="white"))
-ggsave(paste("~/data/output_gcme/colin/test1.jpg",sep=""),width = 15, height = 15)
-
-test <- final_mean[,c("lai","vcmax","jmax","narea","LMA","nmass","bnpp","anpp","root_shoot_ratio")]
-ncomp <- estim_ncpPCA(test)
-res.imp <- imputePCA(test, ncp = ncomp$ncp)
-res.pca <- PCA(res.imp$completeObs)
-ggsave(paste("~/data/output_gcme/colin/test1_pca.jpg",sep=""),width = 5, height = 5)
-
-#light effect
-light_vcmax_points
-subset(kevin_othervars,treatment=="s")
-check <-subset(kevin_othervars,treatment=="s") %>% group_by(exp,lon,lat,response)  %>% summarise(number = n())
-
-check <-subset(kevin_othervars,treatment=="f" & (response=="vcmax")) %>% group_by(exp,lon,lat,response)  %>% summarise(number = n())
-
-#df_only <- read_csv("~/data/gcme/data_received_190325/NewData_wide_CORRECTED2.csv") %>%
-#  mutate( ambient_Sd  = as.numeric(ambient_Sd),  ambient_Se  = as.numeric(ambient_Se), 
-#          elevated_Sd = as.numeric(elevated_Sd), elevated_Se = as.numeric(elevated_Se) )
-#df_only$exp <- tolower(df_only$prev_name)
-#df_only$response <- df_only$Data_type
-#2. convert to lower case
-#check <- subset(df_only,exp=="ornerp_liqui_c")%>% group_by(response,Unit)  %>% summarise(number = n())
-
+ggsave(paste("~/data/output_gcme/colin/final_bivariate_si.jpg",sep=""),width = 30, height = 30)
