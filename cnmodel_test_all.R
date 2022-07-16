@@ -78,7 +78,7 @@ pars <- list(
   tmppar                = 9999)
 
 plot_level<- read.csv("~/data/gcme/kevin/forcing/forcing_info_allnew.csv")
-forcing_path <- "/Users/yunpeng/data/gcme/kevin/forcing/climate_large/"
+forcing_path <- "~/data/gcme/kevin/forcing/climate_large/"
 
 #problem sites
 wrong_sites <- c(9,11,12,14,18,19,22,25,28,29,32,33,34,37,39,40,41,42,45,48,49,50,62,65,66,67,
