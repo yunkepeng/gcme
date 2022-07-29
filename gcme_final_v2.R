@@ -465,7 +465,7 @@ final_mean$soil_mineral_N[final_mean$exp=="popface_pn_c"] <- new_popface$soil_mi
 #include ecm from gcme
 ecm_csv <- na.omit(read.csv("/Users/yunpeng/data/gcme/kevin/orig_vcmax/new_ecm_types_updated.csv")[,c("exp","ecm_type")])
 
-#include ecm from smith (see line 637 from code gcme_final_vcmas)
+#include ecm from smith (see line 637 from code gcme_final_vcmax)
 smith <- read.csv("/Users/yunpeng/data/smith_keenan_gcb/gcb_co2/pred_vcmax.csv")
 smith_all_plotmean <- subset(smith,exp_nam!="NZFACE" &exp_nam!="BioCON" & exp_nam!="ChinaRiceFACE" & exp_nam!="DukeFACE" & exp_nam!="EUROPOPFACE" & exp_nam!="NevadaFACE" & exp_nam!="SwissFACE")
 smith_all_plotmean$ecm_type <- smith_all_plotmean$Nac
@@ -1041,6 +1041,11 @@ final3 <- subset(final2,count_na<6)
 final3 <- unique(final3[order(final3$count_na),])
 head(final3)
 summary(final3)
+
+#check na more?
+#final2 <- final_mean[,c("exp","variance_info","lai","vcmax","jmax","narea","LMA","nmass","bnpp","anpp","root_shoot_ratio")]
+#final2$count_na <- rowSums(is.na(final2))
+#subset(final2,variance_info!="smith"&count_na>=6)$exp
 
 #include lon/lat - remove one repoeated data
 coord_all <- dplyr::bind_rows(coord_smith,unique((read.csv("/Users/yunpeng/data/gcme/kevin/forcing/pred_vcmax_v2.csv")[,c("lon","lat","z","exp")])))
