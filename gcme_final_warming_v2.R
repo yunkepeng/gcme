@@ -517,6 +517,9 @@ obs_warming$points[obs_warming$exp=="brandbjerg_w"] <- "soil warming"
 final_prediction_v_all <- tibble(type_name="prediction",middle=median(obs_warming$logr_pred_vcmax25),ymin=quantile(obs_warming$logr_pred_vcmax25, 0.25),ymax=quantile(obs_warming$logr_pred_vcmax25, 0.75))
 final_observation_v_all <- tibble(type_name="observation",middle=median(obs_warming$logr_obs_vcmax25),ymin=quantile(obs_warming$logr_obs_vcmax25, 0.25),ymax=quantile(obs_warming$logr_obs_vcmax25, 0.75))
 
+#remove soil warming
+obs_warming <- subset(obs_warming,points!="soil warming")
+
 w1 <- obs_warming %>%
   ggplot( aes(x=treatment, y=logr_pred_vcmax25)) +
   geom_boxplot(aes(x=treatment, y=logr_pred_vcmax25),width = 0.5,color="red")+
