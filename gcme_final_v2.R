@@ -1138,7 +1138,7 @@ bnpp_e <- 2.46
 bnpp_a <- 1.76
 euroface4_pn_bnpp <- log((2.46/1.76))/log(550/368)
 
-#facts_ii_face3_pt_c
+#####facts_ii_face3_pt_c
 #anpp still missing
 check <- subset(kevin_othervars,exp=="facts_ii_face3_pt_c")%>% group_by(response,Unit)  %>% summarise(number = n())
 
@@ -1152,7 +1152,7 @@ co2_e <- mean(c(subset(kevin_othervars,exp=="facts_ii_face3_pt_c" & response=="b
 
 facts_ii_face3_pt_c_root_shoot <- log((bgb_e/agb_e)/(bgb_a/agb_a))/log(co2_e/co2_a)
 
-#new_zealand
+####new_zealand
 check <- subset(kevin_othervars,exp=="new_zealand_face_c")%>% group_by(response,Unit)  %>% summarise(number = n())
 #??? root/shoot = bgb/agb?
 #using g/g is better because it is completely mass unit with reasonable values
@@ -1219,9 +1219,9 @@ root_a <- 112+109+91+112+145+105+53+91+103;root_e <- 109+128+126+150+161+131+67+
 duke2_c_anpp <- log((foliage_e+branch_e+stem_e)/(foliage_a+branch_a+stem_a))/log(563/363)
 duke2_c_bnpp <- log((root_e)/(root_a))/log(563/363)
 
-#ignore duke2_cf
+######ignore duke2_cf
 
-#euroface4_pe_c
+########euroface4_pe_c
 #LAI
 check <- subset(kevin_othervars,exp=="euroface4_pe_c")%>% group_by(response,Unit)  %>% summarise(number = n())
 LAI_a <- mean(subset(kevin_othervars,exp=="euroface4_pe_c" & response=="lai_max"& citation=="liberloo_et_al_2006")$ambient,na.rm=TRUE)
@@ -1237,7 +1237,7 @@ euroface4_pe_lma <- log((narea_e/nmass_e)/(narea_a/nmass_a))/log(550/368)
 
 #bnpp not be able capture!
 
-#ornerp_liqui_c: Narea, LMA still missing
+######ornerp_liqui_c: Narea, LMA still missing
 check <- subset(kevin_othervars,exp=="ornerp_liqui_c")%>% group_by(response,Unit)  %>% summarise(number = n())
 
 #LAI calculated from: https://data.ess-dive.lbl.gov/view/doi%3A10.15485%2F1480325#ess-dive-ddd1cfa81a329ba-20181119T143441660
@@ -1246,7 +1246,7 @@ lai_elv <- mean(as.numeric(subset(read.csv("/Users/yunpeng/data/ORNL_FACE/ORNL_a
 
 ornerp_liqui_lai <- log((lai_elv/lai_amb))/log(560/380)
 
-#soyfacesoy2_c: bnpp and root/shoot still missing
+######soyfacesoy2_c: bnpp and root/shoot still missing
 check <- subset(kevin_othervars,exp=="soyfacesoy2_c")%>% group_by(response,Unit)  %>% summarise(number = n())
 #narea = lma * nmass /10
 narea_a <- mean(subset(logr_c_LMA,exp=="soyfacesoy2_c"&Unit=="cm_/g")$ambient)*mean(subset(kevin_othervars,exp=="soyfacesoy2_c"&response=="leaf_n" & Unit=="g_kg")$ambient)/10
@@ -1254,7 +1254,7 @@ narea_e <- mean(subset(logr_c_LMA,exp=="soyfacesoy2_c"&Unit=="cm_/g")$elevated)*
 soyfacesoy2_narea <- log((narea_e/narea_a))/log(548/373)
 
 
-#facts_ii_face4_bp_c missing jmax (only has J), anpp, bnpp and root/shoot missing
+######facts_ii_face4_bp_c missing jmax (only has J), anpp, bnpp and root/shoot missing
 check <- subset(kevin_othervars,exp=="facts_ii_face4_bp_c")%>% group_by(response,Unit)  %>% summarise(number = n())
 
 #nevada_desert_face_c: missing Narea, LMA, root/shoot
@@ -1277,7 +1277,7 @@ narea_ratio <- LMA_ratio*leafNmass_ratio
 nevada_desert_face_c_lma <- log(LMA_ratio)/log(550/364)
 nevada_desert_face_c_narea <- log(narea_ratio)/log(550/364)
 
-#euroface4_pa_c
+#######euroface4_pa_c
 check <- subset(kevin_othervars,exp=="euroface4_pa_c")%>% group_by(response,Unit)  %>% summarise(number = n())
 
 #lai
@@ -1291,7 +1291,7 @@ subset(kevin_othervars,exp=="euroface4_pa_c")$dominant_species[1]
 # Marinari S, Calfapietra C, De Angelis P, Mugnozza GS, Grego S (2007) Impact of elevated CO2 and nitrogen fertilization on foliar elemental composition in a short rotation poplar plantation. Environmental Pollution 147:507–515
 # it only has controlled condition, but not ambient condition
 
-#mi: missing nmass, narea, lma
+#######mi: missing nmass, narea, lma
 check <- subset(kevin_othervars,exp=="mi_c")%>% group_by(response,Unit)  %>% summarise(number = n())
 
 #root/shoot = leaf biomass/bgb biomass
@@ -1301,7 +1301,7 @@ root_shoot_e <- mean(subset(kevin_othervars,exp=="mi_c"&response=="leaf_biomass"
 
 mi_root_shoot <- log((root_shoot_e/root_shoot_a))/log(760/410)
 
-#soyfacesoy1_c: Nmass, Narea, bnpp and root/shoot missing
+######soyfacesoy1_c: Nmass, Narea, bnpp and root/shoot missing
 check <- subset(kevin_othervars,exp=="soyfacesoy1_c")%>% group_by(response,Unit)  %>% summarise(number = n())
 
 #lma = leaf biomass (g/m2) /LAI
@@ -1313,11 +1313,40 @@ LAI_e <- mean(subset(kevin_othervars,exp=="soyfacesoy1_c" & response=="lai")$ele
 
 soyfacesoy1_lma <- log((leaf_biomass_e/LAI_e)/(leaf_biomass_a/LAI_a))/log(552/371)
 
-#soyfacetobacco9_c: missing LAI, anpp, bnpp, root/shoot
+######soyfacetobacco9_c: missing LAI, anpp, bnpp, root/shoot
 check <- subset(kevin_othervars,exp=="soyfacetobacco9_c")%>% group_by(response,Unit)  %>% summarise(number = n())
 
 #narea = nmass * LMA
 soyfacetobacco9_narea <- final4$nmass[final4$exp=="soyfacetobacco9_c"] + final4$LMA[final4$exp=="soyfacetobacco9_c"]
+
+#######giface - filling LAI (m2/m2) and LMA, Nmass and Narea
+LAI_a <- mean(subset(kevin_othervars,exp=="giface_c" & response=="lai_max")$ambient)
+LAI_e <- mean(subset(kevin_othervars,exp=="giface_c" & response=="lai_max")$elevated)
+
+giface_c_lai <- log((LAI_e/LAI_a))/log(450/380)
+
+#lma = agb (g/m2) /LAI in grassland
+leaf_biomass_a <- mean(subset(kevin_othervars,exp=="giface_c" & response=="agb" & Unit=="g_m2")$ambient)
+leaf_biomass_e <- mean(subset(kevin_othervars,exp=="giface_c" & response=="agb"& Unit=="g_m2")$elevated)
+
+giface_c_lma <- log((leaf_biomass_e/LAI_e)/(leaf_biomass_a/LAI_a))/log(450/380)
+
+#Nmass and Narea were filled by below publication
+#Carbon dioxide fertilisation and supressed respiration induce enhanced spring biomass production in a mixed species temperate meadow exposed to moderate carbon dioxide enrichment
+# in table 5, see Nmass (mg/g), Cmass was also recorded but not put here.
+#co2 changes from 400 to 480
+Nmass_a <- (34+41.2+26.4+36.3+31.8+43.5)/6/1000 # averaged them, then converted from mg/g to g/g
+Nmass_e <- (32.7+40.7+24.2+33.3+31.4+42.4)/6/1000 # in mg/g 
+giface_c_nmass <- log((Nmass_e/Nmass_a))/log(480/400)
+
+#since Narea = Nmass * LMA # one paper increases from 380 to 450, another increases from 400 to 480. Not different too much - here we just used one of them
+giface_c_narea <- log((Nmass_e*leaf_biomass_e/LAI_e)/(Nmass_a*leaf_biomass_a/LAI_a))/log(480/400)
+
+#######soyfacemaiz4_c cannot be filled - just one old paper without available info
+aa <- subset(kevin_othervars,exp=="riceface_japan_ko_2012_3558_13960_c")%>% group_by(response,Unit)  %>% summarise(number = n())
+subset(kevin_othervars,response=="lai_max")%>% group_by(exp)  %>% summarise(number = n())
+
+#rice_face- just keeps its original data - because it marks year and coordinates too precisely, so it is dangerous for filling data.
 
 #include all!
 #final5 <- final4 
@@ -1329,6 +1358,7 @@ final5$lai[final5$exp=="euroface4_pn_c"] <- euroface4_pn_lai
 final5$lai[final5$exp=="euroface4_pe_c"] <- euroface4_pe_lai
 final5$lai[final5$exp=="new_zealand_face_c"] <- new_zealand_face_c_lai
 final5$lai[final5$exp=="ornerp_liqui_c"] <- ornerp_liqui_lai
+final5$lai[final5$exp=="giface_c"] <- giface_c_lai
 
 final5$root_shoot_ratio[final5$exp=="biocon_c"] <- biocon_root_shoot
 final5$root_shoot_ratio[final5$exp=="facts_ii_face3_pt_c"] <- facts_ii_face3_pt_c_root_shoot
@@ -1352,10 +1382,15 @@ final5$LMA[final5$exp=="duke_c"] <- duke_c_lma
 final5$LMA[final5$exp=="euroface4_pe_c"] <- euroface4_pe_lma
 final5$LMA[final5$exp=="nevada_desert_face_c"] <- nevada_desert_face_c_lma
 final5$LMA[final5$exp=="soyfacesoy1_c"] <- soyfacesoy1_lma
+final5$LMA[final5$exp=="giface_c"] <- giface_c_lma
 
 final5$narea[final5$exp=="soyfacesoy2_c"] <- soyfacesoy2_narea
 final5$narea[final5$exp=="nevada_desert_face_c"] <- nevada_desert_face_c_narea
 final5$narea[final5$exp=="soyfacetobacco9_c"] <- soyfacetobacco9_narea
+final5$narea[final5$exp=="giface_c"] <- giface_c_narea
+
+final5$nmass[final5$exp=="giface_c"] <- giface_c_nmass
+
 
 final_mean2 <- final5
 #final_mean2$anpp[final_mean2$exp=="phace_c"] <- NA
@@ -1506,12 +1541,11 @@ t2 <- ggplot(final_mean2,aes_string(x="nmass", y="vcmax")) +geom_hline(yintercep
   labs(y=~paste(V[cmax]))+labs(x=~paste(N[mass]))
 
 t3 <- ggplot(final_mean2,aes_string(x="narea", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+
-  geom_smooth(color="black",method="lm",se=F,linetype = "dashed")+
+  geom_smooth(color="black",method="lm",se=T)+
   theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
   labs(y=~paste(V[cmax]))+labs(x=~paste(N[area]))
 
 t4 <- ggplot(final_mean2,aes_string(x="LMA", y="vcmax")) +geom_hline(yintercept=0)+geom_vline(xintercept=0)+geom_point(aes(color=ecosystem_level),size=3)+stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=7)+
-  geom_smooth(color="black",method="lm",se=F,linetype = "dashed")+
   theme(axis.text=element_text(size=25),axis.title=element_text(size=25,face="bold"),legend.position="none")+
   labs(y=~paste(V[cmax]))+labs(x=~paste(LMA))
 
@@ -1635,7 +1669,7 @@ plot_grid(t1,t2,t3,t4,legend_info,
                      '(e)','(f)','(g)','(h)',' ',
                      '(i)','(j)','(k)','(l)','(m)',
                      '(n)','(o)','(p)','(q)','(r)',
-                     '(s)','(t)','(u)','',''), label_size = 20)+theme(plot.background=element_rect(fill="white", color="white"))
+                     '(s)','(t)','(u)','',''), label_size = 23)+theme(plot.background=element_rect(fill="white", color="white"))
 ggsave(paste("~/data/output_gcme/colin/final_bivariate_short1.jpg",sep=""),width = 25, height = 25)
 
 
@@ -1672,3 +1706,34 @@ unique(subset(kevin_vcmax,exp=="euroface4_pa_c")$citation)
 #check site numbers
 summary(final_mean2)
 dim(final_mean2)
+
+#additional, check N fertilization status - how to classify high vs. low N?
+#there are three methods so not to include them now.
+final_nfer_vj
+#####(1): assuming different magnitude of total N
+### -84.04_45.33_Acer saccharum:
+### -84.04_45.33_Populus tremuloides
+#See https://citeseerx.ist.psu.edu/viewdoc/download;jsessionid=93537B615EEE7566E6D42DB00F14309A?doi=10.1.1.383.9190&rep=rep1&type=pdf
+# Method
+#Total N concentrations of the low-N and high-N soils at the beginning of the study were 310 and 1370 mg kg–1, respectively.
+
+#####(2): assuming low-N is 4 times more diluted than high-low
+### 20_-34.5_Leucadendron  coniferum
+### 20_-34.5_Leucadendron  laureolum
+### 20_-34.5_Leucadendron  meridianum
+### 20_-34.5_Leucadendron xanthoconus
+#See https://www.researchgate.net/publication/242459413_Nutrient_and_genotypic_effects_on_CO2-responsiveness_Photosynthetic_regulation_in_Leucadendron_species_of_a_nutrient-poor_environment
+#method
+# Nutrient treatments comprised a complete Long Ashton solution which was diluted to 20% for the high nutrient treatment (containing 0.20 mM nitrogen as ammonium and nitrate), and
+#diluted a further four times for the low nutrient treatment (5% Long Ashton, containing 0.05 mM nitrogen as ammonium and nitrate). Plants were fed 100 ml each once weekly
+
+#(3): assuming different ratio of N, P, K
+#89.14_48.22_Betula papyrifera
+#See https://watermark.silverchair.com/26-11-1457.pdf?token=AQECAHi208BE49Ooan9kkhW_Ercy7Dm3ZL_9Cf3qfKAc485ysgAAAuEwggLdBgkqhkiG9w0BBwagggLOMIICygIBADCCAsMGCSqGSIb3DQEHATAeBglghkgBZQMEAS4wEQQMuuNxAx_kdfXt1ccTAgEQgIIClLfLAGFA6gupj_hD3usfnfVMHXZhAbddqRBSIlYcl69mYt7bMGLGQWtSNpzEimHXANbyqU3AtEAiVYgBJ0Jlhk9c8QcNVGFsGutlPLyjUJohpLHAt_wJ4rL0O1JAK1T1FToFXady_MkOlaXB6vuAwzPIPtEnBZDFpcV85_FA9xr6xBts40LgOX1c48Lxr7A-Z3SbcbrBOHTtMxTI1fS2EbUi9YeGfihn7EHqtuR3ZAS9KZOffZuyvIcSppClW4vVV3TSbDn8M5ruEFPzHzhbBMuuwa7krWJ1LZoiv8z0mf6kaPkcx9UnXSEQpK5u-VAKh3DvwYPXvuUn3DnHuudc_LRwmSn2lk4EcRuGEvvgL3_NJUG9IOFuOZ3j8URT1sS8n8vleuamUuPEdDwXzJiVX6-mJwe-PpZuZLNDYDGnQymXOmGXarB2B-8SwQvAro3QVzXzSqRy52uzn9K9dnPxbBBC8yPqSdXj8DYg0RiNknU5F-lwSwhj5JFUHz0hxASZ7yc2O9PaTXWSxqXn2Y0oZ2YIODtZAAP1_Hb-0guZhgRNHfE_vfwsv5Y8BRgbIGSP7VZF2C-JSY8CwkGSCrGUqIZddWmLTXyOmn-gnl-QNKqudP-923QGNH4onHLURgReJYFotR6SBStmho1qEXG75xNRQ8fyUMlzM5qyaTJRM5jcMYvQn5YVFO9Nv16YY6IrEos20mJFKbBqRFeovLzFg30dEAw6qBZ_D-CFt3VtlIOMjsk7PrPQAIyOu-Ajq7sZ_d1gOzINP5-OPFAMFLwvmyqoza0xQwbQc2ZTgGRcLr8i-7ll7Ir187BqeutZc4aQ5SmvyNjylyyc9PrMvKm8Ybxd0bWUKKRTpwEYtjdt6n-EIDS9fA
+#method
+#All seedlings were fertilized twice
+#weekly: seedlings in the high nutrient treatment received a solution containing 100:44:83 ppm N,P,K, respectively, and
+#seedlings in the low nutrient treatment received a solution
+#containing 10:4.4:8.3 ppm N,P,K, respectively.
+
+#In current analysis we don't include Smith's new data since it could only provides one more sites and the recent analysis has already been finalized.
