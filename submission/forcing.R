@@ -490,6 +490,7 @@ smith_all_removal$exp[smith_all_removal$exp=="AspenFACE"] <- "rhine-aspenface_c"
 smith_all_removal$exp[smith_all_removal$exp=="BilyKriz"] <- "bily_kriz_c";
 smith_all_removal$exp[smith_all_removal$exp=="Headley"] <- "headley_qp_c";
 smith_all_removal$exp[smith_all_removal$exp=="Viesalm"] <- "vielsalm_c"
+smith_all_removal$exp <- tolower(smith_all_removal$exp)
 
 #remove a WHEATCE point - because we only require one ppm gradient per site, so that we will make the whole method consistently, and we can later on safely calculate log(j/v) = log j - log v
 subset(smith_all_removal,elevated==36.53125)
@@ -1007,5 +1008,5 @@ final_prediction$jmax_vcmax <- final_prediction$jmax - final_prediction$vcmax
 
 final_prediction <- final_prediction[,c("exp","lon","lat","vcmax","jmax","jmax_vcmax","treatment","ref","comments")]
 
-csvfile <- paste("~/data/gcme/MS_data/prediction.csv")
+csvfile <- paste("~/data/gcme/prediction/prediction.csv")
 write.csv(final_prediction, csvfile, row.names = TRUE)
