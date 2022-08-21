@@ -1237,5 +1237,11 @@ final5$type_name[final5$exp=="euroface4_pe_c"] <- "No_fertilization"
 final5$type_name[final5$exp=="euroface4_pn_c"] <- "No_fertilization"
 final5$type_name[final5$exp=="new_zealand_face_c"] <- "No_fertilization"
 
+#re-name ecosystem name 
+final5$ecosystem[final5$ecosystem=="forest"] <- "Forest"
+final5$ecosystem[final5$ecosystem=="grassland"] <- "Grassland"
+final5$ecosystem[final5$ecosystem=="cropland"] <- "Cropland"
+
+
 csvfile <- paste("~/data/gcme/MS_data/plot_data.csv")
 write.csv(final5, csvfile, row.names = TRUE)
