@@ -309,22 +309,6 @@ smith_all_plotmean <- smith_all_plotmean[,c("exp","vcmax","jmax","ecosystem")]
 obs_co2 <- rbind(kevin_vj_ecosystem,smith_all_plotmean)
 
 #combine_co2 under fertilization (c, cf, f)
-#1. check if both have the same ambient values
-subset(kevin2_f_vcmax,exp=="duke2_f")[,c("ambient","elevated")];subset(kevin2_cf_vcmax,exp=="duke2_cf")[,c("ambient","elevated")]
-subset(kevin2_f_jmax,exp=="duke2_f")[,c("ambient","elevated")];subset(kevin2_cf_jmax,exp=="duke2_cf")[,c("ambient","elevated")]
-
-subset(kevin2_f_vcmax,exp=="euroface4_pa_f")[,c("ambient","elevated")];subset(kevin2_cf_vcmax,exp=="euroface4_pa_cf")[,c("ambient","elevated")]
-subset(kevin2_f_jmax,exp=="euroface4_pa_f")[,c("ambient","elevated")];subset(kevin2_cf_jmax,exp=="euroface4_pa_cf")[,c("ambient","elevated")]
-
-subset(kevin2_f_vcmax,exp=="euroface4_pe_f")[,c("ambient","elevated")];subset(kevin2_cf_vcmax,exp=="euroface4_pe_cf")[,c("ambient","elevated")]
-subset(kevin2_f_jmax,exp=="euroface4_pe_f")[,c("ambient","elevated")];subset(kevin2_cf_jmax,exp=="euroface4_pe_cf")[,c("ambient","elevated")]
-
-subset(kevin2_f_vcmax,exp=="euroface4_pn_f")[,c("ambient","elevated")];subset(kevin2_cf_vcmax,exp=="euroface4_pn_cf")[,c("ambient","elevated")]
-subset(kevin2_f_jmax,exp=="euroface4_pn_f")[,c("ambient","elevated")];subset(kevin2_cf_jmax,exp=="euroface4_pn_cf")[,c("ambient","elevated")]
-
-subset(kevin2_f_vcmax,exp=="new_zealand_face_f")[,c("ambient","elevated")];subset(kevin2_cf_vcmax,exp=="new_zealand_face_cf")[,c("ambient","elevated")]
-#subset(kevin2_f_jmax,exp=="new_zealand_face_f")[,c("ambient","elevated")];subset(kevin2_cf_jmax,exp=="new_zealand_face_cf")[,c("ambient","elevated")]
-
 Nfer_vcmax <- na.omit(subset(combine_co2_cf(kevin2_c_vcmax,kevin2_f_vcmax,kevin2_cf_vcmax,"middle"),condition=="Fertilization"))
 Nfer_vcmax$ecosystem <- "forest"
 Nfer_vcmax$ecosystem[Nfer_vcmax$exp=="new_zealand_face_cf"] <- "grassland"
@@ -371,7 +355,7 @@ low_high_vcmax$co2_change <- NA
 
 #input co2 change
 low_high_vcmax$co2_change[low_high_vcmax$lon==-84.04] <- log(560/360) 
-# https://watermark.silverchair.com/22-5-321.pdf?token=AQECAHi208BE49Ooan9kkhW_Ercy7Dm3ZL_9Cf3qfKAc485ysgAAAv4wggL6BgkqhkiG9w0BBwagggLrMIIC5wIBADCCAuAGCSqGSIb3DQEHATAeBglghkgBZQMEAS4wEQQMlQzU_4AV0WQkXxioAgEQgIICsZUQMf48_Ogae5yJOUenILkeX5E_nHvKWARnNsbV4Cd5VZ38yYrQBL5duSx1kSq97qPt5PcU5fhbJvGTYY3HdCO1nm4_DwncLNNjvauVf6SSlXs6ilSIzkeclSN2eRY7uzwXfa-JaJg8RHzLq8scOxja5YhaUCRogGCZDpTXryJ97Z1jobEOPG-YCdDI0apFWymgoaqcE286a1lG6-aQK_7kbxwinsZSf1_CcxhItSBy7LTZRxwANCisRFwFr0IXbqpDnoQJH8cBepblQkkZzcEfwclOsghsN26D0uNF4K4UTTpsHUd2jifg0ga_4fzNsP_iMmht62Y0HwRC7uSc1gD587zvIQGQoMa4yUBpPeHYXOLmcGNpURkWQOA-qfRnjAC_7PS8UUMQbSQp7LPD2ZpuAKxNMONSXTT4SwqlQYhxFyHQZyaQYEoaKe-XBSaVjdt2oA1IXfz7OZ72-KsJweC-buZHrjy64iCPtaJ7R0KsAuLtbO3Wsgu5DZyr3oddoZ30fuk2NVogC-7iHPvFfYxu0uqkRwQavdcIYvxVZvt3NkI534Wce9fIgQzoWr2PSbqJoenwM3Bs0QpemX2ByyxFWtCt-7qOcRXu71Iupj5Qt0S6DkcIqlEwEkruKStMO5MUv6CEtpeUaY2VyZ6kKnlh8ffsMkFgKFdARaaRUKc4Igp2JY-ptvQrLInZKoZlebgjHiiwWVQvDB4TqhmXi33pJ_iiriuNTd2_8AKChx7b777LNYKDri48i4Lny425sdVdxrlY_t8123c3OnnVTgmpTD8lUTRKh85iAnKcrts6hSFFeGrC9nM8zuFh0vpA2p8gq0wUqO5knbwNrqIcW_ZXV8v0cTmyNJjnKK7PvwKGq7HFBYfHLk1ZBUJNy7duVXwQ5nqvddVLFmZff_Dv2_-1
+#https://pubmed.ncbi.nlm.nih.gov/11960756/
 low_high_vcmax$co2_change[low_high_vcmax$lon==20.00] <- log(700/350) 
 #https://www.researchgate.net/publication/242459413_Nutrient_and_genotypic_effects_on_CO2-responsiveness_Photosynthetic_regulation_in_Leucadendron_species_of_a_nutrient-poor_environment
 low_high_vcmax$co2_change[low_high_vcmax$lon==89.14] <- log(720/360) 
@@ -1288,45 +1272,93 @@ final5$ecosystem[final5$ecosystem=="grassland"] <- "Grassland"
 final5$ecosystem[final5$ecosystem=="cropland"] <- "Cropland"
 
 
-csvfile <- paste("~/data/gcme/MS_data/plot_data.csv")
-write.csv(final5, csvfile, row.names = TRUE)
-
 #check some very high points with at Nfer condition
 subset(final5,condition=="Fertilization")
-#duke2_cf: jmax (+), LMA (-), narea (-), lai (-)
-#new_zealand_face_cf: vcmax (-), narea (-), narea (-), nmass (-)
+#duke2_cf: jmax,lma, narea, lai.
+#new_zealand_face_cf: vcmax, narea, nmass, lma
 
 #duke2_cf
-subset(logr_c_jmax,exp=="duke2_c")[,c("ambient","elevated","logr","citation")]
-subset(logr_f_jmax,exp=="duke2_f")[,c("ambient","elevated","logr","citation")]
-subset(logr_cf_jmax,exp=="duke2_cf")[,c("ambient","elevated","logr","citation")]
-#paschalis_et_al_2016 - jmax too high
+a1 <- subset(logr_f_jmax,exp=="duke2_f")[,c("ambient","elevated","logr","citation")]
+#remove the one with 4.2, which cannot be parallel to cf on below, and the values looked wrong
+a1$logr[a1$citation=="oishi_et_al_2014"] <- NA
 
-subset(logr_c_LMA,exp=="duke2_c")[,c("ambient","elevated","logr","citation")]
-subset(logr_f_LMA,exp=="duke2_f")[,c("ambient","elevated","logr","citation")]
-subset(logr_cf_LMA,exp=="duke2_cf")[,c("ambient","elevated","logr","citation")]
-# maier_et_al_2008 - LMA to high
+a2 <- subset(logr_cf_jmax,exp=="duke2_cf")[,c("ambient","elevated","logr","citation")]
 
-subset(logr_c_narea,exp=="duke2_c")[,c("ambient","elevated","logr","citation")]
-subset(logr_f_narea,exp=="duke2_f")[,c("ambient","elevated","logr","citation")]
-subset(logr_cf_narea,exp=="duke2_cf")[,c("ambient","elevated","logr","citation")]
-# maier_et_al_2008 - narea too low
+#recalculate logr = logcf - cf
+duke2_cf_jmax <- (mean(a2$logr) - mean(a1$logr,na.rm=TRUE))/log(563/363)
+
+#  LMA and narea were corrected by maier_et_al_2008 -https://academic.oup.com/treephys/article/28/4/597/1720624
+#corrected by their table 2 (using 1-year old data)
+duke2_cf_lma <- log(113.3/100.6)/log(563/363)
+
+duke2_cf_narea <- log(1.34/1.44)/log(563/363)
 
 subset(logr_c_lai,exp=="duke2_c")[,c("ambient","elevated","logr","citation")]
 subset(logr_f_lai,exp=="duke2_f")[,c("ambient","elevated","logr","citation")]
 subset(logr_cf_lai,exp=="duke2_cf")[,c("ambient","elevated","logr","citation")]
-# oishi_et_al_2014 - lai too low
+# oishi_et_al_2014 - lai too low - below has problem - ambient should be 3.8 not 38!
+#calculate it directly 
+duke2_cf_lai <- log(4.8/4.05)/log(563/363)
 
-#new_zealand_face_cf
-# re-check if Nfer are all consistent
-subset(logr_c_vcmax,exp=="new_zealand_face_c")[,c("ambient","elevated","logr","citation")]
-subset(logr_f_vcmax,exp=="new_zealand_face_f")[,c("ambient","elevated","logr","citation")]
-subset(logr_cf_vcmax,exp=="new_zealand_face_cf")[,c("ambient","elevated","logr","citation")]
+final5$jmax[final5$exp=="duke2_cf"] <- duke2_cf_jmax
+final5$jmax_vcmax[final5$exp=="duke2_cf"] <- final5$jmax[final5$exp=="duke2_cf"] -final5$vcmax[final5$exp=="duke2_cf"] 
 
-subset(logr_cf_root_shoot_ratio,exp=="euroface4_pe_cf")[,c("ambient","elevated","logr","citation")]
-subset(logr_c_root_shoot_ratio,exp=="euroface4_pe_c")[,c("ambient","elevated","logr","citation")]
-subset(logr_f_root_shoot_ratio,exp=="euroface4_pe_f")[,c("ambient","elevated","logr","citation")]
-#remove combine_cf
+final5$LMA[final5$exp=="duke2_cf"] <- duke2_cf_lma
+final5$narea[final5$exp=="duke2_cf"] <- duke2_cf_narea
+final5$lai[final5$exp=="duke2_cf"] <- duke2_cf_lai
+
+#new_zealand_face_cf - not wrong
+#all is on below
+# https://www.publish.csiro.au/fp/pdf/PP01009
+#all correct
+
+csvfile <- paste("~/data/gcme/MS_data/plot_data.csv")
+write.csv(final5, csvfile, row.names = TRUE)
+
+#check if all ambient condition at f and cf has same data - so that we can do cf -f directly
 subset(final5,condition=="Fertilization")
 
+#vcmax, jmax already checked
+#1. check if both have the same ambient values (duke2_cf already been corrected)
+#vcmax, jmax, lma, narea, nmass, bnpp, anpp, lai 
+subset(kevin2_f_vcmax,exp=="duke2_f")[,c("ambient","elevated")];subset(kevin2_cf_vcmax,exp=="duke2_cf")[,c("ambient","elevated")]
+subset(kevin2_f_jmax,exp=="duke2_f")[,c("ambient","elevated")];subset(kevin2_cf_jmax,exp=="duke2_cf")[,c("ambient","elevated")]
 
+subset(kevin2_f_vcmax,exp=="euroface4_pa_f")[,c("ambient","elevated")];subset(kevin2_cf_vcmax,exp=="euroface4_pa_cf")[,c("ambient","elevated")]
+subset(kevin2_f_jmax,exp=="euroface4_pa_f")[,c("ambient","elevated")];subset(kevin2_cf_jmax,exp=="euroface4_pa_cf")[,c("ambient","elevated")]
+
+subset(kevin2_f_vcmax,exp=="euroface4_pe_f")[,c("ambient","elevated")];subset(kevin2_cf_vcmax,exp=="euroface4_pe_cf")[,c("ambient","elevated")]
+subset(kevin2_f_jmax,exp=="euroface4_pe_f")[,c("ambient","elevated")];subset(kevin2_cf_jmax,exp=="euroface4_pe_cf")[,c("ambient","elevated")]
+
+subset(kevin2_f_vcmax,exp=="euroface4_pn_f")[,c("ambient","elevated")];subset(kevin2_cf_vcmax,exp=="euroface4_pn_cf")[,c("ambient","elevated")]
+subset(kevin2_f_jmax,exp=="euroface4_pn_f")[,c("ambient","elevated")];subset(kevin2_cf_jmax,exp=="euroface4_pn_cf")[,c("ambient","elevated")]
+
+subset(kevin2_f_vcmax,exp=="new_zealand_face_f")[,c("ambient","elevated")];subset(kevin2_cf_vcmax,exp=="new_zealand_face_cf")[,c("ambient","elevated")]
+#subset(kevin2_f_jmax,exp=="new_zealand_face_f")[,c("ambient","elevated")];subset(kevin2_cf_jmax,exp=="new_zealand_face_cf")[,c("ambient","elevated")]
+
+subset(logr_f_LMA,exp=="euroface4_pn_f")[,c("ambient","elevated","logr","citation")]
+subset(logr_cf_LMA,exp=="euroface4_pn_cf")[,c("ambient","elevated","logr","citation")]
+
+subset(logr_f_LMA,exp=="new_zealand_face_f")[,c("ambient","elevated","logr","citation")]
+subset(logr_cf_LMA,exp=="new_zealand_face_cf")[,c("ambient","elevated","logr","citation")]
+
+subset(logr_f_narea,exp=="euroface4_pe_f")[,c("ambient","elevated","logr","citation")]
+subset(logr_cf_narea,exp=="euroface4_pe_cf")[,c("ambient","elevated","logr","citation")]
+subset(logr_f_narea,exp=="euroface4_pn_f")[,c("ambient","elevated","logr","citation")]
+subset(logr_cf_narea,exp=="euroface4_pn_cf")[,c("ambient","elevated","logr","citation")]
+subset(logr_f_narea,exp=="new_zealand_face_f")[,c("ambient","elevated","logr","citation")]
+subset(logr_cf_narea,exp=="new_zealand_face_cf")[,c("ambient","elevated","logr","citation")]
+
+subset(logr_f_nmass,exp=="euroface4_pe_f")[,c("ambient","elevated","logr","citation")]
+subset(logr_cf_nmass,exp=="euroface4_pe_cf")[,c("ambient","elevated","logr","citation")]
+subset(logr_f_nmass,exp=="euroface4_pn_f")[,c("ambient","elevated","logr","citation")]
+subset(logr_cf_nmass,exp=="euroface4_pn_cf")[,c("ambient","elevated","logr","citation")]
+subset(logr_f_nmass,exp=="new_zealand_face_f")[,c("ambient","elevated","logr","citation")]
+subset(logr_cf_nmass,exp=="new_zealand_face_cf")[,c("ambient","elevated","logr","citation")]
+
+subset(logr_f_anpp,exp=="euroface4_pa_f")[,c("ambient","elevated","logr","citation")]
+subset(logr_cf_anpp,exp=="euroface4_pa_cf")[,c("ambient","elevated","logr","citation")]
+subset(logr_f_anpp,exp=="euroface4_pe_f")[,c("ambient","elevated","logr","citation")]
+subset(logr_cf_anpp,exp=="euroface4_pe_cf")[,c("ambient","elevated","logr","citation")]
+subset(logr_f_anpp,exp=="euroface4_pn_f")[,c("ambient","elevated","logr","citation")]
+subset(logr_cf_anpp,exp=="euroface4_pn_cf")[,c("ambient","elevated","logr","citation")]
