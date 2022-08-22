@@ -108,7 +108,7 @@ combine_co2_c <- function(logr_c_var,logr_f_var,logr_cf_var,name){
 
 #####3. CO2 effect data
 #read Kevin
-kevin <- read.csv("/Users/yunpeng/data/gcme/kevin/orig_vcmax/JunkePeng_11252021.csv")
+kevin <- read.csv("~/data/gcme/kevin/orig_vcmax/JunkePeng_11252021.csv")
 
 #1. correct exp_nam to make it consistent with GCME
 kevin$site[is.na(kevin$site)==TRUE] <- "riceface_japan_a_2003_3938_14057"
@@ -186,7 +186,7 @@ kevin_vj_ecosystem <- merge(kevin_vj,kevin_ecosystem[,c("exp","ecosystem")],by=c
 
 
 #Smith's data
-smith_co2 <- read.csv("/Users/yunpeng/data/smith_keenan_gcb/gcb_co2/co2_data.csv")
+smith_co2 <- read.csv("~/data/smith_keenan_gcb/gcb_co2/co2_data.csv")
 smith_co2$exp_nam <- smith_co2$SiteID
 smith_co2 <- subset(smith_co2,is.na(lat)==FALSE) # remove empty column
 summary(smith_co2)
@@ -260,7 +260,7 @@ smith_all_plotmean <- aggregate(smith_all_simple,by=list(smith_all_simple$SiteID
 names(smith_all_plotmean) <- c("exp","ecosystem","vcmax","jmax")
 smith_all_plotmean$exp[smith_all_plotmean$exp=="OakOTC"] <- "mi_c";
 smith_all_plotmean$exp[smith_all_plotmean$exp=="ORNL"] <- "ornerp_liqui_c";
-smith_all_plotmean$exp[smith_all_plotmean$exp=="PineOTC"] <- "Christchurch_pr_c";
+smith_all_plotmean$exp[smith_all_plotmean$exp=="PineOTC"] <- "christchurch_pr_c";
 smith_all_plotmean$exp[smith_all_plotmean$exp=="RichmondGH"] <- "australiacotton_c";
 smith_all_plotmean$exp[smith_all_plotmean$exp=="UIAPine"] <- "ua_otc_c";
 smith_all_plotmean$exp[smith_all_plotmean$exp=="PHACE"] <- "phace_c";
@@ -268,6 +268,39 @@ smith_all_plotmean$exp[smith_all_plotmean$exp=="AspenFACE"] <- "rhine-aspenface_
 smith_all_plotmean$exp[smith_all_plotmean$exp=="BilyKriz"] <- "bily_kriz_c";
 smith_all_plotmean$exp[smith_all_plotmean$exp=="Headley"] <- "headley_qp_c";
 smith_all_plotmean$exp[smith_all_plotmean$exp=="Viesalm"] <- "vielsalm_c"
+
+#check if smith and GCME have consistent site (but not consistent species!)
+kevin_othervars <- read.csv("~/data/gcme/kevin_20220222/MESI_2022.csv")
+
+unique(subset(smith_all_simple,exp_nam=="OakOTC")[,c("lon","lat","Genus","Species")])
+unique(subset(kevin_othervars,exp=="mi_c")[,c("lon","lat","dominant_species")])
+
+unique(subset(smith_all_simple,exp_nam=="ORNL")[,c("lon","lat","Genus","Species")])
+unique(subset(kevin_othervars,exp=="ornerp_liqui_c")[,c("lon","lat","dominant_species")])
+
+unique(subset(smith_all_simple,exp_nam=="PineOTC")[,c("lon","lat","Genus","Species")])
+unique(subset(kevin_othervars,exp=="christchurch_pr_c")[,c("lon","lat","dominant_species")])
+
+unique(subset(smith_all_simple,exp_nam=="RichmondGH")[,c("lon","lat","Genus","Species")])
+unique(subset(kevin_othervars,exp=="australiacotton_c")[,c("lon","lat","dominant_species")])
+
+unique(subset(smith_all_simple,exp_nam=="UIAPine")[,c("lon","lat","Genus","Species")])
+unique(subset(kevin_othervars,exp=="ua_otc_c")[,c("lon","lat","dominant_species")])
+
+unique(subset(smith_all_simple,exp_nam=="PHACE")[,c("lon","lat","Genus","Species")])
+unique(subset(kevin_othervars,exp=="phace_c")[,c("lon","lat","dominant_species")])
+
+unique(subset(smith_all_simple,exp_nam=="AspenFACE")[,c("lon","lat","Genus","Species")])
+unique(subset(kevin_othervars,exp=="rhine-aspenface_c")[,c("lon","lat","dominant_species")])
+
+unique(subset(smith_all_simple,exp_nam=="BilyKriz")[,c("lon","lat","Genus","Species")])
+unique(subset(kevin_othervars,exp=="bily_kriz_c")[,c("lon","lat","dominant_species")])
+
+unique(subset(smith_all_simple,exp_nam=="Headley")[,c("lon","lat","Genus","Species")])
+unique(subset(kevin_othervars,exp=="headley_qp_c")[,c("lon","lat","dominant_species")])
+
+unique(subset(smith_all_simple,exp_nam=="Viesalm")[,c("lon","lat","Genus","Species")])
+unique(subset(kevin_othervars,exp=="vielsalm_c")[,c("lon","lat","dominant_species")])
 
 smith_all_plotmean$exp <- tolower(smith_all_plotmean$exp)
 
@@ -287,7 +320,7 @@ Nfer_kevin <- merge(Nfer_vcmax,Nfer_jmax,by=c("exp","condition","ecosystem"),all
 names(Nfer_kevin) <- c("exp","condition","ecosystem","vcmax","jmax")
 
 #N fertilization data from Walker 
-walker <- read.csv("/Users/yunpeng/data/leaf_traits/Walker/LEAF_PHOTOSYNTHESIS_TRAITS_1224/data/Leaf_Photosynthesis_Traits.csv")
+walker <- read.csv("~/data/leaf_traits/Walker/LEAF_PHOTOSYNTHESIS_TRAITS_1224/data/Leaf_Photosynthesis_Traits.csv")
 
 Nfer_vcmax <- subset(walker,Treatment_N!="not applicable" &Treatment_CO2!="not applicable" & Vcmax>0) %>% 
   group_by(lon,lat,species,Treatment_N,Treatment_P,Treatment_CO2,Treatment_light)  %>% summarise(mean = mean(Vcmax))
@@ -374,7 +407,7 @@ low_high_jmax$jmax_lowN_coef <- low_high_jmax$jmax_lowN/low_high_jmax$co2_change
 
 ####Input Warming data 
 #Input data, and combine dataset to get Tleaf
-df3 <- read_csv("/Users/yunpeng/data/Kumarathunge_2020_newphy/kumarathunge_2020_newphy/Data/PPC-TGlob_V1.0.csv")
+df3 <- read_csv("~/data/Kumarathunge_2020_newphy/kumarathunge_2020_newphy/Data/PPC-TGlob_V1.0.csv")
 df3 <- subset(df3,Growth_condition=="Glasshouse"|Growth_condition=="Whole tree chambers")
 # select sites - only these sites have available Temp information and matched our purpose.
 df3 <- df3 %>% filter(Dataset %in% c("Black Spruce, ON, Canada",
@@ -396,7 +429,7 @@ df3$jmax25 <- df3$Jmax*exp((43540/8.314)*((1/(df3$Tleaf+273.15))-(1/298.15)))
 
 
 #now, fill temp treatment information - needs to check original data
-df1 <- read_csv("/Users/yunpeng/data/Kumarathunge_2020_newphy/kumarathunge_2020_newphy/Data/ACi-TGlob_V1.0.csv")
+df1 <- read_csv("~/data/Kumarathunge_2020_newphy/kumarathunge_2020_newphy/Data/ACi-TGlob_V1.0.csv")
 df1 <- subset(df1,Growth_condition=="Glasshouse"|Growth_condition=="Whole tree chambers")
 
 #For "Black Spruce, ON, Canada"
@@ -545,7 +578,7 @@ d6 <- tibble(
 obs_warming <- as.data.frame(rbind(d1,d2,d3,d4,d5,d6))
 
 #####2. Input light effect data
-walker <- read.csv("/Users/yunpeng/data/leaf_traits/Walker/LEAF_PHOTOSYNTHESIS_TRAITS_1224/data/Leaf_Photosynthesis_Traits.csv")
+walker <- read.csv("~/data/leaf_traits/Walker/LEAF_PHOTOSYNTHESIS_TRAITS_1224/data/Leaf_Photosynthesis_Traits.csv")
 
 light_vcmax <- subset(walker,Treatment_light!="not applicable" & Vcmax>0) %>% 
   group_by(lon,lat,species,Treatment_N,Treatment_P,Treatment_CO2,Treatment_light)  %>% summarise(mean = mean(Vcmax))
@@ -670,11 +703,7 @@ names(all_obs_pred)
 all_obs_pred <- all_obs_pred[,c("exp","lon","lat","vcmax","jmax","jmax_vcmax","pred_vcmax","pred_jmax","pred_jmax_vcmax","treatment","ecosystem","type_name",
                                 "ref","comments")]
 
-#csvfile <- paste("/Users/yunpeng/data/gcme/MS_data/vcmax_obs_pred.csv")
-#write.csv(all_obs_pred, csvfile, row.names = TRUE)
-
-
-
+#####before this, it was fully checked!
 #finally, for meta-analysis
 #anpp, bnpp, nmass, LAI, soil N
 kevin_othervars <- read.csv("~/data/gcme/kevin_20220222/MESI_2022.csv")
@@ -780,7 +809,7 @@ for (i in 1:nrow(varname)) {
   }, error=function(e){})} 
 
 #LMA
-kevin_LMA <- read.csv("/Users/yunpeng/data/gcme/kevin/orig_leaf/LMA.csv")
+kevin_LMA <- read.csv("~/data/gcme/kevin/orig_leaf/LMA.csv")
 kevin_LMA <- rename(kevin_LMA, c(ambient = x_c, elevated=x_t, ambient_Sd=sd_c, elevated_Sd=sd_t,ambient_Se=se_c,elevated_Se=se_t,n_plots=rep_c,
                                  z=elevation, co2_a=c_c, co2_e=c_t, nfertQ_a = n_c, nfertQ_e = n_t, pfertQ_a = p_c, pfertQ_e = p_t,kfertQ_a = k_c, kfertQ_e = k_t,
                                  warmQ_e1 = w_t1, warmQ_e2 = w_t2, warmQ_e3 = w_t3, Unit=x_units))
@@ -903,7 +932,7 @@ final_mean$ecm_type[final_mean$exp=="glycinece"] <- "Nfix"
 #corret one outlier of bgb_coarse
 
 #add two plots from Cesar -->after adding them --becoming weaker!
-Cesar_anpp <- read.csv("/Users/yunpeng/data/gcme/cesar/ANPP.csv")
+Cesar_anpp <- read.csv("~/data/gcme/cesar/ANPP.csv")
 phace <- log(112.6493/111.8533)/log(600/384)
 Aspen <- (log(669.6334/517.9303)/log(550/360) + log(621.7131/429.4247)/log(550/360))/2
 
@@ -913,7 +942,7 @@ final_mean$anpp[final_mean$exp=="rhine-aspenface_c"] <- Aspen
 
 ###add more data: eucface - LAI
 #from https://onlinelibrary.wiley.com/doi/full/10.1111/gcb.13151?casa_token=6CKcWQ_OHHwAAAAA%3AEsLJPJXb45rz2WxE807-NvACiQmFkELScHJiV_eaRUEPd0psT7co5ZnJp8Mo7CKaPFt4H6dkKe8XqZFXJw
-eucface_lai_df <- read.csv("/Users/yunpeng/data/Duursma_gcb/EucFACE_DUURSMA_GCB_LEAFAREAINDEX/data/FACE_RA_P0037_GAPFRACLAI_20121026-20150225_L2.csv")
+eucface_lai_df <- read.csv("~/data/Duursma_gcb/EucFACE_DUURSMA_GCB_LEAFAREAINDEX/data/FACE_RA_P0037_GAPFRACLAI_20121026-20150225_L2.csv")
 #150 as given in paper, also consistent with our df
 subset(logr_c_vcmax,exp=="eucface_c")$co2_e[1];subset(logr_c_vcmax,exp=="eucface_c")$co2_a[1]
 eucface_lai <- log(mean(subset(eucface_lai_df,treatment=="elevated")$LAI,na.rm=TRUE)/mean(subset(eucface_lai_df,treatment=="ambient")$LAI,na.rm=TRUE))/log(540/394)
@@ -1073,8 +1102,8 @@ euroface4_pe_lma <- log((narea_e/nmass_e)/(narea_a/nmass_a))/log(550/368)
 check <- subset(kevin_othervars,exp=="ornerp_liqui_c")%>% group_by(response,Unit)  %>% summarise(number = n())
 
 #LAI calculated from: https://data.ess-dive.lbl.gov/view/doi%3A10.15485%2F1480325#ess-dive-ddd1cfa81a329ba-20181119T143441660
-lai_amb <- mean(as.numeric(subset(read.csv("/Users/yunpeng/data/ORNL_FACE/ORNL_ax.csv"),co2=="AMB")$ptrait_lai),na.rm=T)
-lai_elv <- mean(as.numeric(subset(read.csv("/Users/yunpeng/data/ORNL_FACE/ORNL_ax.csv"),co2=="ELE")$ptrait_lai),na.rm=T)
+lai_amb <- mean(as.numeric(subset(read.csv("~/data/ORNL_FACE/ORNL_ax.csv"),co2=="AMB")$ptrait_lai),na.rm=T)
+lai_elv <- mean(as.numeric(subset(read.csv("~/data/ORNL_FACE/ORNL_ax.csv"),co2=="ELE")$ptrait_lai),na.rm=T)
 
 ornerp_liqui_lai <- log((lai_elv/lai_amb))/log(560/380)
 
@@ -1245,3 +1274,43 @@ final5$ecosystem[final5$ecosystem=="cropland"] <- "Cropland"
 
 csvfile <- paste("~/data/gcme/MS_data/plot_data.csv")
 write.csv(final5, csvfile, row.names = TRUE)
+
+#check some very high points with at Nfer condition
+subset(final5,condition=="Fertilization")
+#duke2_cf: jmax (+), LMA (-), narea (-), lai (-)
+#new_zealand_face_cf: vcmax (-), narea (-), narea (-), nmass (-)
+
+#duke2_cf
+subset(logr_c_jmax,exp=="duke2_c")[,c("ambient","elevated","logr","citation")]
+subset(logr_f_jmax,exp=="duke2_f")[,c("ambient","elevated","logr","citation")]
+subset(logr_cf_jmax,exp=="duke2_cf")[,c("ambient","elevated","logr","citation")]
+#paschalis_et_al_2016 - jmax too high
+
+subset(logr_c_LMA,exp=="duke2_c")[,c("ambient","elevated","logr","citation")]
+subset(logr_f_LMA,exp=="duke2_f")[,c("ambient","elevated","logr","citation")]
+subset(logr_cf_LMA,exp=="duke2_cf")[,c("ambient","elevated","logr","citation")]
+# maier_et_al_2008 - LMA to high
+
+subset(logr_c_narea,exp=="duke2_c")[,c("ambient","elevated","logr","citation")]
+subset(logr_f_narea,exp=="duke2_f")[,c("ambient","elevated","logr","citation")]
+subset(logr_cf_narea,exp=="duke2_cf")[,c("ambient","elevated","logr","citation")]
+# maier_et_al_2008 - narea too low
+
+subset(logr_c_lai,exp=="duke2_c")[,c("ambient","elevated","logr","citation")]
+subset(logr_f_lai,exp=="duke2_f")[,c("ambient","elevated","logr","citation")]
+subset(logr_cf_lai,exp=="duke2_cf")[,c("ambient","elevated","logr","citation")]
+# oishi_et_al_2014 - lai too low
+
+#new_zealand_face_cf
+# re-check if Nfer are all consistent
+subset(logr_c_vcmax,exp=="new_zealand_face_c")[,c("ambient","elevated","logr","citation")]
+subset(logr_f_vcmax,exp=="new_zealand_face_f")[,c("ambient","elevated","logr","citation")]
+subset(logr_cf_vcmax,exp=="new_zealand_face_cf")[,c("ambient","elevated","logr","citation")]
+
+subset(logr_cf_root_shoot_ratio,exp=="euroface4_pe_cf")[,c("ambient","elevated","logr","citation")]
+subset(logr_c_root_shoot_ratio,exp=="euroface4_pe_c")[,c("ambient","elevated","logr","citation")]
+subset(logr_f_root_shoot_ratio,exp=="euroface4_pe_f")[,c("ambient","elevated","logr","citation")]
+#remove combine_cf
+subset(final5,condition=="Fertilization")
+
+

@@ -29,7 +29,7 @@ library(MAd)
 #Read all original data csv and downloading forcing data
 #####1. GCME (CO2 + warming), sent from Kevin
 
-kevin <- read.csv("/Users/yunpeng/data/gcme/kevin/orig_vcmax/JunkePeng_11252021.csv")
+kevin <- read.csv("~/data/gcme/kevin/orig_vcmax/JunkePeng_11252021.csv")
 #1. correct exp_nam to make it consistent with GCME
 kevin$site[is.na(kevin$site)==TRUE] <- "riceface_japan_a_2003_3938_14057"
 kevin$exp_nam <- kevin$site #new plot: capo_caccia,itatinga,itatinga_experimental_station,setres
@@ -264,7 +264,7 @@ vcmax_kevin <- kevin2_c_vcmax %>% group_by(lon,lat,exp)  %>% summarise(vcmax = m
 jmax_kevin <- kevin2_c_vcmax %>% group_by(lon,lat,exp)  %>% summarise(jmax = mean(pred_jmax_coef))
 
 #####2. Smith: co2_data
-smith_co2 <- read.csv("/Users/yunpeng/data/smith_keenan_gcb/gcb_co2/co2_data.csv")
+smith_co2 <- read.csv("~/data/smith_keenan_gcb/gcb_co2/co2_data.csv")
 smith_co2$exp_nam <- smith_co2$SiteID
 smith_co2 <- subset(smith_co2,is.na(lat)==FALSE) # remove empty column
 
@@ -317,7 +317,7 @@ write.csv(siteinfo_final, csvfile, row.names = TRUE)
 #  print(i)    
 #}
 
-smith_co2 <- read.csv("/Users/yunpeng/data/smith_keenan_gcb/gcb_co2/co2_data.csv")
+smith_co2 <- read.csv("~/data/smith_keenan_gcb/gcb_co2/co2_data.csv")
 smith_co2$exp_nam <- smith_co2$SiteID
 smith_co2 <- subset(smith_co2,is.na(lat)==FALSE) # remove empty column
 summary(smith_co2)
@@ -492,16 +492,12 @@ smith_all_removal$exp[smith_all_removal$exp=="Headley"] <- "headley_qp_c";
 smith_all_removal$exp[smith_all_removal$exp=="Viesalm"] <- "vielsalm_c"
 smith_all_removal$exp <- tolower(smith_all_removal$exp)
 
-#remove a WHEATCE point - because we only require one ppm gradient per site, so that we will make the whole method consistently, and we can later on safely calculate log(j/v) = log j - log v
-subset(smith_all_removal,elevated==36.53125)
-smith_all_removal <- subset(smith_all_removal,elevated!=36.53125)
-
 vcmax_smith <- smith_all_removal %>% group_by(lon,lat,exp)  %>% summarise(vcmax = mean(pred_vcmax_coef))
 jmax_smith <- smith_all_removal %>% group_by(lon,lat,exp)  %>% summarise(jmax = mean(pred_jmax_coef))
 
 ######3. Warming from dushan's dataset
 #Input data, and combine dataset to get Tleaf
-df3 <- read_csv("/Users/yunpeng/data/Kumarathunge_2020_newphy/kumarathunge_2020_newphy/Data/PPC-TGlob_V1.0.csv")
+df3 <- read_csv("~/data/Kumarathunge_2020_newphy/kumarathunge_2020_newphy/Data/PPC-TGlob_V1.0.csv")
 df3 <- subset(df3,Growth_condition=="Glasshouse"|Growth_condition=="Whole tree chambers")
 # select sites - only these sites have available Temp information and matched our purpose.
 df3 <- df3 %>% filter(Dataset %in% c("Black Spruce, ON, Canada",
@@ -523,7 +519,7 @@ df3$jmax25 <- df3$Jmax*exp((43540/8.314)*((1/(df3$Tleaf+273.15))-(1/298.15)))
 
 
 #now, fill temp treatment information - needs to check original data
-df1 <- read_csv("/Users/yunpeng/data/Kumarathunge_2020_newphy/kumarathunge_2020_newphy/Data/ACi-TGlob_V1.0.csv")
+df1 <- read_csv("~/data/Kumarathunge_2020_newphy/kumarathunge_2020_newphy/Data/ACi-TGlob_V1.0.csv")
 df1 <- subset(df1,Growth_condition=="Glasshouse"|Growth_condition=="Whole tree chambers")
 
 #For "Black Spruce, ON, Canada"
@@ -819,7 +815,7 @@ names(vcmax_warming) <- c("lon","lat","exp","vcmax","jmax")
 
 ######4. light treatment from Walker 2014
 
-walker <- read.csv("/Users/yunpeng/data/leaf_traits/Walker/LEAF_PHOTOSYNTHESIS_TRAITS_1224/data/Leaf_Photosynthesis_Traits.csv")
+walker <- read.csv("~/data/leaf_traits/Walker/LEAF_PHOTOSYNTHESIS_TRAITS_1224/data/Leaf_Photosynthesis_Traits.csv")
 
 #vcmax
 light_vcmax <- subset(walker,Treatment_light!="not applicable") %>% 
