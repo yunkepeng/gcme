@@ -309,6 +309,22 @@ smith_all_plotmean <- smith_all_plotmean[,c("exp","vcmax","jmax","ecosystem")]
 obs_co2 <- rbind(kevin_vj_ecosystem,smith_all_plotmean)
 
 #combine_co2 under fertilization (c, cf, f)
+#1. check if both have the same ambient values
+subset(kevin2_f_vcmax,exp=="duke2_f")[,c("ambient","elevated")];subset(kevin2_cf_vcmax,exp=="duke2_cf")[,c("ambient","elevated")]
+subset(kevin2_f_jmax,exp=="duke2_f")[,c("ambient","elevated")];subset(kevin2_cf_jmax,exp=="duke2_cf")[,c("ambient","elevated")]
+
+subset(kevin2_f_vcmax,exp=="euroface4_pa_f")[,c("ambient","elevated")];subset(kevin2_cf_vcmax,exp=="euroface4_pa_cf")[,c("ambient","elevated")]
+subset(kevin2_f_jmax,exp=="euroface4_pa_f")[,c("ambient","elevated")];subset(kevin2_cf_jmax,exp=="euroface4_pa_cf")[,c("ambient","elevated")]
+
+subset(kevin2_f_vcmax,exp=="euroface4_pe_f")[,c("ambient","elevated")];subset(kevin2_cf_vcmax,exp=="euroface4_pe_cf")[,c("ambient","elevated")]
+subset(kevin2_f_jmax,exp=="euroface4_pe_f")[,c("ambient","elevated")];subset(kevin2_cf_jmax,exp=="euroface4_pe_cf")[,c("ambient","elevated")]
+
+subset(kevin2_f_vcmax,exp=="euroface4_pn_f")[,c("ambient","elevated")];subset(kevin2_cf_vcmax,exp=="euroface4_pn_cf")[,c("ambient","elevated")]
+subset(kevin2_f_jmax,exp=="euroface4_pn_f")[,c("ambient","elevated")];subset(kevin2_cf_jmax,exp=="euroface4_pn_cf")[,c("ambient","elevated")]
+
+subset(kevin2_f_vcmax,exp=="new_zealand_face_f")[,c("ambient","elevated")];subset(kevin2_cf_vcmax,exp=="new_zealand_face_cf")[,c("ambient","elevated")]
+#subset(kevin2_f_jmax,exp=="new_zealand_face_f")[,c("ambient","elevated")];subset(kevin2_cf_jmax,exp=="new_zealand_face_cf")[,c("ambient","elevated")]
+
 Nfer_vcmax <- na.omit(subset(combine_co2_cf(kevin2_c_vcmax,kevin2_f_vcmax,kevin2_cf_vcmax,"middle"),condition=="Fertilization"))
 Nfer_vcmax$ecosystem <- "forest"
 Nfer_vcmax$ecosystem[Nfer_vcmax$exp=="new_zealand_face_cf"] <- "grassland"
