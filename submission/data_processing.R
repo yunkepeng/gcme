@@ -1312,6 +1312,9 @@ final5$lai[final5$exp=="duke2_cf"] <- duke2_cf_lai
 # https://www.publish.csiro.au/fp/pdf/PP01009
 #all correct
 
+#edit comments
+final5$comments[final5$condition=="light"] <- "vcmax and jmax are sensitivity coefficients = log(vcmax-ele/vcmax-amb)"
+
 csvfile <- paste("~/data/gcme/MS_data/plot_data.csv")
 write.csv(final5, csvfile, row.names = TRUE)
 

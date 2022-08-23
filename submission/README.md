@@ -26,7 +26,11 @@ Then for inputting all forcing file at each site, to predict Sensitivity coeffic
 
 ###data processing
 
-1. Input light, warming and co2 effect observation data - to output /Users/yunpeng/data/gcme/MS_data/vcmax_obs_pred.csv
+1. Input light, warming and co2 effect observation data - to output /Users/yunpeng/data/gcme/MS_data/plot_data.csv
+
+###running to output all figures
+
+/Users/yunpeng/yunkepeng/gcme_MS/gcme_MS.Rmd
 
 
 
