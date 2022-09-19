@@ -417,6 +417,8 @@ df3 <- df3 %>% filter(Dataset %in% c("Black Spruce, ON, Canada",
                                      "Eucalyptus tereticornis provs AU-NSW",
                                      "Eucalyptus tereticornis, AU-NSW"))
 
+unique(df3$Leafspan) # all in forest - evergreen
+
 df3 %>% group_by(Dataset,Temp_Treatment)  %>% summarise(number = n())
 #here one site have three temp treatments, remove the 'highest' temperature 
 df3 <- subset(df3,Temp_Treatment!=6)
