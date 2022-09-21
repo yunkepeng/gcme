@@ -133,28 +133,32 @@ plot2$condition[plot2$type_name=="No_fertilization"] <- "CO2 at N and without N"
 plot2 <- subset(plot2,condition!="Fertilization")
 
 
-#add temperature info (just added in co2 info)
-plot2$co2_a.x[plot2$site=="Black Spruce, ON, Canada"] <- 22
-plot2$co2_e.x[plot2$site=="Black Spruce, ON, Canada"] <- 30
+#add temperature info
+plot2$temp_a <- NA
+plot2$temp_e <- NA
 
-plot2$co2_a.x[plot2$site=="Corymbia calophylla provs, AU-NSW"] <- 26
-plot2$co2_e.x[plot2$site=="Corymbia calophylla provs, AU-NSW"] <- 32
+plot2$temp_a[plot2$site=="Black Spruce, ON, Canada"] <- 22
+plot2$temp_e[plot2$site=="Black Spruce, ON, Canada"] <- 30
 
-plot2$co2_a.x[plot2$site=="Eucalyptus tereticornis provs AU-NSW"] <- 18
-plot2$co2_e.x[plot2$site=="Eucalyptus tereticornis provs AU-NSW"] <- 28.5
+plot2$temp_a[plot2$site=="Corymbia calophylla provs, AU-NSW"] <- 26
+plot2$temp_e[plot2$site=="Corymbia calophylla provs, AU-NSW"] <- 32
 
-plot2$co2_a.x[plot2$site=="Eucalyptus globulus, AU-NSW"] <- 20
-plot2$co2_e.x[plot2$site=="Eucalyptus globulus, AU-NSW"] <- 23
+plot2$temp_a[plot2$site=="Eucalyptus tereticornis provs AU-NSW"] <- 18
+plot2$temp_e[plot2$site=="Eucalyptus tereticornis provs AU-NSW"] <- 28.5
 
-plot2$co2_a.x[plot2$site=="Eucalyptus parramattensis, AU-NSW"] <- 15
-plot2$co2_e.x[plot2$site=="Eucalyptus parramattensis, AU-NSW"] <- 18
+plot2$temp_a[plot2$site=="Eucalyptus globulus, AU-NSW"] <- 20
+plot2$temp_e[plot2$site=="Eucalyptus globulus, AU-NSW"] <- 23
 
-plot2$co2_a.x[plot2$site=="Eucalyptus tereticornis, AU-NSW"] <- 14.4
-plot2$co2_e.x[plot2$site=="Eucalyptus tereticornis, AU-NSW"] <- 22.6
+plot2$temp_a[plot2$site=="Eucalyptus parramattensis, AU-NSW"] <- 15
+plot2$temp_e[plot2$site=="Eucalyptus parramattensis, AU-NSW"] <- 18
+
+plot2$temp_a[plot2$site=="Eucalyptus tereticornis, AU-NSW"] <- 14.4
+plot2$temp_e[plot2$site=="Eucalyptus tereticornis, AU-NSW"] <- 22.6
 
 #all warming, light, N fertilization plots are in forest or shrub. Fully checked.
 plot2$ecosystem[is.na(plot2$ecosystem)==T] <- "Forest"
 
+plot2 <- plot2[order(plot2$condition, plot2$site.x),]
 
 csvfile <- paste("~/data/gcme/MS_data/table_org_site.csv")
 write.csv(plot2, csvfile, row.names = TRUE)

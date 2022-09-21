@@ -1367,3 +1367,6 @@ subset(logr_f_anpp,exp=="euroface4_pe_f")[,c("ambient","elevated","logr","citati
 subset(logr_cf_anpp,exp=="euroface4_pe_cf")[,c("ambient","elevated","logr","citation")]
 subset(logr_f_anpp,exp=="euroface4_pn_f")[,c("ambient","elevated","logr","citation")]
 subset(logr_cf_anpp,exp=="euroface4_pn_cf")[,c("ambient","elevated","logr","citation")]
+
+#check N uptake plots
+
