@@ -540,17 +540,16 @@ df3$Temp_Treatment[df3$Dataset=="Eucalyptus tereticornis provs AU-NSW" & df3$Tem
 df3$Temp_Treatment[df3$Dataset=="Eucalyptus tereticornis provs AU-NSW" & df3$Temp_Treatment=="4"] <- 28.5
 
 #For "Eucalyptus globulus, AU-NSW"
-#By looking at https://onlinelibrary.wiley.com/doi/full/10.1111/gcb.12314 
-# Fig.1 (mean ambient T in whole year = 20) and description: a factorial between ambient temperature (aT) and ambient +3 °C (eT) by ambient CO2 concentration (aC)
-#we can assume Tair changed from 20 to 23
-df3$Temp_Treatment[df3$Dataset=="Eucalyptus globulus, AU-NSW" & df3$Temp_Treatment=="ambient"] <- 20
-df3$Temp_Treatment[df3$Dataset=="Eucalyptus globulus, AU-NSW" & df3$Temp_Treatment=="elevated"] <- 23
+#see below Table s1: we can assume ambient = 19.7, elevated = 24.9 (basing on growth temperature column)
+#https://nph.onlinelibrary.wiley.com/action/downloadSupplement?doi=10.1111%2Fnph.15668&file=nph15668-sup-0001-SupInfo.pdf
+df3$Temp_Treatment[df3$Dataset=="Eucalyptus globulus, AU-NSW" & df3$Temp_Treatment=="ambient"] <- 19.7
+df3$Temp_Treatment[df3$Dataset=="Eucalyptus globulus, AU-NSW" & df3$Temp_Treatment=="elevated"] <- 24.9
 
 #for "Eucalyptus parramattensis, AU-NSW"
 #see below Table s1: we can assume ambient = 15, elevated = 18
 #https://nph.onlinelibrary.wiley.com/action/downloadSupplement?doi=10.1111%2Fnph.15668&file=nph15668-sup-0001-SupInfo.pdf
-df3$Temp_Treatment[df3$Dataset=="Eucalyptus parramattensis, AU-NSW" & df3$Temp_Treatment=="ambient"] <- 15
-df3$Temp_Treatment[df3$Dataset=="Eucalyptus parramattensis, AU-NSW" & df3$Temp_Treatment=="elevated"] <- 18
+df3$Temp_Treatment[df3$Dataset=="Eucalyptus parramattensis, AU-NSW" & df3$Temp_Treatment=="ambient"] <- 15.1
+df3$Temp_Treatment[df3$Dataset=="Eucalyptus parramattensis, AU-NSW" & df3$Temp_Treatment=="elevated"] <- 18.0
 
 #for Eucalyptus tereticornis, AU-NSW
 #see below Table s1: we can assume ambient = 14.4, elevated = 22.6

@@ -27,7 +27,6 @@ library(ggpubr)
 library(MAd)
 
 #response_ratio_v2: calculate response ratio of each individuals
-#logr_var  calculated from ROM
 response_ratio_v2 <- function(df){
   df$logr <- log(df$elevated/df$ambient)
   df_c_sub <- df
@@ -38,72 +37,13 @@ response_ratio_v2 <- function(df){
 }
 
 #agg_meta_sen_coef: calculate sensitivity coefficient from individuals dataset to site-mean dataset
-agg_meta_sen_coef <- function(df){
-  explist <- unique(df$exp)
-  mylist <- list() #create an empty list
-  #convert to sensitivity coef
+agg_meta_sen_coef <- function(df,name){
   df$sen_coef <- df$logr/log(df$co2_e/df$co2_a)
   
-  #all using mean value
-  for (i in 1:length(explist)){
-    mean_value <- mean(subset(df,exp==explist[i])$sen_coef,na.rm=TRUE)
-    n_samples <- length(subset(df,exp==explist[i])$logr)
-    df_box <- tibble(
-      exp=explist[i],
-      middle = mean_value,
-      no=n_samples)
-    mylist[[i]] <- df_box}
-  output <- do.call("rbind",mylist)
-  return(output)
-}
-
-#agg_meta: calculate response ratio from individuals dataset to site-mean dataset
-agg_meta <- function(df){
-  explist <- unique(df$exp)
-  mylist <- list() 
-  for (i in 1:length(explist)){
-    mean_value <- mean(subset(df,exp==explist[i])$logr,na.rm=TRUE)
-    n_samples <- length(subset(df,exp==explist[i])$logr)
-    df_box <- tibble(
-      exp=explist[i], 
-      middle = mean_value,
-      no=n_samples)
-    mylist[[i]] <- df_box}
-  output <- do.call("rbind",mylist)
-  return(output)
-}
-
-#combine co2 and co2+nfertilization site-mean dataset
-combine_co2_cf <- function(logr_c_var,logr_f_var,logr_cf_var,name){
-  all_logr_c_lma <- agg_meta_sen_coef(logr_c_var)[,c("exp","middle")]
-  all_logr_c_lma$condition <- "co2"
-  #co2 + fer / fer
-  all_logr_f_lma <- agg_meta(logr_f_var)[,c("exp","middle")]
-  all_logr_cf_lma <- agg_meta(logr_cf_var)[,c("exp","middle")]
-  all_logr_cf_lma$exp_old <- all_logr_cf_lma$exp 
-  all_logr_cf_lma$exp <-  paste(substr(all_logr_cf_lma$exp,1,nchar(all_logr_cf_lma$exp)-2),"f",sep="")
+  df1 <- aggregate(df,by=list(df$exp), FUN=mean, na.rm=TRUE)[,c("Group.1","sen_coef")]
   
-  all_logr_f_lma2 <- all_logr_f_lma %>% filter(exp %in%all_logr_cf_lma$exp)
-  new_df <- merge(all_logr_f_lma2,all_logr_cf_lma,by=c("exp"),all.x=TRUE)
-  for (i in 1:nrow(new_df)) {
-    new_df$co2[i] <- subset(logr_cf_var,exp==new_df$exp_old[i])$co2_e[1]/
-      subset(logr_cf_var,exp==new_df$exp_old[i])$co2_a[1]
-  } 
-  new_df$middle <- (new_df$middle.y - new_df$middle.x)/log(new_df$co2)
-  new_df$exp <- new_df$exp_old
-  new_df$condition <- "Fertilization"
-  
-  lma_plot <- dplyr::bind_rows(all_logr_c_lma,new_df[,c("exp","middle","condition")]) 
-  names(lma_plot) <- c("exp",name,"condition")
-  return(lma_plot)
-}
-
-combine_co2_c <- function(logr_c_var,logr_f_var,logr_cf_var,name){
-  all_logr_c_lma <- agg_meta_sen_coef(logr_c_var)[,c("exp","middle")]
-  all_logr_c_lma$condition <- "co2"
-  lma_plot <- all_logr_c_lma
-  names(lma_plot) <- c("exp",name,"condition")
-  return(lma_plot)
+  names (df1) <- c("exp",name)
+  return(df1)
 }
 
 #####3. CO2 effect data
@@ -111,7 +51,8 @@ combine_co2_c <- function(logr_c_var,logr_f_var,logr_cf_var,name){
 kevin <- read.csv("~/data/gcme/kevin/orig_vcmax/JunkePeng_11252021.csv")
 
 #1. correct exp_nam to make it consistent with GCME
-kevin$site[is.na(kevin$site)==TRUE] <- "riceface_japan_a_2003_3938_14057"
+kevin$site[is.na(kevin$site)==TRUE & kevin$exp=="riceface_japan_a_2003_3938_14057_c"] <- "riceface_japan_a_2003_3938_14057"
+kevin$site[is.na(kevin$site)==TRUE & kevin$exp=="riceface_japan_a_2004_3938_14057_c"] <- "riceface_japan_a_2004_3938_14057"
 
 kevin$exp_nam <- kevin$site 
 
@@ -172,15 +113,13 @@ kevin2_c_jmax <- subset(kevin2_final, treatment=="c" & response =="jmax")
 kevin2_f_jmax <- subset(kevin2_final, treatment=="f" & response =="jmax")
 kevin2_cf_jmax <- subset(kevin2_final, treatment=="cf" & response =="jmax")
 
-kevin_vcmax_plotmean <- agg_meta_sen_coef(kevin2_c_vcmax)[,c("exp","middle","no")]
-names(kevin_vcmax_plotmean) <- c("exp","vcmax","no")
+kevin_vcmax_plotmean <- agg_meta_sen_coef(kevin2_c_vcmax,"vcmax")
 
-kevin_jmax_plotmean <- agg_meta_sen_coef(kevin2_c_jmax)[,c("exp","middle","no")]
-names(kevin_jmax_plotmean) <- c("exp","jmax","no")
+kevin_jmax_plotmean <- agg_meta_sen_coef(kevin2_c_jmax,"jmax")
 
 kevin_ecosystem <- as.data.frame(kevin2_c_vcmax %>% group_by(exp,ecosystem) %>% summarise(number=n()))
 
-kevin_vj <- merge(kevin_vcmax_plotmean[,c("exp","vcmax")],kevin_jmax_plotmean[,c("exp","jmax")],by=c("exp"),all.x=TRUE)
+kevin_vj <- merge(kevin_vcmax_plotmean,kevin_jmax_plotmean,by=c("exp"),all.x=TRUE)
 
 kevin_vj_ecosystem <- merge(kevin_vj,kevin_ecosystem[,c("exp","ecosystem")],by=c("exp"),all.x=TRUE)
 
@@ -192,7 +131,18 @@ smith_co2 <- subset(smith_co2,is.na(lat)==FALSE) # remove empty column
 summary(smith_co2)
 smith_final <- smith_co2%>% group_by(exp_nam,Species)  %>% summarise(number = n())
 
-#first 2 columns are the same treatment in same plot (amb + elv) -check their Tleaf --> all equal
+# check if first and second column ALWAYS has the same site, and species name 
+# if so then we can apply a simple for-loop function (like below) to combine data 
+for (i in 1:((nrow(smith_co2)/2))){  #if first and second column has the same site, and species name then calculation can run
+  if (smith_co2$SiteID[2*i-1] == smith_co2$SiteID[2*i] &
+      smith_co2$Genus[2*i-1] == smith_co2$Genus[2*i] &
+      smith_co2$Species[2*i-1] == smith_co2$Species[2*i]
+  ){ print ("yes")
+  } else { print ("no")
+  }
+}
+
+#first 2 columns are the same treatment in same plot (amb + elv) - so we can calculate it directly to combine them into one column
 for (i in 1:((nrow(smith_co2)/2))){
   smith_co2$logr_v[2*i-1] <- NA
   smith_co2$sen_coef_v[2*i-1] <- NA
@@ -228,29 +178,31 @@ for (i in 1:((nrow(smith_co2)/2))){
   smith_co2$ambient_jmax_tmean[2*i] <- smith_co2$Jmax_tmean[2*i-1]
   #smith_co2$ambient_jv_tmean[2*i] <- smith_co2$JV_tmean[2*i-1]
 }
+#wheat has two co2_a - so jmax/vcmax sensitivity coefficient should not be jmax - vcmax. But not a problem since this doens't have jmax data
 
 smith_co2_final <- subset(smith_co2,is.na(logr_v)==FALSE)
 
 vcmax25_warmingco2_siteinfo <- rename(smith_co2_final, c(ambient = ambient_vcmax, elevated=Vcmax, ambient_Se=ambient_vcmaxSE, elevated_Se=SE,
                                                          co2_a=ambient_co2, co2_e=Ca,
                                                          ambient_j = ambient_jmax, elevated_j =Jmax, ambient_Se_j=ambient_jmaxSE, elevated_Se_j=Jmax_SE))
-
+#check N fix species (will be used at the end)
+unique(subset(vcmax25_warmingco2_siteinfo,Nac=="Nfix")$SiteID)
 
 vcmax25_warmingco2_siteinfo$ecosystem[vcmax25_warmingco2_siteinfo$Stature=="Tree"] <- "forest"
-vcmax25_warmingco2_siteinfo$ecosystem[vcmax25_warmingco2_siteinfo$SiteID=="ChinaRiceFACE"] <- "cropland"
-vcmax25_warmingco2_siteinfo$ecosystem[vcmax25_warmingco2_siteinfo$SiteID=="UAMACFACE"] <- "cropland"
-vcmax25_warmingco2_siteinfo$ecosystem[vcmax25_warmingco2_siteinfo$SiteID=="GlycineCE"] <- "cropland"
-vcmax25_warmingco2_siteinfo$ecosystem[vcmax25_warmingco2_siteinfo$SiteID=="GossypiumGC"] <- "cropland"
-vcmax25_warmingco2_siteinfo$ecosystem[vcmax25_warmingco2_siteinfo$SiteID=="MississippiCE"] <- "cropland"
-vcmax25_warmingco2_siteinfo$ecosystem[vcmax25_warmingco2_siteinfo$SiteID=="WheatCE"] <- "cropland"
-vcmax25_warmingco2_siteinfo$ecosystem[vcmax25_warmingco2_siteinfo$SiteID=="ChinaMiniFACE"] <- "cropland"
+vcmax25_warmingco2_siteinfo$ecosystem[vcmax25_warmingco2_siteinfo$SiteID=="ChinaRiceFACE"] <- "cropland" #Oryza	sativa
+vcmax25_warmingco2_siteinfo$ecosystem[vcmax25_warmingco2_siteinfo$SiteID=="UAMACFACE"] <- "cropland" #Triticum aestivum
+vcmax25_warmingco2_siteinfo$ecosystem[vcmax25_warmingco2_siteinfo$SiteID=="GlycineCE"] <- "cropland" # Glycine max
+vcmax25_warmingco2_siteinfo$ecosystem[vcmax25_warmingco2_siteinfo$SiteID=="GossypiumGC"] <- "cropland" # Gossypium hirsutum
+vcmax25_warmingco2_siteinfo$ecosystem[vcmax25_warmingco2_siteinfo$SiteID=="MississippiCE"] <- "cropland" # Gossypium hirsutum
+vcmax25_warmingco2_siteinfo$ecosystem[vcmax25_warmingco2_siteinfo$SiteID=="WheatCE"] <- "cropland" # Triticum	aestivum
+vcmax25_warmingco2_siteinfo$ecosystem[vcmax25_warmingco2_siteinfo$SiteID=="ChinaMiniFACE"] <- "cropland" # Glycine Max
 vcmax25_warmingco2_siteinfo$ecosystem[vcmax25_warmingco2_siteinfo$SiteID=="GrassOTC"] <- "grassland"
-vcmax25_warmingco2_siteinfo$ecosystem[vcmax25_warmingco2_siteinfo$SiteID=="PHACE"] <- "grassland"
-vcmax25_warmingco2_siteinfo$ecosystem[vcmax25_warmingco2_siteinfo$SiteID=="FescueCE"] <- "grassland"
+vcmax25_warmingco2_siteinfo$ecosystem[vcmax25_warmingco2_siteinfo$SiteID=="PHACE"] <- "grassland" # Pascopyrium smithii and Linaria	dalmatica
+vcmax25_warmingco2_siteinfo$ecosystem[vcmax25_warmingco2_siteinfo$SiteID=="FescueCE"] <- "grassland" # Festuca arundinacea
 vcmax25_warmingco2_siteinfo$ecosystem[vcmax25_warmingco2_siteinfo$SiteID=="NZFACE"] <- "grassland"
 vcmax25_warmingco2_siteinfo$ecosystem[vcmax25_warmingco2_siteinfo$SiteID=="NevadaFACE"] <- "grassland"
 vcmax25_warmingco2_siteinfo$ecosystem[vcmax25_warmingco2_siteinfo$SiteID=="BioCON"] <- "grassland"
-vcmax25_warmingco2_siteinfo$ecosystem[vcmax25_warmingco2_siteinfo$SiteID=="PhalarisGC"] <- "grassland"
+vcmax25_warmingco2_siteinfo$ecosystem[vcmax25_warmingco2_siteinfo$SiteID=="PhalarisGC"] <- "grassland" # Phalaris	arundinacea
 vcmax25_warmingco2_siteinfo$ecosystem[vcmax25_warmingco2_siteinfo$SiteID=="SwissFACE"] <- "grassland"
 
 #now, combine with Kevin:
@@ -308,49 +260,61 @@ smith_all_plotmean <- smith_all_plotmean[,c("exp","vcmax","jmax","ecosystem")]
 
 obs_co2 <- rbind(kevin_vj_ecosystem,smith_all_plotmean)
 
-#combine_co2 under fertilization (c, cf, f)
-Nfer_vcmax <- na.omit(subset(combine_co2_cf(kevin2_c_vcmax,kevin2_f_vcmax,kevin2_cf_vcmax,"middle"),condition=="Fertilization"))
-Nfer_vcmax$ecosystem <- "forest"
-Nfer_vcmax$ecosystem[Nfer_vcmax$exp=="new_zealand_face_cf"] <- "grassland"
-
-Nfer_jmax <- na.omit(subset(combine_co2_cf(kevin2_c_jmax,kevin2_f_jmax,kevin2_cf_jmax,"middle"),condition=="Fertilization"))
-Nfer_jmax$ecosystem <- "forest"
-
-Nfer_kevin <- merge(Nfer_vcmax,Nfer_jmax,by=c("exp","condition","ecosystem"),all.x=TRUE)
-names(Nfer_kevin) <- c("exp","condition","ecosystem","vcmax","jmax")
-
 #N fertilization data from Walker 
 walker <- read.csv("~/data/leaf_traits/Walker/LEAF_PHOTOSYNTHESIS_TRAITS_1224/data/Leaf_Photosynthesis_Traits.csv")
 
-Nfer_vcmax <- subset(walker,Treatment_N!="not applicable" &Treatment_CO2!="not applicable" & Vcmax>0) %>% 
-  group_by(lon,lat,species,Treatment_N,Treatment_P,Treatment_CO2,Treatment_light)  %>% summarise(mean = mean(Vcmax))
+Nfer_vcmax <- subset(walker,Treatment_N!="not applicable" &Treatment_CO2!="not applicable" & Vcmax>0)
+Nfer_vcmax2 <- Nfer_vcmax[,c("lon","lat","species","Treatment_N","Treatment_P",
+                             "Treatment_CO2","Treatment_light","Vcmax","Jmax","narea","SLA")]
+summary(Nfer_vcmax2)
+Nfer_vcmax2$SLA[Nfer_vcmax2$SLA==-9999.999] <- NA
+Nfer_vcmax2$LMA <- 1/Nfer_vcmax2$SLA
+Nfer_vcmax2$nmass <- Nfer_vcmax2$narea/Nfer_vcmax2$LMA
+
+Nfer_vcmax3 <- Nfer_vcmax2 %>% 
+  group_by(lon,lat,species,Treatment_N,Treatment_P,Treatment_CO2,Treatment_light) %>%
+  summarise(vcmax = mean(Vcmax,na.rm=TRUE),jmax = mean(Jmax,na.rm=TRUE),nmass = mean(nmass,na.rm=TRUE),
+            narea = mean(narea,na.rm=TRUE),LMA = mean(LMA,na.rm=TRUE)) 
+
 #keep all other treatments consistent
-highN_vcmax <- merge(subset(Nfer_vcmax,Treatment_N=="high"&Treatment_CO2=="amb"),
-                     subset(Nfer_vcmax,Treatment_N=="high"&Treatment_CO2=="ele"),
+highN_vcmax <- merge(subset(Nfer_vcmax3,Treatment_N=="high"&Treatment_CO2=="amb"),
+                     subset(Nfer_vcmax3,Treatment_N=="high"&Treatment_CO2=="ele"),
                      by=c("lon","lat","species","Treatment_N","Treatment_P","Treatment_light"),all.x=TRUE)
 highN_vcmax <- subset(highN_vcmax,Treatment_light!="shade")
 
-highN_vcmax #now, except co2 condition, all others are consistent
+dim(highN_vcmax) #now, except co2 condition, all others are consistent
 
-highN_vcmax$middle <- log(highN_vcmax$mean.y/highN_vcmax$mean.x)
+highN_vcmax$logr_vcmax <- log(highN_vcmax$vcmax.y/highN_vcmax$vcmax.x)
+highN_vcmax$logr_jmax <- log(highN_vcmax$jmax.y/highN_vcmax$jmax.x)
+highN_vcmax$logr_nmass <- log(highN_vcmax$nmass.y/highN_vcmax$nmass.x)
+highN_vcmax$logr_narea <- log(highN_vcmax$narea.y/highN_vcmax$narea.x)
+highN_vcmax$logr_LMA <- log(highN_vcmax$LMA.y/highN_vcmax$LMA.x)
 
 highN_vcmax$site_species <- paste(highN_vcmax$lon,highN_vcmax$lat,highN_vcmax$species,sep="_")
-highN_vcmax[,c("site_species","middle")]
 
-lowN_vcmax <- merge(subset(Nfer_vcmax,Treatment_N=="low"&Treatment_CO2=="amb"),
-                    subset(Nfer_vcmax,Treatment_N=="low"&Treatment_CO2=="ele"),
+highN_vcmax
+
+lowN_vcmax <- merge(subset(Nfer_vcmax3,Treatment_N=="low"&Treatment_CO2=="amb"),
+                    subset(Nfer_vcmax3,Treatment_N=="low"&Treatment_CO2=="ele"),
                     by=c("lon","lat","species","Treatment_N","Treatment_P","Treatment_light"),all.x=TRUE)
 
 lowN_vcmax <- subset(lowN_vcmax,Treatment_light!="shade")
-lowN_vcmax
 
-lowN_vcmax$middle <- log(lowN_vcmax$mean.y/lowN_vcmax$mean.x)
+#select the same site-species paralled for high-N data
+lowN_vcmax$lon;highN_vcmax$lon
+lowN_vcmax <- subset(lowN_vcmax,lon!=-71.03 & lon!=141.00)
+
+lowN_vcmax$logr_vcmax <- log(lowN_vcmax$vcmax.y/lowN_vcmax$vcmax.x)
+lowN_vcmax$logr_jmax <- log(lowN_vcmax$jmax.y/lowN_vcmax$jmax.x)
+lowN_vcmax$logr_nmass <- log(lowN_vcmax$nmass.y/lowN_vcmax$nmass.x)
+lowN_vcmax$logr_narea <- log(lowN_vcmax$narea.y/lowN_vcmax$narea.x)
+lowN_vcmax$logr_LMA <- log(lowN_vcmax$LMA.y/lowN_vcmax$LMA.x)
 lowN_vcmax$site_species <- paste(lowN_vcmax$lon,lowN_vcmax$lat,lowN_vcmax$species,sep="_")
 
-#by checking them - most sites do have both high N and P comparing with low nutrient sites
-low_high_vcmax <- merge(highN_vcmax[,c("lon","lat","site_species","middle")],na.omit(lowN_vcmax[,c("lon","lat","site_species","middle")]),
-                        by=c("lon","lat","site_species"),all.x=TRUE)
-names(low_high_vcmax) <- c("lon","lat","site_species","vcmax_highN","vcmax_lowN")
+low_high_vcmax <-  dplyr::bind_rows(highN_vcmax,lowN_vcmax)
+#except for treatment N, all other treatment are consistent
+unique(low_high_vcmax[,c("site_species","Treatment_N","Treatment_P","Treatment_light","Treatment_CO2.x")])
+
 low_high_vcmax$co2_change <- NA
 
 #input co2 change
@@ -360,50 +324,59 @@ low_high_vcmax$co2_change[low_high_vcmax$lon==20.00] <- log(700/350)
 #https://www.researchgate.net/publication/242459413_Nutrient_and_genotypic_effects_on_CO2-responsiveness_Photosynthetic_regulation_in_Leucadendron_species_of_a_nutrient-poor_environment
 low_high_vcmax$co2_change[low_high_vcmax$lon==89.14] <- log(720/360) 
 
-low_high_vcmax$vcmax_highN_coef <- low_high_vcmax$vcmax_highN/low_high_vcmax$co2_change
-low_high_vcmax$vcmax_lowN_coef <- low_high_vcmax$vcmax_lowN/low_high_vcmax$co2_change
+low_high_vcmax$vcmax <- low_high_vcmax$logr_vcmax/low_high_vcmax$co2_change
+low_high_vcmax$jmax <- low_high_vcmax$logr_jmax/low_high_vcmax$co2_change
+low_high_vcmax$nmass <- low_high_vcmax$logr_nmass/low_high_vcmax$co2_change
+low_high_vcmax$narea <- low_high_vcmax$logr_narea/low_high_vcmax$co2_change
+low_high_vcmax$LMA <- low_high_vcmax$logr_LMA/low_high_vcmax$co2_change
 
-#do the same for jmax
+low_high_dataset <- low_high_vcmax[,c("lon","lat","site_species","Treatment_N",
+                                      "vcmax","jmax","nmass","narea","LMA")]
+low_high_dataset
 
-Nfer_jmax <- subset(walker,Treatment_N!="not applicable" &Treatment_CO2!="not applicable" & Jmax>0) %>% 
-  group_by(lon,lat,species,Treatment_N,Treatment_P,Treatment_CO2,Treatment_light) %>% summarise(mean = mean(Jmax))
+#####2. Input light effect data (we only obtain vcmax and jmax)
+walker <- read.csv("~/data/leaf_traits/Walker/LEAF_PHOTOSYNTHESIS_TRAITS_1224/data/Leaf_Photosynthesis_Traits.csv")
 
-highN_jmax <- merge(subset(Nfer_jmax,Treatment_N=="high"&Treatment_CO2=="amb"),
-                    subset(Nfer_jmax,Treatment_N=="high"&Treatment_CO2=="ele"),
-                    by=c("lon","lat","species","Treatment_N","Treatment_P","Treatment_light"),all.x=TRUE)
+light_vcmax <- subset(walker,(Treatment_light=="shade"|Treatment_light=="sun"|
+                                Treatment_light=="high"|Treatment_light=="low") & Vcmax>0)
+light1 <- light_vcmax[,c("lon","lat","species","Treatment_N","Treatment_P",
+                         "Treatment_CO2","Treatment_light","Vcmax","Jmax")]
+light1$Jmax[light1$Jmax==-9999.99] <- NA
 
-highN_jmax <- subset(highN_jmax,Treatment_light!="shade")
+#divided into two categories:
+#(1) shade vs. sun
+#(2) high vs. low light
 
-highN_jmax$middle <- log(highN_jmax$mean.y/highN_jmax$mean.x)
+light1a <- merge(subset(light1,Treatment_light=="shade"),
+                 subset(light1,Treatment_light=="sun"),
+                 by=c("lon","lat","species","Treatment_N","Treatment_P","Treatment_CO2"),
+                 all.x=TRUE)
 
-highN_jmax$type_name <- "CO2 response at high N"
-highN_jmax$site_species <- paste(highN_jmax$lon,highN_jmax$lat,highN_jmax$species,sep="_")
+#remove ele co2 and high-N
+light1a <- subset(light1a,Treatment_CO2 != "ele" & Treatment_N!="high" & Treatment_N!="fertilised")
+light1a
 
-lowN_jmax <- merge(subset(Nfer_jmax,Treatment_N=="low"&Treatment_CO2=="amb"),
-                   subset(Nfer_jmax,Treatment_N=="low"&Treatment_CO2=="ele"),
-                   by=c("lon","lat","species","Treatment_N","Treatment_P","Treatment_light"),all.x=TRUE)
+light1a$logr_vcmax <- log(light1a$Vcmax.y/light1a$Vcmax.x)
+light1a$logr_jmax <- log(light1a$Jmax.y/light1a$Jmax.x)
 
-lowN_jmax <- subset(lowN_jmax,Treatment_light!="shade")
+light1a$type_name <- "shade_to_sun"
 
-lowN_jmax$middle <- log(lowN_jmax$mean.y/lowN_jmax$mean.x)
+light2 <- subset(light_vcmax,Treatment_light=="high"|Treatment_light=="low")
+light2a <- merge(subset(light2,Treatment_light=="low"),subset(light2,Treatment_light=="high"),
+                 by=c("lon","lat","species","Treatment_N","Treatment_P","Treatment_CO2"),
+                 all.x=TRUE)
+light2a$logr_vcmax <- log(light2a$Vcmax.y/light2a$Vcmax.x)
+light2a$logr_jmax <- log(light2a$Jmax.y/light2a$Jmax.x)
+light2a$type_name <- "low_to_high_light"
 
-lowN_jmax$type_name <- "CO2 response at low N"
-lowN_jmax$site_species <- paste(lowN_jmax$lon,lowN_jmax$lat,lowN_jmax$species,sep="_")
+light_vcmax_points <- dplyr::bind_rows(light1a[,c("lon","lat","species","logr_vcmax","logr_jmax","type_name")],
+                                       light2a[,c("lon","lat","species","logr_vcmax","logr_jmax","type_name")]) 
+names(light_vcmax_points) <- c("lon","lat","species","vcmax","jmax","type_name")
 
-low_high_jmax <- merge(highN_jmax[,c("lon","lat","site_species","middle")],na.omit(lowN_jmax[,c("lon","lat","site_species","middle")]),
-                       by=c("lon","lat","site_species"),all.x=TRUE)
-names(low_high_jmax) <- c("lon","lat","site_species","jmax_highN","jmax_lowN")
-low_high_jmax$co2_change <- NA
+light_vcmax_points$site_species <- paste(light_vcmax_points$lon,light_vcmax_points$lat,light_vcmax_points$species,sep="_")
 
-#input co2 change
-low_high_jmax$co2_change[low_high_jmax$lon==-84.04] <- log(560/360) 
-# https://watermark.silverchair.com/22-5-321.pdf?token=AQECAHi208BE49Ooan9kkhW_Ercy7Dm3ZL_9Cf3qfKAc485ysgAAAv4wggL6BgkqhkiG9w0BBwagggLrMIIC5wIBADCCAuAGCSqGSIb3DQEHATAeBglghkgBZQMEAS4wEQQMlQzU_4AV0WQkXxioAgEQgIICsZUQMf48_Ogae5yJOUenILkeX5E_nHvKWARnNsbV4Cd5VZ38yYrQBL5duSx1kSq97qPt5PcU5fhbJvGTYY3HdCO1nm4_DwncLNNjvauVf6SSlXs6ilSIzkeclSN2eRY7uzwXfa-JaJg8RHzLq8scOxja5YhaUCRogGCZDpTXryJ97Z1jobEOPG-YCdDI0apFWymgoaqcE286a1lG6-aQK_7kbxwinsZSf1_CcxhItSBy7LTZRxwANCisRFwFr0IXbqpDnoQJH8cBepblQkkZzcEfwclOsghsN26D0uNF4K4UTTpsHUd2jifg0ga_4fzNsP_iMmht62Y0HwRC7uSc1gD587zvIQGQoMa4yUBpPeHYXOLmcGNpURkWQOA-qfRnjAC_7PS8UUMQbSQp7LPD2ZpuAKxNMONSXTT4SwqlQYhxFyHQZyaQYEoaKe-XBSaVjdt2oA1IXfz7OZ72-KsJweC-buZHrjy64iCPtaJ7R0KsAuLtbO3Wsgu5DZyr3oddoZ30fuk2NVogC-7iHPvFfYxu0uqkRwQavdcIYvxVZvt3NkI534Wce9fIgQzoWr2PSbqJoenwM3Bs0QpemX2ByyxFWtCt-7qOcRXu71Iupj5Qt0S6DkcIqlEwEkruKStMO5MUv6CEtpeUaY2VyZ6kKnlh8ffsMkFgKFdARaaRUKc4Igp2JY-ptvQrLInZKoZlebgjHiiwWVQvDB4TqhmXi33pJ_iiriuNTd2_8AKChx7b777LNYKDri48i4Lny425sdVdxrlY_t8123c3OnnVTgmpTD8lUTRKh85iAnKcrts6hSFFeGrC9nM8zuFh0vpA2p8gq0wUqO5knbwNrqIcW_ZXV8v0cTmyNJjnKK7PvwKGq7HFBYfHLk1ZBUJNy7duVXwQ5nqvddVLFmZff_Dv2_-1
-low_high_jmax$co2_change[low_high_jmax$lon==20.00] <- log(700/350) 
-#https://www.researchgate.net/publication/242459413_Nutrient_and_genotypic_effects_on_CO2-responsiveness_Photosynthetic_regulation_in_Leucadendron_species_of_a_nutrient-poor_environment
-low_high_jmax$co2_change[low_high_jmax$lon==89.14] <- log(720/360) 
+obs_light <- light_vcmax_points %>% group_by(lon,lat,site_species,type_name)  %>% summarise(vcmax = mean(vcmax),jmax=mean(jmax))
 
-low_high_jmax$jmax_highN_coef <- low_high_jmax$jmax_highN/low_high_jmax$co2_change
-low_high_jmax$jmax_lowN_coef <- low_high_jmax$jmax_lowN/low_high_jmax$co2_change
 
 ####Input Warming data 
 #Input data, and combine dataset to get Tleaf
@@ -434,38 +407,39 @@ df3$jmax25 <- df3$Jmax*exp((43540/8.314)*((1/(df3$Tleaf+273.15))-(1/298.15)))
 df1 <- read_csv("~/data/Kumarathunge_2020_newphy/kumarathunge_2020_newphy/Data/ACi-TGlob_V1.0.csv")
 df1 <- subset(df1,Growth_condition=="Glasshouse"|Growth_condition=="Whole tree chambers")
 
-#For "Black Spruce, ON, Canada"
+#For "Black Spruce, ON, Canada" - temperature was given in its original A-Ci data
 unique(subset(df1,Dataset=="Black Spruce, ON, Canada")$Temp_Treatment) 
 df3$Temp_Treatment[df3$Dataset=="Black Spruce, ON, Canada" & df3$Temp_Treatment=="ambient"] <- 22
 df3$Temp_Treatment[df3$Dataset=="Black Spruce, ON, Canada" & df3$Temp_Treatment=="elevated"] <- 30
 
-#For "Corymbia calophylla provs, AU-NSW"
+#For "Corymbia calophylla provs, AU-NSW"- temperature was given in its original A-Ci data
 unique(subset(df1,Dataset=="Corymbia calophylla provs, AU-NSW")$Temp_Treatment) 
 df3$Temp_Treatment[df3$Dataset=="Corymbia calophylla provs, AU-NSW" & df3$Temp_Treatment=="ambient"] <- 26
 df3$Temp_Treatment[df3$Dataset=="Corymbia calophylla provs, AU-NSW" & df3$Temp_Treatment=="elevated"] <- 32
 
-#For "Eucalyptus tereticornis provs AU-NSW"
+#For "Eucalyptus tereticornis provs AU-NSW" - temperature was given in its original A-Ci data
 #needs to check ID_curve number spefically, since it has multiple temp control
+#tempeature information was also given in /Users/yunpeng/data/Kumarathunge_2020_newphy/kumarathunge_2020_newphy/dataset_processing_code.R
+#showing that 1 = 18C, 4=28.5C
 id_one <- subset(df3,Dataset=="Eucalyptus tereticornis provs AU-NSW")$Curve_Id
 unique((subset(df1,Dataset=="Eucalyptus tereticornis provs AU-NSW")  %>% filter(Curve_Id %in% id_one))$Temp_Treatment)
 df3$Temp_Treatment[df3$Dataset=="Eucalyptus tereticornis provs AU-NSW" & df3$Temp_Treatment=="1"] <- 18
 df3$Temp_Treatment[df3$Dataset=="Eucalyptus tereticornis provs AU-NSW" & df3$Temp_Treatment=="4"] <- 28.5
 
 #For "Eucalyptus globulus, AU-NSW"
-#By looking at https://onlinelibrary.wiley.com/doi/full/10.1111/gcb.12314 
-# Fig.1 (mean ambient T in whole year = 20) and description: a factorial between ambient temperature (aT) and ambient +3 °C (eT) by ambient CO2 concentration (aC)
-#we can assume Tair changed from 20 to 23
-df3$Temp_Treatment[df3$Dataset=="Eucalyptus globulus, AU-NSW" & df3$Temp_Treatment=="ambient"] <- 20
-df3$Temp_Treatment[df3$Dataset=="Eucalyptus globulus, AU-NSW" & df3$Temp_Treatment=="elevated"] <- 23
+#see below Table s1: we can assume ambient = 19.7, elevated = 24.9 (basing on growth temperature column)
+#https://nph.onlinelibrary.wiley.com/action/downloadSupplement?doi=10.1111%2Fnph.15668&file=nph15668-sup-0001-SupInfo.pdf
+df3$Temp_Treatment[df3$Dataset=="Eucalyptus globulus, AU-NSW" & df3$Temp_Treatment=="ambient"] <- 19.7
+df3$Temp_Treatment[df3$Dataset=="Eucalyptus globulus, AU-NSW" & df3$Temp_Treatment=="elevated"] <- 24.9
 
 #for "Eucalyptus parramattensis, AU-NSW"
-#see below Table s1: we can assume ambient = 15, elevated = 18
+#see below Table s1: we can assume ambient = 15, elevated = 18 (basing on growth temperature column)
 #https://nph.onlinelibrary.wiley.com/action/downloadSupplement?doi=10.1111%2Fnph.15668&file=nph15668-sup-0001-SupInfo.pdf
-df3$Temp_Treatment[df3$Dataset=="Eucalyptus parramattensis, AU-NSW" & df3$Temp_Treatment=="ambient"] <- 15
-df3$Temp_Treatment[df3$Dataset=="Eucalyptus parramattensis, AU-NSW" & df3$Temp_Treatment=="elevated"] <- 18
+df3$Temp_Treatment[df3$Dataset=="Eucalyptus parramattensis, AU-NSW" & df3$Temp_Treatment=="ambient"] <- 15.1
+df3$Temp_Treatment[df3$Dataset=="Eucalyptus parramattensis, AU-NSW" & df3$Temp_Treatment=="elevated"] <- 18.0
 
 #for Eucalyptus tereticornis, AU-NSW
-#see below Table s1: we can assume ambient = 14.4, elevated = 22.6
+#see below Table s1: we can assume ambient = 14.4, elevated = 22.6 (basing on growth temperature column)
 #https://nph.onlinelibrary.wiley.com/action/downloadSupplement?doi=10.1111%2Fnph.15668&file=nph15668-sup-0001-SupInfo.pdf
 df3$Temp_Treatment[df3$Dataset=="Eucalyptus tereticornis, AU-NSW" & df3$Temp_Treatment=="ambient"] <- 14.4
 df3$Temp_Treatment[df3$Dataset=="Eucalyptus tereticornis, AU-NSW" & df3$Temp_Treatment=="elevated"] <- 22.6
@@ -579,67 +553,6 @@ d6 <- tibble(
 
 obs_warming <- as.data.frame(rbind(d1,d2,d3,d4,d5,d6))
 
-#####2. Input light effect data
-walker <- read.csv("~/data/leaf_traits/Walker/LEAF_PHOTOSYNTHESIS_TRAITS_1224/data/Leaf_Photosynthesis_Traits.csv")
-
-light_vcmax <- subset(walker,Treatment_light!="not applicable" & Vcmax>0) %>% 
-  group_by(lon,lat,species,Treatment_N,Treatment_P,Treatment_CO2,Treatment_light)  %>% summarise(mean = mean(Vcmax))
-
-#divided into two categories:
-#(1) shade vs. sun
-#(2) high vs. low light
-
-light1 <- subset(light_vcmax,Treatment_light=="shade"|Treatment_light=="sun")
-light1a <- merge(subset(light1,Treatment_light=="shade"),subset(light1,Treatment_light=="sun"),
-                 by=c("lon","lat","species","Treatment_N","Treatment_P","Treatment_CO2"),all.x=TRUE)
-
-#remove ele co2 and high-N
-light1a <- subset(light1a,Treatment_CO2 != "ele" & Treatment_N!="high" & Treatment_N!="fertilised")
-light1a
-
-light1a$middle <- log(light1a$mean.y/light1a$mean.x)
-light1a$type_name <- "shade_to_sun"
-
-light2 <- subset(light_vcmax,Treatment_light=="high"|Treatment_light=="low")
-light2a <- merge(subset(light2,Treatment_light=="low"),subset(light2,Treatment_light=="high"),
-                 by=c("lon","lat","species","Treatment_N","Treatment_P","Treatment_CO2"),all.x=TRUE)
-light2a$middle <- log(light2a$mean.y/light2a$mean.x)
-light2a$type_name <- "low_to_high_light"
-
-light_vcmax_points <- dplyr::bind_rows(light1a[,c("lon","lat","species","middle","type_name")],
-                                       light2a[,c("lon","lat","species","middle","type_name")]) 
-names(light_vcmax_points) <- c("lon","lat","species","vcmax","type_name")
-
-#jmax
-light_jmax <- subset(walker,Treatment_light!="not applicable" & Jmax>0) %>% 
-  group_by(lon,lat,species,Treatment_N,Treatment_P,Treatment_CO2,Treatment_light)  %>% summarise(mean = mean(Jmax))
-
-light1 <- subset(light_jmax,Treatment_light=="shade"|Treatment_light=="sun")
-
-light1a <- merge(subset(light1,Treatment_light=="shade"),subset(light1,Treatment_light=="sun"),
-                 by=c("lon","lat","species","Treatment_N","Treatment_P","Treatment_CO2"),all.x=TRUE)
-
-#remove ele co2 and high-N
-light1a <- subset(light1a,Treatment_CO2 != "ele" & Treatment_N!="high" & Treatment_N!="fertilised")
-
-light1a$middle <- log(light1a$mean.y/light1a$mean.x)
-light1a$type_name <- "shade_to_sun"
-
-light2 <- subset(light_jmax,Treatment_light=="high"|Treatment_light=="low")
-light2a <- merge(subset(light2,Treatment_light=="low"),subset(light2,Treatment_light=="high"),
-                 by=c("lon","lat","species","Treatment_N","Treatment_P","Treatment_CO2"),all.x=TRUE)
-#all consistent
-
-light2a$middle <- log(light2a$mean.y/light2a$mean.x)
-light2a$type_name <- "low_to_high_light"
-
-light_jmax_points <- dplyr::bind_rows(light1a[,c("lon","lat","species","middle","type_name")],
-                                      light2a[,c("lon","lat","species","middle","type_name")]) 
-
-names(light_jmax_points) <- c("lon","lat","species","jmax","type_name")
-
-#ratio
-obs_light <- merge(light_vcmax_points,light_jmax_points,by=c("lon","lat","species","type_name"),all.x=TRUE)
 
 
 ######now, combine all observational data
@@ -650,37 +563,18 @@ obs_warming$jmax <-log(obs_warming$jmax25_e/obs_warming$jmax25_a)/obs_warming$t1
 obs_warming_final <- obs_warming[,c("exp","lon","lat","vcmax","jmax")]
 obs_warming_final$treatment <- "warming"
 
-obs_light$exp <-paste(obs_light$lon,obs_light$lat,obs_light$species,sep="_")
+obs_light$exp <- obs_light$site_species
 obs_light_final <- obs_light[,c("exp","lon","lat","vcmax","jmax","type_name")]
 obs_light_final$treatment <- "light"
 
-low_high_vcmax$exp <- low_high_vcmax$site_species
+low_high_dataset$exp <- low_high_dataset$site_species
+low_high_dataset$treatment[low_high_dataset$Treatment_N=="high"] <- "highN"
+low_high_dataset$treatment[low_high_dataset$Treatment_N=="low"] <- "lowN"
+low_high_dataset$type_name <- low_high_dataset$treatment
 
-low_high_jmax$exp <- low_high_jmax$site_species
-
-Nfer_vj <- merge(low_high_vcmax[,c("vcmax_highN_coef","vcmax_lowN_coef","exp","lon","lat")],
-                 low_high_jmax[,c("jmax_highN_coef","jmax_lowN_coef","exp","lon","lat")],
-                 by=c("exp","lon","lat"),all.x=TRUE)
-
-obs_lowN <- Nfer_vj[,c("exp","lon","lat","vcmax_highN_coef","jmax_highN_coef")]
-names(obs_lowN) <- c("exp","lon","lat","vcmax","jmax")
-obs_lowN$treatment <- "lowN"
-
-obs_highN <- Nfer_vj[,c("exp","lon","lat","vcmax_lowN_coef","jmax_lowN_coef")]
-names(obs_highN) <- c("exp","lon","lat","vcmax","jmax")
-obs_highN$treatment <- "highN"
-
-names(Nfer_kevin) <- c("exp","treatment","ecosystem","vcmax","jmax")
-
-#add reference
-obs_lowN$ref <- "Walker 2014 dataset"
-obs_lowN$comments <- "vcmax and jmax are sensitivity coefficients of co2 at N fertilization"
-
-obs_highN$ref <- "Walker 2014 dataset"
-obs_highN$comments <- "vcmax and jmax are sensitivity coefficients of co2 at N fertilization"
-
-Nfer_kevin$ref <- "GCME_kevin"
-Nfer_kevin$comments <- "vcmax and jmax are sensitivity coefficients of co2 at N fertilization"
+low_high_dataset$ref <- "Walker 2014 dataset"
+low_high_dataset$comments <- "vcmax and jmax are sensitivity coefficients of co2 at N fertilization"
+low_high_dataset <- low_high_dataset[ , -which(names(low_high_dataset) %in% c("Treatment_N","site_species"))]
 
 #merged prediction data one-by-one
 #now, combine with prediction data
@@ -696,14 +590,11 @@ obs_light_pred$exp <- obs_light_pred$exp.x
 
 obs_light_pred <- obs_light_pred[ , -which(names(obs_light_pred) %in% c("exp.x","exp.y"))]
 
-all_obs_pred <- dplyr::bind_rows(obs_co2_pred, obs_warming_pred,obs_light_pred,
-                                 obs_lowN,obs_highN,Nfer_kevin) 
+all_obs_pred <- dplyr::bind_rows(obs_co2_pred, obs_warming_pred,obs_light_pred,low_high_dataset) 
 
 all_obs_pred$jmax_vcmax <- all_obs_pred$jmax - all_obs_pred$vcmax
 names(all_obs_pred)
 
-all_obs_pred <- all_obs_pred[,c("exp","lon","lat","vcmax","jmax","jmax_vcmax","pred_vcmax","pred_jmax","pred_jmax_vcmax","treatment","ecosystem","type_name",
-                                "ref","comments")]
 
 #####before this, it was fully checked!
 #finally, for meta-analysis
@@ -724,91 +615,71 @@ kevin_othervars$exp_nam <- kevin_othervars$site
 
 
 #filter plots only within vcmax and jmax
-photo_plot <- c(unique(all_obs_pred$exp),c("duke2_f","euroface4_pa_f","euroface4_pe_f","euroface4_pn_f","new_zealand_face_f"))
+photo_plot <- c(unique(all_obs_pred$exp),c("duke2_f","euroface4_pa_f","euroface4_pe_f","euroface4_pn_f","new_zealand_face_f"),
+                c("duke2_cf","euroface4_pa_cf","euroface4_pe_cf","euroface4_pn_cf","new_zealand_face_cf"))
 kevin_othervars_cf <- kevin_othervars %>% filter(exp %in% photo_plot)
 
 #leaf_n needs division - but leaf_p doesn't need (as it is all pmass)
+unique(subset(kevin_othervars_cf,response=="leaf_n")$Unit)
+
 nmass <- subset(kevin_othervars_cf,response=="leaf_n") %>%         
-  filter(Unit %in% c("g","g_100g","g_g","g_kg","mg_g","mg_kg","mmol_g","ug_mg","umol_g"))
+  filter(Unit %in% c("g_100g","g_g","g_kg","mg_g","mmol_g","ug_mg","umol_g"))
 nmass$response <- "nmass"
 logr_c_nmass <- as_tibble(response_ratio_v2(subset(nmass,treatment=="c")));
 logr_f_nmass <- as_tibble(response_ratio_v2(subset(nmass,treatment=="f")));
 logr_cf_nmass <- as_tibble(response_ratio_v2(subset(nmass,treatment=="cf")))
 
 narea <- subset(kevin_othervars_cf,response=="leaf_n") %>%         
-  filter(Unit %in% c("g_m2","g_m3","g_pot","mg_cm2","mg_m2","mmol_m2","ug_cm2","ug_cm3","umol_m2"))
+  filter(Unit %in% c("g_m2","mg_cm2","mg_m2","mmol_m2","ug_cm3","umol_m2"))
 narea$response <- "narea"
 
 logr_c_narea <- as_tibble(response_ratio_v2(subset(narea,treatment=="c")));
 logr_f_narea <- as_tibble(response_ratio_v2(subset(narea,treatment=="f")));
 logr_cf_narea <- as_tibble(response_ratio_v2(subset(narea,treatment=="cf")))
 
-#anpp and anpp_grain are both anpp.
-kevin_othervars_cf$response[kevin_othervars_cf$response=="anpp_grain"] <- "anpp"
-unique(subset(kevin_othervars_cf,response=="anpp")$Unit)
+#bnpp
+#root data 1 - all used
+root1 <- subset(kevin_othervars_cf,response=="root_production")
+unique(root1[,c("exp","Unit")])
 
-#bnpp - make sure data between them are not mixed.
-kevin_othervars_cf$output[kevin_othervars_cf$response=="coarse_root_production"|
-                            kevin_othervars_cf$response=="fine_root_turnover"|
-                            kevin_othervars_cf$response=="root_production"|
-                            (kevin_othervars_cf$response=="fine_root_biomass" & kevin_othervars_cf$Unit=="g_m2y")|
-                            (kevin_othervars_cf$response=="fine_root_production")] <- "bnpp"
+#root data 2: alternatively, use fine root production (but remove non-useful data)
+root2 <- subset(kevin_othervars_cf,response=="fine_root_production" & Unit!="km_m3"& Unit!="m_m2")
 
-bnpp_dataset <- subset(kevin_othervars_cf,output=="bnpp"&(response=="root_production"|exp=="christchurch_pr_c"|exp=="nevada_desert_face_c"|exp=="popface_pa_c"|exp=="popface_pe_c"|exp=="popface_pn_c"| (exp=="facts_ii_face3_pt_c"&response=="fine_root_production")|exp=="biforface_c"))
+root2_rest <- subset(root2,exp!="new_zealand_face_c"&exp!="eucface_c"&exp!="mi_c"&exp!="ornerp_liqui_c"&
+                       exp!="duke_c"&exp!="biocon_c"&exp!="brandbjerg_c")
 
-unique(bnpp_dataset[,c("exp","response","Unit")])
+unique(root2_rest[,c("exp","response","Unit","citation")])  # all unit works well 
+
+bnpp_dataset <- rbind(root1,root2_rest)
 
 #soil mineral N in dry-mass: 7+1
 #7 plots: nh4 + no3
 soil_nh4 <- subset(kevin_othervars_cf,response=="soil_nh4-n") %>% group_by(exp,Unit) %>% summarise(co2_a = mean(co2_a), co2_e = mean(co2_e), ambient = mean(ambient), elevated = mean(elevated))
 soil_no3 <- subset(kevin_othervars_cf,response=="soil_no3-n") %>% group_by(exp,Unit) %>% summarise(co2_a = mean(co2_a), co2_e = mean(co2_e),ambient = mean(ambient), elevated = mean(elevated))
-soil_nh4no3 <- na.omit(merge(soil_nh4,soil_no3,by=c("exp","Unit"),all.x=TRUE))
-soil_nh4no3$logr <- log((soil_nh4no3$elevated.x+soil_nh4no3$elevated.y)/(soil_nh4no3$ambient.x+soil_nh4no3$ambient.y))
-soil_nh4no3$soil_mineral_N <- log((soil_nh4no3$elevated.x+soil_nh4no3$elevated.y)/(soil_nh4no3$ambient.x+soil_nh4no3$ambient.y))/log(soil_nh4no3$co2_e.x/soil_nh4no3$co2_a.x)
+soil_nh4no3 <- na.omit(merge(soil_nh4,soil_no3,by=c("exp","Unit","co2_a","co2_e"),all.x=TRUE))
+soil_nh4no3
+soil_nh4no3$soil_mineral_N <- log((soil_nh4no3$elevated.x+soil_nh4no3$elevated.y)/(soil_nh4no3$ambient.x+soil_nh4no3$ambient.y))/log(soil_nh4no3$co2_e/soil_nh4no3$co2_a)
 
-duke2_cf_soil <- (soil_nh4no3$logr[soil_nh4no3$exp=="duke2_cf"]-soil_nh4no3$logr[soil_nh4no3$exp=="duke2_f"])/log(soil_nh4no3$co2_e.x[soil_nh4no3$exp=="duke2_cf"]/soil_nh4no3$co2_a.x[soil_nh4no3$exp=="duke2_cf"])
-soil_mineral_1 <- subset(soil_nh4no3,exp!="duke2_cf" & exp!="duke2_f")[,c("exp","soil_mineral_N")]
-soil_mineral_2 <- tibble(exp="duke2_cf",soil_mineral_N =duke2_cf_soil)
+duke_2_cf_nh4no3 <- (soil_nh4no3$elevated.x[soil_nh4no3$exp=="duke2_cf"]+soil_nh4no3$elevated.y[soil_nh4no3$exp=="duke2_cf"])
+duke_2_f_nh4no3 <- (soil_nh4no3$elevated.x[soil_nh4no3$exp=="duke2_f"]+soil_nh4no3$elevated.y[soil_nh4no3$exp=="duke2_f"])
+co2_a <- soil_nh4no3$co2_a[soil_nh4no3$exp=="duke2_cf"]
+co2_e <- soil_nh4no3$co2_e[soil_nh4no3$exp=="duke2_cf"]
+
+duke2_cf_soil <- log(duke_2_cf_nh4no3/duke_2_f_nh4no3)/log(co2_e/co2_a)
+
+soil_nh4no3$soil_mineral_N[soil_nh4no3$exp=="duke2_cf"] <- duke2_cf_soil
+
+soil_mineral_1 <- subset(soil_nh4no3, exp!="duke2_f")[,c("exp","soil_mineral_N")]
+
+#combine from multiple samples to site-mean
+soil_mineral_1 <- soil_mineral_1%>% group_by(exp)  %>% summarise(soil_mineral_N = mean(soil_mineral_N))
+
 
 #1 plot: soil_in
-soil_mineral_3 <- tibble(exp="facts_ii_face3_pt_c",soil_mineral_N =agg_meta_sen_coef(response_ratio_v2(subset(kevin_othervars_cf,response=="soil_in")))$middle)
-soil_mineral_dry <- rbind(soil_mineral_1,soil_mineral_2,soil_mineral_3)
-soil_mineral_dry$type <- "dry"
-
-#soil mineral N in solution: 2+1
-solution_mineral <-  agg_meta_sen_coef(response_ratio_v2(subset(kevin_othervars_cf,response=="soil_solution_mineral_n")))
-soil_mineral_4 <- tibble(exp=solution_mineral$exp,soil_mineral_N=solution_mineral$middle)
-
-soil_solution_nh4 <- subset(kevin_othervars_cf,response=="soil_solution_nh4") %>% group_by(exp,Unit) %>% summarise(co2_a = mean(co2_a), co2_e = mean(co2_e), ambient = mean(ambient), elevated = mean(elevated))
-soil_solution_no3 <- subset(kevin_othervars_cf,response=="soil_solution_no3") %>% group_by(exp,Unit) %>% summarise(co2_a = mean(co2_a), co2_e = mean(co2_e),ambient = mean(ambient), elevated = mean(elevated))
-soil_solution_nh4no3 <- merge(soil_solution_nh4,soil_solution_no3,by=c("exp","Unit"),all.x=TRUE)
-soil_solution_nh4no3$soil_mineral_N <- log((soil_solution_nh4no3$elevated.x+soil_solution_nh4no3$elevated.y)/(soil_solution_nh4no3$ambient.x+soil_solution_nh4no3$ambient.y))/log(soil_solution_nh4no3$co2_e.x/soil_solution_nh4no3$co2_a.x)
-soil_mineral_5 <- tibble(exp=soil_solution_nh4no3$exp,soil_mineral_N=soil_solution_nh4no3$soil_mineral_N)
-
-soil_mineral_wet <- rbind(soil_mineral_4,soil_mineral_5)
-soil_mineral_wet$type <- "wet"
-
-soil_mineral <- rbind(soil_mineral_dry,soil_mineral_wet)
-soil_mineral_plotmean <- soil_mineral%>% group_by(exp,type)  %>% summarise(soil_mineral_N = mean(soil_mineral_N))
-
-
-
-#check numbers of sites and variables 
-varname <- kevin_othervars_cf%>% group_by(response)  %>% summarise(number = n())
-
-#other vars - all created now
-for (i in 1:nrow(varname)) {
-  tryCatch({
-    varname1 <- varname$response[i]
-    df_c <- subset(kevin_othervars_cf,treatment=="c" & response==varname1)
-    assign(paste("logr_c_", varname1,sep=""), as_tibble(response_ratio_v2(df_c)))
-    
-    df_f <- subset(kevin_othervars_cf,treatment=="f"& response==varname1)
-    assign(paste("logr_f_", varname1,sep=""), as_tibble(response_ratio_v2(df_f)))
-    
-    df_cf <- subset(kevin_othervars_cf,treatment=="cf" & response==varname1)
-    assign(paste("logr_cf_", varname1,sep=""), as_tibble(response_ratio_v2(df_cf)))
-  }, error=function(e){})} 
+soil_mineral_3 <- tibble(exp="facts_ii_face3_pt_c",
+                         soil_mineral_N =agg_meta_sen_coef(response_ratio_v2(subset(kevin_othervars_cf,response=="soil_in")),
+                                                           "soil_mineral_N")$soil_mineral_N)
+soil_mineral_dry <- rbind(soil_mineral_1,soil_mineral_3)
 
 #LMA
 kevin_LMA <- read.csv("~/data/gcme/kevin/orig_leaf/LMA.csv")
@@ -825,87 +696,173 @@ kevin_LMA$Year[kevin_LMA$Year<0] <- 0
 summary(kevin_LMA$Year)
 kevin_LMA <- kevin_LMA %>% filter(exp %in% photo_plot)
 
+unique(kevin_LMA$response)
 
-#THIS dangerous! However, since we don't know year of measurement, we could only assume it as average
-kevin_LMA$Year[is.na(kevin_LMA$Year)==TRUE] <- 2
 sla <- subset(kevin_LMA,response=="sla")
+unique(sla$Unit)
 lma <- subset(kevin_LMA,response=="lma")
+unique(lma$Unit)
 #convert SLA to LMA format 
-sla$ambient <- 1/sla$ambient; sla$elevated <- 1/sla$elevated; sla$ambient_Sd <- 1/sla$ambient_Sd
-sla$elevated_Sd <- 1/sla$elevated_Sd;sla$ambient_Se <- 1/sla$ambient_Se;sla$elevated_Se <- 1/sla$elevated_Se
-LMA <- dplyr::bind_rows(lma,sla)
+sla$ambient <- 1/sla$ambient; sla$elevated <- 1/sla$elevated
+
+LMA <- dplyr::bind_rows(lma[,c("ambient","elevated","exp","treatment","co2_a","co2_e","Unit")],sla[,c("ambient","elevated","exp","treatment","co2_a","co2_e","Unit")])
 LMA$response <- "LMA"
 LMA2 <- merge(LMA,unique(kevin_othervars_cf[,c("exp","exp_nam")]),by=c("exp"),all.x=TRUE)
-logr_c_LMA <- as_tibble(response_ratio_v2(subset(LMA2,treatment=="c")));
-logr_f_LMA <-  as_tibble(response_ratio_v2(subset(LMA2,treatment=="f")));
+logr_c_LMA <- as_tibble(response_ratio_v2(subset(LMA2,treatment=="c")))
+logr_f_LMA <-  as_tibble(response_ratio_v2(subset(LMA2,treatment=="f")))
 logr_cf_LMA <-  as_tibble(response_ratio_v2(subset(LMA2,treatment=="cf")))
 
 
 #######final aggregation 
-lma_plot <- combine_co2_cf(logr_c_LMA,logr_f_LMA,logr_cf_LMA,"LMA")
-narea_plot <- combine_co2_cf(logr_c_narea,logr_f_narea,logr_cf_narea,"narea")
-nmass_plot <- combine_co2_cf(logr_c_nmass,logr_f_nmass,logr_cf_nmass,"nmass")
+lma_plot <- agg_meta_sen_coef(logr_c_LMA,"LMA")
+narea_plot <- agg_meta_sen_coef(logr_c_narea,"narea")
+nmass_plot <- agg_meta_sen_coef(logr_c_nmass,"nmass")
 
 logr_c_bnpp <- response_ratio_v2(bnpp_dataset)
-bnpp_plot <- combine_co2_c(logr_c_bnpp,logr_c_bnpp,logr_c_bnpp,"bnpp")
+bnpp_plot <- agg_meta_sen_coef(logr_c_bnpp,"bnpp")
 bnpp_plot$bnpp[bnpp_plot$exp=="duke_c"] <- log(subset(bnpp_dataset,exp=="duke_c")$elevated/subset(bnpp_dataset,exp=="duke_c")$ambient)/log(563/363)
-#bnpp_plot_final <- merge(bnpp_plot,unique(bnpp_dataset[,c("exp","response")]),by=c("exp"),all.x=TRUE)
 
-soil_mineral_plotmean$condition <- "co2"
-soil_mineral_plotmean$condition[soil_mineral_plotmean$exp=="duke2_cf"] <- "fertilization"
-soil_mineral_plotmean <- soil_mineral_plotmean[,c("exp","condition","soil_mineral_N","type")]
-soil_mineral_plotmean_dry <- subset(soil_mineral_plotmean,type=="dry")
+#also, some other dataset
+logr_c_lai <- response_ratio_v2(subset(kevin_othervars_cf,treatment=="c" & response=="lai"))
+logr_f_lai <- response_ratio_v2(subset(kevin_othervars_cf,treatment=="f"& response=="lai"))
+logr_cf_lai <- response_ratio_v2(subset(kevin_othervars_cf,treatment=="cf" & response=="lai"))
 
-lai_plot <- combine_co2_cf(logr_c_lai,logr_f_lai,logr_cf_lai,"lai")
+logr_c_root_shoot_ratio <- response_ratio_v2(subset(kevin_othervars_cf,treatment=="c" & response=="root_shoot_ratio"))
+logr_f_root_shoot_ratio <- response_ratio_v2(subset(kevin_othervars_cf,treatment=="f"& response=="root_shoot_ratio"))
+logr_cf_root_shoot_ratio <- response_ratio_v2(subset(kevin_othervars_cf,treatment=="cf" & response=="root_shoot_ratio"))
 
-root_shoot_ratio_plot <- combine_co2_c(logr_c_root_shoot_ratio,logr_f_root_shoot_ratio,logr_cf_root_shoot_ratio,"root_shoot_ratio")
+lai_plot <- agg_meta_sen_coef(logr_c_lai,"lai")
+root_shoot_ratio_plot <- agg_meta_sen_coef(logr_c_root_shoot_ratio,"root_shoot_ratio")
 
 #anpp
-#when removing g/m2 - it becomes better
+unique(subset(kevin_othervars_cf,response=="anpp")$Unit)
+#firstly, only combing with gC/m2/yr data. Remove below unit first.
 anpp_new <- subset(kevin_othervars_cf,response=="anpp"&Unit!="t_ha"&Unit!="g_m2"&Unit!="gc_m2"&Unit!="mg"&Unit!="g_plant")
+unique(anpp_new$Unit)
 anpp_new_c <- response_ratio_v2(subset(anpp_new,treatment=="c"))
 anpp_new_f <- response_ratio_v2(subset(anpp_new,treatment=="f"))
 anpp_new_cf <- response_ratio_v2(subset(anpp_new,treatment=="cf"))
-anpp_plot <- combine_co2_cf(anpp_new_c,anpp_new_f,anpp_new_cf,"anpp")
+anpp_plot1 <- agg_meta_sen_coef(anpp_new_c,"anpp")
+
+#second, have a look at 'other unit'
+anpp_others <- subset(kevin_othervars_cf,response=="anpp"& (Unit=="t_ha"|Unit=="g_m2"|Unit=="gc_m2"|Unit=="mg"|Unit=="g_plant"))
+unique(anpp_others[,c("exp")])
+#checked those sites one-by-one
+
+#pop-face should be added because it measures anpp for >2 years. Can just be aggregated into site-mean
+subset(anpp_others,exp_nam=="popface")
+anpp_plot2 <- agg_meta_sen_coef(response_ratio_v2(subset(anpp_others,exp_nam=="popface")),"anpp")
+
+#nevada_desert_face_c - checked - unit is mg, these are seed mass, cannot be used
+subset(anpp_others,exp=="nevada_desert_face_c") 
+
+#soyfacesoy2_c - checked (https://onlinelibrary.wiley.com/doi/full/10.1111/j.1365-2486.2005.001017.x)
+#See its Fig.3. It is cumulative anpp within one year (i.e. including multiple (bi-weekly) harvest)
+#so its data should be added to sum first, and then calculate to logr (following Kevin's suggestion)
+subset(anpp_others,exp=="soyfacesoy2_c") 
+soyfacesoy2_c_anpp <- log(sum(subset(anpp_others,exp=="soyfacesoy2_c")$elevated)/sum(subset(anpp_others,exp=="soyfacesoy2_c")$ambient))/log(subset(anpp_others,exp=="soyfacesoy2_c")$co2_e[1]/subset(anpp_others,exp=="soyfacesoy2_c")$co2_a[1])
+anpp_plot3 <- tibble(exp="soyfacesoy2_c",anpp=soyfacesoy2_c_anpp)
+anpp_plot <- rbind(anpp_plot1,anpp_plot2,anpp_plot3)
 
 all_obs_pred <- all_obs_pred %>% rename(condition = treatment)
 
-final_mean <-Reduce(function(x,y) merge(x = x, y = y, by = c("exp","condition"),all.x=TRUE),
+final_mean <-Reduce(function(x,y) merge(x = x, y = y, by = c("exp"),all.x=TRUE),
                     list(all_obs_pred,lma_plot,narea_plot,nmass_plot,bnpp_plot,root_shoot_ratio_plot,
-                         soil_mineral_plotmean_dry[,c("exp","condition","soil_mineral_N")],
+                         soil_mineral_dry,
                          anpp_plot,lai_plot))
+
+#combine data and remove not-useful column
+final_mean$narea.y[is.na(final_mean$narea.x)==F] <- final_mean$narea.x[is.na(final_mean$narea.x)==F]
+final_mean$nmass.y[is.na(final_mean$nmass.x)==F] <- final_mean$nmass.x[is.na(final_mean$nmass.x)==F]
+final_mean$LMA.y[is.na(final_mean$LMA.x)==F] <- final_mean$LMA.x[is.na(final_mean$LMA.x)==F]
+
+final_mean$narea <- final_mean$narea.y
+final_mean$nmass <- final_mean$nmass.y
+final_mean$LMA <- final_mean$LMA.y
+
+final_mean <- final_mean[ , -which(names(final_mean) %in% c("narea.y","nmass.y","LMA.y",
+                                                            "narea.x","nmass.x","LMA.x","X"))]
+
+#create some new points to add co2-effect on vcmax (with N fertilization)
+t1 <- tibble(exp="euroface4_pa_cf",condition="Fertilization")
+t2 <- tibble(exp="euroface4_pe_cf",condition="Fertilization")
+t3 <- tibble(exp="euroface4_pn_cf",condition="Fertilization")
+t4 <- tibble(exp="new_zealand_face_cf",condition="Fertilization")
+t5 <- tibble(exp="duke2_cf",condition="Fertilization")
+
+final5 <-  dplyr::bind_rows(final_mean,t1,t2,t3,t4,t5)
+
+
+#create a function to calculate co2 effect on N fertilzation 
+#cal_nfer - merged by individiduals, and then averaged by inviduals to calculate logr
+#if sucessfully merged (then it means ambient values are different from each other), then n(row) before and after should be the same
+#if not then(then it means ambient values are not different from each other), then n(row) before and after should not be the same
+cal_nfer <- function(df_f,df_cf,name_f,name_cf){
+  df1 <- subset(df_f,exp==name_f)[,c("ambient","elevated")]
+  df2 <- subset(df_cf,exp==name_cf)[,c("ambient","elevated")]
+  df3 <- merge(df1,df2,by=c("ambient"),all.x=TRUE) 
+  co2_a <- subset(df_cf,exp==name_cf)$co2_a[1]
+  co2_e <- subset(df_cf,exp==name_cf)$co2_e[1]
+  
+  if (nrow(df3)-nrow(df2)==0){
+    output_value <- mean(log(df3$elevated.y/df3$elevated.x),na.rm=TRUE)/log(co2_e/co2_a)
+  } else {output_value <-NA}
+  return(output_value)
+  #-----------------------------------------------------------------------
+  # Output: df_c_sub
+  #-----------------------------------------------------------------------
+}
+
+final5$vcmax[final5$exp=="euroface4_pa_cf"] <- cal_nfer(kevin2_f_vcmax,kevin2_cf_vcmax,"euroface4_pa_f","euroface4_pa_cf")
+final5$vcmax[final5$exp=="euroface4_pe_cf"] <- cal_nfer(kevin2_f_vcmax,kevin2_cf_vcmax,"euroface4_pe_f","euroface4_pe_cf")
+final5$vcmax[final5$exp=="euroface4_pn_cf"] <- cal_nfer(kevin2_f_vcmax,kevin2_cf_vcmax,"euroface4_pn_f","euroface4_pn_cf")
+final5$vcmax[final5$exp=="new_zealand_face_cf"] <- cal_nfer(kevin2_f_vcmax,kevin2_cf_vcmax,"new_zealand_face_f","new_zealand_face_cf")
+
+final5$jmax[final5$exp=="euroface4_pa_cf"] <- cal_nfer(kevin2_f_jmax,kevin2_cf_jmax,"euroface4_pa_f","euroface4_pa_cf")
+final5$jmax[final5$exp=="euroface4_pe_cf"] <- cal_nfer(kevin2_f_jmax,kevin2_cf_jmax,"euroface4_pe_f","euroface4_pe_cf")
+final5$jmax[final5$exp=="euroface4_pn_cf"] <- cal_nfer(kevin2_f_jmax,kevin2_cf_jmax,"euroface4_pn_f","euroface4_pn_cf")
+
+final5$LMA[final5$exp=="euroface4_pn_cf"] <- cal_nfer(logr_f_LMA,logr_cf_LMA,"euroface4_pn_f","euroface4_pn_cf")
+final5$LMA[final5$exp=="new_zealand_face_cf"] <- cal_nfer(logr_f_LMA,logr_cf_LMA,"new_zealand_face_f","new_zealand_face_cf")
+
+final5$narea[final5$exp=="new_zealand_face_cf"] <- cal_nfer(logr_f_narea,logr_cf_narea,"new_zealand_face_f","new_zealand_face_cf")
+final5$narea[final5$exp=="euroface4_pe_cf"] <-  cal_nfer(logr_f_narea,logr_cf_narea,"euroface4_pe_f","euroface4_pe_cf")
+final5$narea[final5$exp=="euroface4_pn_cf"] <-  cal_nfer(logr_f_narea,logr_cf_narea,"euroface4_pn_f","euroface4_pn_cf")
+
+final5$nmass[final5$exp=="new_zealand_face_cf"] <- cal_nfer(logr_f_nmass,logr_cf_nmass,"new_zealand_face_f","new_zealand_face_cf")
+final5$nmass[final5$exp=="duke2_cf"] <- cal_nfer(logr_f_nmass,logr_cf_nmass,"duke2_f","duke2_cf")
+final5$nmass[final5$exp=="euroface4_pe_cf"] <-  cal_nfer(logr_f_nmass,logr_cf_nmass,"euroface4_pe_f","euroface4_pe_cf")
+final5$nmass[final5$exp=="euroface4_pn_cf"] <-  cal_nfer(logr_f_nmass,logr_cf_nmass,"euroface4_pn_f","euroface4_pn_cf")
+
+final5$anpp[final5$exp=="euroface4_pa_cf"] <- cal_nfer(anpp_new_f,anpp_new_cf,"euroface4_pa_f","euroface4_pa_cf")
+final5$anpp[final5$exp=="euroface4_pe_cf"] <-  cal_nfer(anpp_new_f,anpp_new_cf,"euroface4_pe_f","euroface4_pe_cf")
+final5$anpp[final5$exp=="euroface4_pn_cf"] <-  cal_nfer(anpp_new_f,anpp_new_cf,"euroface4_pn_f","euroface4_pn_cf")
+
+
+#check if n fertilization at eCO2 is all site-species
+unique(subset(kevin_othervars,exp=="duke2_cf")$dominant_species)
+unique(subset(kevin_othervars,exp=="euroface4_pa_cf")$dominant_species)
+unique(subset(kevin_othervars,exp=="euroface4_pe_cf")$dominant_species)
+unique(subset(kevin_othervars,exp=="euroface4_pn_cf")$dominant_species)
+unique(subset(kevin_othervars,exp=="new_zealand_face_cf")$dominant_species)
+#new zealand includes multiple species because it is temperate grasslands: https://www.researchgate.net/publication/236201570_Photosynthetic_responses_of_temperate_species_to_free_air_CO2_enrichment_FACE_in_a_grazed_New_Zealand_pasture
+
+#add ecm type
+final5$ecm_type <- NA
+final5$ecm_type[final5$exp=="grassotc"] <- "Nfix" # 2 N-fixing vs. 4 AM
+final5$ecm_type[final5$exp=="biocon_c"]<- "Nfix"
+final5$ecm_type[final5$exp=="swissface_trifolium2_c"]<- "Nfix"
+final5$ecm_type[final5$exp=="new_zealand_face_c"] <- "Nfix"
+final5$ecm_type[final5$exp=="chinaminiface"] <- "Nfix"
+final5$ecm_type[final5$exp=="glycinece"] <- "Nfix"
 
 #further process
 
 #2. remove high Tleaf measurement's vcmax (actually, two papers: darbah_et_al_2010a and darbah_et_al_2010b)
-final_mean$vcmax[final_mean$exp=="facts_ii_face3_pt_c"] <- agg_meta_sen_coef(response_ratio_v2(subset(logr_c_vcmax,exp=="facts_ii_face3_pt_c" & citation!="darbah_et_al_2010b" & citation!="darbah_et_al_2010a")))$middle
-final_mean$vcmax[final_mean$exp=="facts_ii_face4_bp_c"] <- agg_meta_sen_coef(response_ratio_v2(subset(logr_c_vcmax,exp=="facts_ii_face4_bp_c" & citation!="darbah_et_al_2010b")))$middle
+final5$vcmax[final5$exp=="facts_ii_face3_pt_c"] <- agg_meta_sen_coef(response_ratio_v2(subset(kevin2_c_vcmax,exp=="facts_ii_face3_pt_c" & citation!="darbah_et_al_2010b" & citation!="darbah_et_al_2010a")),"vcmax")$vcmax
+final5$vcmax[final5$exp=="facts_ii_face4_bp_c"] <- agg_meta_sen_coef(response_ratio_v2(subset(kevin2_c_vcmax,exp=="facts_ii_face4_bp_c" & citation!="darbah_et_al_2010b")),"vcmax")$vcmax
 
-#add three anpp plots in rice_face where the unit it g/m2
-#only 3 samples - include them
 
-anpp_a <- mean(subset(kevin_othervars,exp=="riceface_japan_ko_2013_3558_13960_c" & response=="anpp_grain")$ambient)
-anpp_e <- mean(subset(kevin_othervars,exp=="riceface_japan_ko_2013_3558_13960_c" & response=="anpp_grain")$elevated)
-co2_a <- subset(kevin_othervars,exp=="riceface_japan_ko_2013_3558_13960_c" & response=="anpp_grain")$co2_a[1]
-co2_e <- subset(kevin_othervars,exp=="riceface_japan_ko_2013_3558_13960_c" & response=="anpp_grain")$co2_e[1]
-anpp_r <- log((anpp_e/anpp_a))/log(co2_e/co2_a)
-
-anpp_a <- mean(subset(kevin_othervars,exp=="soyfacesoy1_c" & response=="anpp_grain")$ambient)
-anpp_e <- mean(subset(kevin_othervars,exp=="soyfacesoy1_c" & response=="anpp_grain")$elevated)
-co2_a <- subset(kevin_othervars,exp=="soyfacesoy1_c" & response=="anpp_grain")$co2_a[1]
-co2_e <- subset(kevin_othervars,exp=="soyfacesoy1_c" & response=="anpp_grain")$co2_e[1]
-anpp_s1 <- log((anpp_e/anpp_a))/log(co2_e/co2_a)
-
-check <- subset(kevin_othervars,exp=="soyfacesoy2_c")%>% group_by(response,Unit)  %>% summarise(number = n())
-anpp_a <- mean(subset(kevin_othervars,exp=="soyfacesoy2_c" & response=="anpp_grain")$ambient)
-anpp_e <- mean(subset(kevin_othervars,exp=="soyfacesoy2_c" & response=="anpp_grain")$elevated)
-co2_a <- subset(kevin_othervars,exp=="soyfacesoy2_c" & response=="anpp_grain")$co2_a[1]
-co2_e <- subset(kevin_othervars,exp=="soyfacesoy2_c" & response=="anpp_grain")$co2_e[1]
-anpp_s2 <- log((anpp_e/anpp_a))/log(co2_e/co2_a)
-
-final_mean$anpp[final_mean$exp=="riceface_japan_ko_2013_3558_13960_c"] <- anpp_r
-final_mean$anpp[final_mean$exp=="soyfacesoy1_c"] <- anpp_s1
-final_mean$anpp[final_mean$exp=="soyfacesoy2_c"] <- anpp_s2
 
 #add popface's soil 
 old_data <- read_csv("~/data/gcme/data_received_190325/NewData_wide_CORRECTED2.csv") %>%
@@ -916,19 +873,11 @@ old_data <- read_csv("~/data/gcme/data_received_190325/NewData_wide_CORRECTED2.c
 
 old_data$exp <- tolower(old_data$exp_nam)
 popface <-subset(old_data, (exp_nam=="POPFACE_pa"|exp_nam=="POPFACE_pe"|exp_nam=="POPFACE_pn")&Data_type=="soil_mineral_N")
-new_popface <- as.data.frame(agg_meta_sen_coef(response_ratio_v2(popface))[,c("exp","middle")])
-names(new_popface) <- c("exp","soil_mineral_N")
-final_mean$soil_mineral_N[final_mean$exp=="popface_pa_c"] <- new_popface$soil_mineral_N[new_popface$exp=="popface_pa"]
-final_mean$soil_mineral_N[final_mean$exp=="popface_pe_c"] <- new_popface$soil_mineral_N[new_popface$exp=="popface_pe"]
-final_mean$soil_mineral_N[final_mean$exp=="popface_pn_c"] <- new_popface$soil_mineral_N[new_popface$exp=="popface_pn"]
+new_popface <- as.data.frame(agg_meta_sen_coef(response_ratio_v2(popface),"soil_mineral_N")[,c("exp","soil_mineral_N")])
 
-final_mean$ecm_type <- NA
-final_mean$ecm_type[final_mean$exp=="grassotc"] <- "Nfix" # 2 N-fixing vs. 4 AM
-final_mean$ecm_type[final_mean$exp=="biocon_c"]<- "Nfix"
-final_mean$ecm_type[final_mean$exp=="swissface_trifolium2_c"]<- "Nfix"
-final_mean$ecm_type[final_mean$exp=="new_zealand_face_c"] <- "Nfix"
-final_mean$ecm_type[final_mean$exp=="chinaminiface"] <- "Nfix"
-final_mean$ecm_type[final_mean$exp=="glycinece"] <- "Nfix"
+final5$soil_mineral_N[final5$exp=="popface_pa_c"] <- new_popface$soil_mineral_N[new_popface$exp=="popface_pa"]
+final5$soil_mineral_N[final5$exp=="popface_pe_c"] <- new_popface$soil_mineral_N[new_popface$exp=="popface_pe"]
+final5$soil_mineral_N[final5$exp=="popface_pn_c"] <- new_popface$soil_mineral_N[new_popface$exp=="popface_pn"]
 
 
 #corret one outlier of bgb_coarse
@@ -939,14 +888,14 @@ phace <- log(112.6493/111.8533)/log(600/384)
 Aspen <- (log(669.6334/517.9303)/log(550/360) + log(621.7131/429.4247)/log(550/360))/2
 
 #further look
-final_mean$anpp[final_mean$exp=="phace_c"] <- phace
-final_mean$anpp[final_mean$exp=="rhine-aspenface_c"] <- Aspen
+final5$anpp[final5$exp=="phace_c"] <- phace
+final5$anpp[final5$exp=="rhine-aspenface_c"] <- Aspen
 
 ###add more data: eucface - LAI
 #from https://onlinelibrary.wiley.com/doi/full/10.1111/gcb.13151?casa_token=6CKcWQ_OHHwAAAAA%3AEsLJPJXb45rz2WxE807-NvACiQmFkELScHJiV_eaRUEPd0psT7co5ZnJp8Mo7CKaPFt4H6dkKe8XqZFXJw
 eucface_lai_df <- read.csv("~/data/Duursma_gcb/EucFACE_DUURSMA_GCB_LEAFAREAINDEX/data/FACE_RA_P0037_GAPFRACLAI_20121026-20150225_L2.csv")
 #150 as given in paper, also consistent with our df
-subset(logr_c_vcmax,exp=="eucface_c")$co2_e[1];subset(logr_c_vcmax,exp=="eucface_c")$co2_a[1]
+subset(kevin2_c_vcmax,exp=="eucface_c")$co2_e[1];subset(kevin2_c_vcmax,exp=="eucface_c")$co2_a[1]
 eucface_lai <- log(mean(subset(eucface_lai_df,treatment=="elevated")$LAI,na.rm=TRUE)/mean(subset(eucface_lai_df,treatment=="ambient")$LAI,na.rm=TRUE))/log(540/394)
 
 ###biocon_c - LAI
@@ -959,31 +908,13 @@ check <- subset(kevin_othervars,exp=="biocon_c")%>% group_by(response,Unit)  %>%
 agb_a <- mean(subset(kevin_othervars,exp=="biocon_c" & response=="agb" & Unit=="g_m2")$ambient)
 agb_e <- mean(subset(kevin_othervars,exp=="biocon_c" & response=="agb" & Unit=="g_m2")$elevated)
 agb_a/lma_a;agb_e/lma_e # looks ok
-subset(logr_c_vcmax,exp=="biocon_c")$co2_a;subset(logr_c_vcmax,exp=="biocon_c")$co2_e
+subset(kevin2_c_vcmax,exp=="biocon_c")$co2_a;subset(kevin2_c_vcmax,exp=="biocon_c")$co2_e
 biocon_lai <- log((agb_e/lma_e)/(agb_a/lma_a))/log(570/367)
 
 #??? biocon_c - root/shoot = bgb/agb?
 bgb_a <- mean(subset(kevin_othervars,exp=="biocon_c" & response=="bgb" & Unit=="g_m2")$ambient)
 bgb_e <- mean(subset(kevin_othervars,exp=="biocon_c" & response=="bgb" & Unit=="g_m2")$elevated)
 biocon_root_shoot <- log((bgb_e/agb_e)/(bgb_a/agb_a))/log(570/367)
-
-###popface_pa_c - anpp - shown in gC/m2 but should be gC/m2/yr
-check <- subset(kevin_othervars,exp=="popface_pa_c")%>% group_by(response,Unit)  %>% summarise(number = n())
-anpp_a <- mean(subset(kevin_othervars,exp=="popface_pa_c" & response=="anpp")$ambient)
-anpp_e <- mean(subset(kevin_othervars,exp=="popface_pa_c" & response=="anpp")$elevated)
-popface_pa_c_ANPP <- log((anpp_e/anpp_a))/log(550/368)
-
-###popface_pe_c - anpp - shown in gC/m2 but should be gC/m2/yr
-check <- subset(kevin_othervars,exp=="popface_pe_c")%>% group_by(response,Unit)  %>% summarise(number = n())
-anpp_a <- mean(subset(kevin_othervars,exp=="popface_pe_c" & response=="anpp")$ambient)
-anpp_e <- mean(subset(kevin_othervars,exp=="popface_pe_c" & response=="anpp")$elevated)
-popface_pe_c_ANPP <- log((anpp_e/anpp_a))/log(550/368)
-
-###popface_pn_c - anpp - shown in gC/m2 but should be gC/m2/yr
-check <- subset(kevin_othervars,exp=="popface_pn_c")%>% group_by(response,Unit)  %>% summarise(number = n())
-anpp_a <- mean(subset(kevin_othervars,exp=="popface_pn_c" & response=="anpp")$ambient)
-anpp_e <- mean(subset(kevin_othervars,exp=="popface_pn_c" & response=="anpp")$elevated)
-popface_pn_c_ANPP <- log((anpp_e/anpp_a))/log(550/368)
 
 ###brandbjerg_c - LAI and ANPP missing after investigation
 check <- subset(kevin_othervars,exp=="brandbjerg_c")%>% group_by(response,Unit)  %>% summarise(number = n())
@@ -1024,10 +955,6 @@ bgb_e <- subset(kevin_othervars,exp=="new_zealand_face_c" & response=="bgb_c")$e
 agb_a <- subset(kevin_othervars,exp=="new_zealand_face_c" & response=="agb_c")$ambient
 agb_e <-subset(kevin_othervars,exp=="new_zealand_face_c" & response=="agb_c")$elevated
 
-#bgb_a <- mean(subset(kevin_othervars,exp=="new_zealand_face_c" & response=="bgb" & Unit=="g_m2")$ambient)
-#bgb_e <- mean(subset(kevin_othervars,exp=="new_zealand_face_c" & response=="bgb" & Unit=="g_m2")$elevated)
-#agb_a <- mean(subset(kevin_othervars,exp=="new_zealand_face_c" & response=="agb" & Unit=="g_m2" & citation=="allard_et_al_2005")$ambient)
-#agb_e <- mean(subset(kevin_othervars,exp=="new_zealand_face_c" & response=="agb" & Unit=="g_m2" & citation=="allard_et_al_2005")$elevated)
 new_zealand_c_root_shoot <- log((bgb_e/agb_e)/(bgb_a/agb_a))/log(475/364)
 
 #LAI from LMA and agb
@@ -1124,10 +1051,6 @@ check <- subset(kevin_othervars,exp=="facts_ii_face4_bp_c")%>% group_by(response
 check <- subset(kevin_othervars,exp=="nevada_desert_face_c")%>% group_by(response,Unit)  %>% summarise(number = n())
 # it is Scrubland, so can be considered as grassland
 
-#anpp, unit is wrong. so not used
-#anpp_a <- mean(subset(kevin_othervars,exp=="nevada_desert_face_c"&response=="anpp")$ambient)
-#anpp_e <- mean(subset(kevin_othervars,exp=="nevada_desert_face_c"&response=="anpp")$elevated)
-#nevada_desert_face_c_anpp <- log((anpp_e/anpp_a))/log(550/364)
 
 #Leaf area obtained from https://link.springer.com/content/pdf/10.1007/s10021-005-0124-4.pdf Housman D. C., Naumburg E., Huxman T.E., Charlet T.N., Nowak R.S., Smith S.D. (2006) Increase in Desert Shrub Produvtivity under Elevated Carbon Dioxide Vary with Water Availability. Ecosystems 9: 374-385
 #only has ratio of LA
@@ -1213,7 +1136,6 @@ subset(kevin_othervars,response=="lai_max")%>% group_by(exp)  %>% summarise(numb
 
 #include all!
 #final5 <- final4 
-final5 <- final_mean
 final5$lai[final5$exp=="eucface_c"] <- eucface_lai
 final5$lai[final5$exp=="biocon_c"] <- biocon_lai
 final5$lai[final5$exp=="euroface4_pa_c"] <- euroface4_pa_lai
@@ -1234,12 +1156,6 @@ final5$root_shoot_ratio[final5$exp=="mi_c"] <- mi_root_shoot
 final5$anpp[final5$exp=="duke2_c"] <- duke2_c_anpp
 final5$bnpp[final5$exp=="duke2_c"] <- duke2_c_bnpp
 final5$bnpp[final5$exp=="euroface4_pn_c"] <- euroface4_pn_bnpp
-
-#anpp, bnpp not imputed now - since their unit are somewhere wrong (gc/m2)
-#final5$anpp[final5$exp=="euroface4_pa_c"] <- popface_pa_c_ANPP
-#final5$anpp[final5$exp=="euroface4_pn_c"] <- popface_pn_c_ANPP
-#final5$anpp[final5$exp=="euroface4_pe_c"] <- popface_pe_c_ANPP
-#final5$anpp[final5$exp=="nevada_desert_face_c"] <- nevada_desert_face_c_anpp
 
 final5$LMA[final5$exp=="duke_c"] <- duke_c_lma
 final5$LMA[final5$exp=="euroface4_pe_c"] <- euroface4_pe_lma
@@ -1274,24 +1190,16 @@ final5$ecosystem[final5$ecosystem=="grassland"] <- "Grassland"
 final5$ecosystem[final5$ecosystem=="cropland"] <- "Cropland"
 
 
-#check some very high points with at Nfer condition
-subset(final5,condition=="Fertilization")
-#duke2_cf: jmax,lma, narea, lai.
-#new_zealand_face_cf: vcmax, narea, nmass, lma
+#gap-fill duke2_cf
+#because this cannot be merged by individuals-level. We can only calculate them at site-level
+duke2_cf_vcmax <-(mean(kevin2_cf_vcmax$logr[kevin2_cf_vcmax$exp=="duke2_cf"]) - mean(kevin2_f_vcmax$logr[kevin2_f_vcmax$exp=="duke2_f"]))/
+  log(kevin2_cf_vcmax$co2_e[kevin2_cf_vcmax$exp=="duke2_cf"][1]/kevin2_cf_vcmax$co2_a[kevin2_cf_vcmax$exp=="duke2_cf"][1])
 
-#duke2_cf
-
-subset(logr_f_vcmax,exp=="duke2_f")[,c("ambient","elevated","logr")];subset(logr_cf_vcmax,exp=="duke2_cf")[,c("ambient","elevated","logr")]
-
-duke2_cf_vcmax <-(mean(logr_cf_vcmax$logr[logr_cf_vcmax$exp=="duke2_cf"]) - mean(logr_f_vcmax$logr[logr_f_vcmax$exp=="duke2_f"]))/
-  log(logr_cf_vcmax$co2_e[logr_cf_vcmax$exp=="duke2_cf"][1]/logr_cf_vcmax$co2_a[logr_cf_vcmax$exp=="duke2_cf"][1])
-#check N uptake plots
-
-a1 <- subset(logr_f_jmax,exp=="duke2_f")[,c("ambient","elevated","logr","citation")]
+a1 <- subset(kevin2_f_jmax,exp=="duke2_f")[,c("ambient","elevated","logr","citation")]
 #remove the one with 4.2, which cannot be parallel to cf on below, and the values looked wrong
 a1$logr[a1$citation=="oishi_et_al_2014"] <- NA
 
-a2 <- subset(logr_cf_jmax,exp=="duke2_cf")[,c("ambient","elevated","logr","citation")]
+a2 <- subset(kevin2_cf_jmax,exp=="duke2_cf")[,c("ambient","elevated","logr","citation")]
 
 #recalculate logr = logcf - cf
 duke2_cf_jmax <- (mean(a2$logr) - mean(a1$logr,na.rm=TRUE))/log(563/363)
@@ -1316,8 +1224,6 @@ final5$LMA[final5$exp=="duke2_cf"] <- duke2_cf_lma
 final5$narea[final5$exp=="duke2_cf"] <- duke2_cf_narea
 final5$lai[final5$exp=="duke2_cf"] <- duke2_cf_lai
 final5$vcmax[final5$exp=="duke2_cf"] <- duke2_cf_vcmax
-
-
 #new_zealand_face_cf - not wrong
 #all is on below
 # https://www.publish.csiro.au/fp/pdf/PP01009
@@ -1325,62 +1231,31 @@ final5$vcmax[final5$exp=="duke2_cf"] <- duke2_cf_vcmax
 
 #edit comments
 final5$comments[final5$condition=="light"] <- "vcmax and jmax are sensitivity coefficients = log(vcmax-ele/vcmax-amb)"
+final5$jmax_vcmax <- final5$jmax-final5$vcmax
+
+#remove popface, and gap-fill euroface data (if euroface has no data but popface does)
+#final5$narea[final5$exp=="euroface4_pa_c"] <-final5$narea[final5$exp=="popface_pa_c"]
+#final5$nmass[final5$exp=="euroface4_pa_c"] <-final5$nmass[final5$exp=="popface_pa_c"]
+#final5$LMA[final5$exp=="euroface4_pa_c"] <-final5$LMA[final5$exp=="popface_pa_c"]
+
+#final5$bnpp[final5$exp=="euroface4_pa_c"] <-final5$bnpp[final5$exp=="popface_pa_c"]
+#final5$bnpp[final5$exp=="euroface4_pe_c"] <-final5$bnpp[final5$exp=="popface_pe_c"]
+
+#final5$soil_mineral_N[final5$exp=="euroface4_pa_c"] <-final5$soil_mineral_N[final5$exp=="popface_pa_c"]
+#final5$soil_mineral_N[final5$exp=="euroface4_pe_c"] <-final5$soil_mineral_N[final5$exp=="popface_pe_c"]
+#final5$soil_mineral_N[final5$exp=="euroface4_pn_c"] <-final5$soil_mineral_N[final5$exp=="popface_pn_c"]
+
+#final5 <- subset(final5,exp!="popface_pa_c"&exp!="popface_pe_c"&exp!="popface_pn_c")
 
 csvfile <- paste("~/data/gcme/MS_data/plot_data.csv")
 write.csv(final5, csvfile, row.names = TRUE)
 
+#list of things 
+#re-check Nfer all results - especially, why some: from low to high vcmax even more decreased???
+#check Nfer - if more data can be found (use a function to prove)
+#inform kevin about
+#remove the one with 4.2, which cannot be parallel to cf on below, and the values looked wrong
+#a1$logr[a1$citation=="oishi_et_al_2014"] <- NA
+# oishi_et_al_2014 - lai too low - below has problem - ambient should be 3.8 not 38!
 
-#create a function to calculate co2 effect on N fertilzation (basing on N fertilization )
-subset(final5,condition=="Fertilization")
-#cal_nfer - merged by individiduals, and then averaged by inviduals to calculate logr
-#if sucessfully merged (then it means ambient values are different from each other), then n(row) before and after should be the same
-#if not then(then it means ambient values are not different from each other), then n(row) before and after should not be the same
-cal_nfer <- function(df_f,df_cf,name_f,name_cf){
-  df1 <- subset(df_f,exp==name_f)[,c("ambient","elevated")]
-  df2 <- subset(df_cf,exp==name_cf)[,c("ambient","elevated","citation")]
-  df3 <- merge(df1,df2,by=c("ambient"),all.x=TRUE) 
-  co2_a <- subset(df_cf,exp==name_cf)$co2_a[1]
-  co2_e <- subset(df_cf,exp==name_cf)$co2_e[1]
-  
-  if (nrow(df3)-nrow(df2)==0){
-    output_value <- mean(log(df3$elevated.y/df3$elevated.x),na.rm=TRUE)/log(co2_e/co2_a)
-  } else {output_value <-NA}
-  return(output_value)
-  #-----------------------------------------------------------------------
-  # Output: df_c_sub
-  #-----------------------------------------------------------------------
-}
-
-final5$vcmax[final5$exp=="euroface4_pa_cf"] <- cal_nfer(logr_f_vcmax,logr_cf_vcmax,"euroface4_pa_f","euroface4_pa_cf")
-final5$vcmax[final5$exp=="euroface4_pe_cf"] <- cal_nfer(logr_f_vcmax,logr_cf_vcmax,"euroface4_pe_f","euroface4_pe_cf")
-final5$vcmax[final5$exp=="euroface4_pn_cf"] <- cal_nfer(logr_f_vcmax,logr_cf_vcmax,"euroface4_pn_f","euroface4_pn_cf")
-final5$vcmax[final5$exp=="new_zealand_face_cf"] <- cal_nfer(logr_f_vcmax,logr_cf_vcmax,"new_zealand_face_f","new_zealand_face_cf")
-
-final5$jmax[final5$exp=="euroface4_pa_cf"] <- cal_nfer(logr_f_jmax,logr_cf_jmax,"euroface4_pa_f","euroface4_pa_cf")
-final5$jmax[final5$exp=="euroface4_pe_cf"] <- cal_nfer(logr_f_jmax,logr_cf_jmax,"euroface4_pe_f","euroface4_pe_cf")
-final5$jmax[final5$exp=="euroface4_pn_cf"] <- cal_nfer(logr_f_jmax,logr_cf_jmax,"euroface4_pn_f","euroface4_pn_cf")
-
-final5$LMA[final5$exp=="euroface4_pn_cf"] <- cal_nfer(logr_f_LMA,logr_cf_LMA,"euroface4_pn_f","euroface4_pn_cf")
-final5$LMA[final5$exp=="new_zealand_face_cf"] <- cal_nfer(logr_f_LMA,logr_cf_LMA,"new_zealand_face_f","new_zealand_face_cf")
-
-final5$narea[final5$exp=="new_zealand_face_cf"] <- cal_nfer(logr_f_narea,logr_cf_narea,"new_zealand_face_f","new_zealand_face_cf")
-final5$narea[final5$exp=="euroface4_pe_cf"] <-  cal_nfer(logr_f_narea,logr_cf_narea,"euroface4_pe_f","euroface4_pe_cf")
-final5$narea[final5$exp=="euroface4_pn_cf"] <-  cal_nfer(logr_f_narea,logr_cf_narea,"euroface4_pn_f","euroface4_pn_cf")
-
-final5$nmass[final5$exp=="new_zealand_face_cf"] <- cal_nfer(logr_f_nmass,logr_cf_nmass,"new_zealand_face_f","new_zealand_face_cf")
-final5$nmass[final5$exp=="duke2_cf"] <- cal_nfer(logr_f_nmass,logr_cf_nmass,"duke2_f","duke2_cf")
-final5$nmass[final5$exp=="euroface4_pe_cf"] <-  cal_nfer(logr_f_nmass,logr_cf_nmass,"euroface4_pe_f","euroface4_pe_cf")
-final5$nmass[final5$exp=="euroface4_pn_cf"] <-  cal_nfer(logr_f_nmass,logr_cf_nmass,"euroface4_pn_f","euroface4_pn_cf")
-
-final5$anpp[final5$exp=="euroface4_pa_cf"] <- cal_nfer(anpp_new_f,anpp_new_cf,"euroface4_pa_f","euroface4_pa_cf")
-final5$anpp[final5$exp=="euroface4_pe_cf"] <-  cal_nfer(anpp_new_f,anpp_new_cf,"euroface4_pe_f","euroface4_pe_cf")
-final5$anpp[final5$exp=="euroface4_pn_cf"] <-  cal_nfer(anpp_new_f,anpp_new_cf,"euroface4_pn_f","euroface4_pn_cf")
-
-
-#check if n fertilization at eCO2 is all site-species
-unique(subset(kevin_othervars,exp=="duke2_cf")$dominant_species)
-unique(subset(kevin_othervars,exp=="euroface4_pa_cf")$dominant_species)
-unique(subset(kevin_othervars,exp=="euroface4_pe_cf")$dominant_species)
-unique(subset(kevin_othervars,exp=="euroface4_pn_cf")$dominant_species)
-unique(subset(kevin_othervars,exp=="new_zealand_face_cf")$dominant_species)
-#new zealand includes multiple species because it is temperate grasslands: https://www.researchgate.net/publication/236201570_Photosynthetic_responses_of_temperate_species_to_free_air_CO2_enrichment_FACE_in_a_grazed_New_Zealand_pasture
+#ask kevin about popface/euroface + rice_japan

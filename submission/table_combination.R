@@ -146,11 +146,11 @@ plot2$temp_e[plot2$site=="Corymbia calophylla provs, AU-NSW"] <- 32
 plot2$temp_a[plot2$site=="Eucalyptus tereticornis provs AU-NSW"] <- 18
 plot2$temp_e[plot2$site=="Eucalyptus tereticornis provs AU-NSW"] <- 28.5
 
-plot2$temp_a[plot2$site=="Eucalyptus globulus, AU-NSW"] <- 20
-plot2$temp_e[plot2$site=="Eucalyptus globulus, AU-NSW"] <- 23
+plot2$temp_a[plot2$site=="Eucalyptus globulus, AU-NSW"] <- 19.7
+plot2$temp_e[plot2$site=="Eucalyptus globulus, AU-NSW"] <- 24.9
 
-plot2$temp_a[plot2$site=="Eucalyptus parramattensis, AU-NSW"] <- 15
-plot2$temp_e[plot2$site=="Eucalyptus parramattensis, AU-NSW"] <- 18
+plot2$temp_a[plot2$site=="Eucalyptus parramattensis, AU-NSW"] <- 15.1
+plot2$temp_e[plot2$site=="Eucalyptus parramattensis, AU-NSW"] <- 18.0
 
 plot2$temp_a[plot2$site=="Eucalyptus tereticornis, AU-NSW"] <- 14.4
 plot2$temp_e[plot2$site=="Eucalyptus tereticornis, AU-NSW"] <- 22.6
