@@ -486,7 +486,7 @@ smith_all_removal$exp[smith_all_removal$exp=="PineOTC"] <- "Christchurch_pr_c";
 smith_all_removal$exp[smith_all_removal$exp=="RichmondGH"] <- "australiacotton_c";
 smith_all_removal$exp[smith_all_removal$exp=="UIAPine"] <- "ua_otc_c";
 smith_all_removal$exp[smith_all_removal$exp=="PHACE"] <- "phace_c";
-smith_all_removal$exp[smith_all_removal$exp=="AspenFACE"] <- "rhine-aspenface_c";
+smith_all_removal$exp[smith_all_removal$exp=="AspenFACE"] <- "aspenface_c";
 smith_all_removal$exp[smith_all_removal$exp=="BilyKriz"] <- "bily_kriz_c";
 smith_all_removal$exp[smith_all_removal$exp=="Headley"] <- "headley_qp_c";
 smith_all_removal$exp[smith_all_removal$exp=="Viesalm"] <- "vielsalm_c"
@@ -1003,5 +1003,97 @@ final_prediction$jmax_vcmax <- final_prediction$jmax - final_prediction$vcmax
 
 final_prediction <- final_prediction[,c("exp","lon","lat","vcmax","jmax","jmax_vcmax","treatment","ref","comments")]
 
+
+###############Add one more site: biforface_c
+###according to MESI_2022.xlsx (the most recent data after above vcmax data version) - one more exp was newly added for vcmax data
+kevin_othervars <- read.csv("~/data/gcme/kevin_20220222/MESI_2022.csv")
+unique(subset(kevin_othervars,exp=="biforface_c" & response=="vcmax")[,c("lon","lat","elevation","start_year","sampling_year","c_c","c_t")])
+#add them here
+siteinfo_site <- tibble(sitename="kevin61",lon=-2.3,lat=52.8,elv=108,year_start=2012,year_end=2016) # forcing data was saved in ~/data/gcme/kevin/forcing/climate/kevin61.csv
+sitename <- "biforface_c"
+
+df1 <- read.csv("~/data/gcme/kevin/forcing/climate/kevin61.csv") # this is for ambient
+df2 <- read.csv("~/data/gcme/kevin/forcing/climate/kevin61.csv") # this is for elevated
+
+df1$co2 <- 408 # set to ambient
+df2$co2 <- 558 # set to elevated 
+
+df_soiltexture <- bind_rows(
+  top    = tibble(layer = "top",    fsand = 0.4, fclay = 0.3, forg = 0.1, fgravel = 0.1),
+  bottom = tibble(layer = "bottom", fsand = 0.4, fclay = 0.3, forg = 0.1, fgravel = 0.1))
+params_modl <- list(
+  kphio           = 0.09423773,
+  soilm_par_a     = 0.33349283,
+  soilm_par_b     = 1.45602286,
+  tau_acclim_tempstress = 10,
+  par_shape_tempstress  = 0.0)
+
+modlist1 <- run_pmodel_f_bysite( 
+  sitename=sitename, 
+  params_siml <- list(#ambient
+    spinup             = TRUE,
+    spinupyears        = 10,
+    recycle            = 1,
+    soilmstress        = TRUE,
+    tempstress         = TRUE,
+    calc_aet_fapar_vpd = FALSE,
+    in_ppfd            = TRUE,
+    in_netrad          = FALSE,
+    outdt              = 1,
+    ltre               = FALSE,
+    ltne               = FALSE,
+    ltrd               = FALSE,
+    ltnd               = FALSE,
+    lgr3               = TRUE,
+    lgn3               = FALSE,
+    lgr4               = FALSE,
+    firstyeartrend = siteinfo_site$year_start,
+    nyeartrend = siteinfo_site$year_end-siteinfo_site$year_start+1), 
+  siteinfo_site, 
+  df1, 
+  df_soiltexture, 
+  params_modl = params_modl, 
+  makecheck = TRUE)
+
+modlist2 <- run_pmodel_f_bysite( #elevated
+  sitename=sitename, 
+  params_siml <- list(
+    spinup             = TRUE,
+    spinupyears        = 10,
+    recycle            = 1,
+    soilmstress        = TRUE,
+    tempstress         = TRUE,
+    calc_aet_fapar_vpd = FALSE,
+    in_ppfd            = TRUE,
+    in_netrad          = FALSE,
+    outdt              = 1,
+    ltre               = FALSE,
+    ltne               = FALSE,
+    ltrd               = FALSE,
+    ltnd               = FALSE,
+    lgr3               = TRUE,
+    lgn3               = FALSE,
+    lgr4               = FALSE,
+    firstyeartrend = siteinfo_site$year_start,
+    nyeartrend = siteinfo_site$year_end-siteinfo_site$year_start+1), 
+  siteinfo_site, 
+  df2, 
+  df_soiltexture, 
+  params_modl = params_modl, 
+  makecheck = TRUE)
+#mean or max?
+mean_vcmax_ambient <- max(modlist1$vcmax)*1000000
+mean_vcmax_elevated <- max(modlist2$vcmax)*1000000
+mean_jmax_ambient <- max(modlist1$jmax)*1000000
+mean_jmax_elevated <- max(modlist2$jmax)*1000000
+
+pred_vcmax_coef <- (log(mean_vcmax_elevated/mean_vcmax_ambient))/(log(558/408))
+pred_jmax_coef <- (log(mean_jmax_elevated/mean_jmax_ambient))/(log(558/408))
+
+biforface_c <- tibble( exp="biforface_c",lon=-2.3,lat=52.8,vcmax=pred_vcmax_coef,jmax=pred_jmax_coef,jmax_vcmax=pred_jmax_coef-pred_vcmax_coef,
+        treatment="co2",ref="GCME_kevin",comments="vcmax and jmax are sensitivity coefficients = log(vcmax-ele/vcmax-amb)/log(co2-e/co2-a)")
+
+final_prediction2 <- rbind(final_prediction[,c("exp","lon","lat","vcmax","jmax","jmax_vcmax","treatment","ref","comments")],biforface_c)
+
 csvfile <- paste("~/data/gcme/prediction/prediction.csv")
-write.csv(final_prediction, csvfile, row.names = TRUE)
+write.csv(final_prediction2, csvfile, row.names = TRUE)
