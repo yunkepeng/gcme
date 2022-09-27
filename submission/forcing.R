@@ -28,7 +28,7 @@ library(MAd)
 
 #Read all original data csv and downloading forcing data
 #####1. GCME (CO2 + warming), sent from Kevin
-
+##this file has better format than MESI.csv, especially about the measurement year information
 kevin <- read.csv("~/data/gcme/kevin/orig_vcmax/JunkePeng_11252021.csv")
 #1. correct exp_nam to make it consistent with GCME
 kevin$site[is.na(kevin$site)==TRUE] <- "riceface_japan_a_2003_3938_14057"
