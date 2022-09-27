@@ -47,43 +47,70 @@ agg_meta_sen_coef <- function(df,name){
 }
 
 #####3. CO2 effect data
-#read Kevin's most recent data
-kevin_othervars <- read.csv("~/data/gcme/kevin_20220222/MESI_2022.csv")
-kevin_othervars <- rename(kevin_othervars, c(ambient = x_c, elevated=x_t, ambient_Sd=sd_c, elevated_Sd=sd_t,ambient_Se=se_c,elevated_Se=se_t,n_plots=rep_c,
-                                             z=elevation, co2_a=c_c, co2_e=c_t, nfertQ_a = n_c, nfertQ_e = n_t, pfertQ_a = p_c, pfertQ_e = p_t,kfertQ_a = k_c, kfertQ_e = k_t,
-                                             warmQ_e1 = w_t1, warmQ_e2 = w_t2, warmQ_e3 = w_t3, Unit=x_units))
-kevin_othervars$ambient <-as.numeric(kevin_othervars$ambient)
-kevin_othervars$elevated <-as.numeric(kevin_othervars$elevated)
-kevin_othervars$ambient_Sd  <-as.numeric(kevin_othervars$ambient_Sd)
-kevin_othervars$elevated_Sd  <-as.numeric(kevin_othervars$elevated_Sd)
-kevin_othervars$ambient_Se <- as.numeric(kevin_othervars$ambient_Se)
-kevin_othervars$elevated_Se <- as.numeric(kevin_othervars$elevated_Se)
-kevin_othervars$n_plots  <-as.numeric(kevin_othervars$n_plots)
-kevin_othervars$z <- as.numeric(kevin_othervars$z)
-kevin_othervars$exp_nam <- kevin_othervars$site
+#read Kevin
+kevin <- read.csv("~/data/gcme/kevin/orig_vcmax/JunkePeng_11252021.csv")
 
-##combine some site-name
-#we  also keep popface (where not applying N-fertilzied) and euroface (where applying N-fertilzied) separately.
-kevin_othervars$exp[kevin_othervars$exp=="soyfacesoy1_c"] <- "soyfacesoy2_c"
-kevin_othervars$exp[kevin_othervars$exp=="riceface_japan_ko_2012_3558_13960_c"] <- "riceface_japan_ko_2013_3558_13960_c"
-kevin_othervars$exp[kevin_othervars$exp=="riceface_japan_l_2007_3938_14057_c"] <- "riceface_japan_l_2008_3938_14057_c"
-kevin_othervars$exp[kevin_othervars$exp=="riceface_japan_ta_2012_3558_13960_c"] <- "riceface_japan_ta_2013_3558_13960_c"
-kevin_othervars$exp[kevin_othervars$exp=="riceface_japan_a_2003_3938_14057_c"] <- "riceface_japan_a_2004_3938_14057_c"
+#combine some sites since they are just measured in different years
+kevin$exp[kevin$exp=="soyfacesoy1_c"] <- "soyfacesoy2_c"
+kevin$exp[kevin$exp=="riceface_japan_ko_2012_3558_13960_c"] <- "riceface_japan_ko_2013_3558_13960_c"
+kevin$exp[kevin$exp=="riceface_japan_l_2007_3938_14057_c"] <- "riceface_japan_l_2008_3938_14057_c"
+kevin$exp[kevin$exp=="riceface_japan_ta_2012_3558_13960_c"] <- "riceface_japan_ta_2013_3558_13960_c"
+kevin$exp[kevin$exp=="riceface_japan_a_2003_3938_14057_c"] <- "riceface_japan_a_2004_3938_14057_c"
 
-kevin_vcmax <- subset(kevin_othervars,response =="vcmax"|response =="jmax")
-kevin2_final <- response_ratio_v2(kevin_vcmax)
+#1. correct exp_nam to make it consistent with GCME
+kevin$site[is.na(kevin$site)==TRUE & kevin$exp=="riceface_japan_a_2003_3938_14057_c"] <- "riceface_japan_a_2003_3938_14057"
+kevin$site[is.na(kevin$site)==TRUE & kevin$exp=="riceface_japan_a_2004_3938_14057_c"] <- "riceface_japan_a_2004_3938_14057"
+
+kevin$exp_nam <- kevin$site 
+
+kevin <- rename(kevin, c(ambient = x_c, elevated=x_t, ambient_Sd=sd_c, elevated_Sd=sd_t,ambient_Se=se_c,elevated_Se=se_t,n_plots=rep_c,
+                         z=elevation, co2_a=c_c, co2_e=c_t, nfertQ_a = n_c, nfertQ_e = n_t, pfertQ_a = p_c, pfertQ_e = p_t,kfertQ_a = k_c, kfertQ_e = k_t,
+                         warmQ_e1 = w_t1, warmQ_e2 = w_t2, warmQ_e3 = w_t3, Unit=x_units))
+
+#adjust temperature response
+kevin$warmQ_e2[is.na(kevin$warmQ_e2)==TRUE] <- 0
+
+#correct a few sampling year --> when looking at org csv
+kevin$sampling_year[is.na(kevin$sampling_year)==TRUE & kevin$site=="brandbjerg"] <- 2011
+kevin$sampling_year[is.na(kevin$sampling_year)==TRUE & kevin$site=="popface"] <- 2002
+kevin$sampling_year[is.na(kevin$sampling_year)==TRUE & kevin$site=="biocon"] <- 2005
+kevin$sampling_year[kevin$sampling_year=="2005-2010"] <- 2008
+kevin$sampling_year[kevin$sampling_year=="1996-2010"] <- 2003
+kevin$sampling_year[kevin$sampling_year=="2003-2006"] <- 2005
+kevin$sampling_year[kevin$citation=="domec_et_al_2012"] <- 1997 # by looking at their info it says +1y. then we assume it is 1996+1
+kevin$sampling_year[kevin$citation=="ellsworth_et_al_2012"] <- 1997
+kevin$start_year[is.na(kevin$start_year)==TRUE] <- 1992
+
+kevin$sampling_year <- as.numeric(kevin$sampling_year)
+kevin$start_year <- as.numeric(kevin$start_year)
+kevin$Year <-  kevin$sampling_year - kevin$start_year
+summary(kevin$Year)
+
+#correct elevation
+aaa <- aggregate(kevin,by=list(kevin$lon,kevin$lat), FUN=mean, na.rm=TRUE)[,c("lon","lat")]
+aaa$sitename <- paste("c",1:length(aaa$lon),sep="")
+devtools::load_all("~/yunkepeng/gcme/pmodel/ingestr/")
+df_etopo <- ingest(aaa,source = "etopo1",dir = "~/data/etopo/" )
+aaa$elv <- as.numeric(as.data.frame(df_etopo$data))
+kevin_z <- merge(kevin,aaa[,c("lon","lat","elv")],by=c("lon","lat"),all.x=TRUE)
+plot(kevin_z$z~kevin_z$elv) # looks ok - now interploate original elevation value with etopo elevation
+kevin_z$z[is.na(kevin_z$z)==TRUE] <- kevin_z$elv[is.na(kevin_z$z)==TRUE] 
+kevin_z <- kevin_z[, !(colnames(kevin_z) %in% c("elv"))]
+
+summary(kevin_z$Year)
+summary(kevin_z$start_year)
+summary(kevin_z$sampling_year) #all from 1992 to 2016 - good news!
+
+kevin_z$year_start <- kevin_z$start_year
+kevin_z$year_end <- kevin_z$sampling_year
+
+kevin2_final <- response_ratio_v2(kevin_z)
 
 #show pft
 kevin2_final$ecosystem[kevin2_final$ecosystem=="temperate_forest"] <- "forest"
 kevin2_final$ecosystem[kevin2_final$ecosystem=="heathland"] <- "grassland"
 kevin2_final$ecosystem[kevin2_final$ecosystem=="shrubland"] <- "forest"
-kevin_ecosystem <- as.data.frame(kevin2_final %>% group_by(exp,ecosystem) %>% summarise(number=n()))
 
-#correct exp_nam to make it consistent with GCME
-kevin2_final$site[is.na(kevin2_final$site)==TRUE & kevin2_final$exp=="riceface_japan_a_2003_3938_14057_c"] <- "riceface_japan_a_2003_3938_14057"
-kevin2_final$site[is.na(kevin2_final$site)==TRUE & kevin2_final$exp=="riceface_japan_a_2004_3938_14057_c"] <- "riceface_japan_a_2004_3938_14057"
-
-#vcmax and jmax data
 kevin2_c_vcmax <- subset(kevin2_final, treatment=="c" & response =="vcmax")
 kevin2_f_vcmax <- subset(kevin2_final, treatment=="f" & response =="vcmax")
 kevin2_cf_vcmax <- subset(kevin2_final, treatment=="cf" & response =="vcmax")
@@ -96,7 +123,9 @@ kevin_vcmax_plotmean <- agg_meta_sen_coef(kevin2_c_vcmax,"vcmax")
 
 kevin_jmax_plotmean <- agg_meta_sen_coef(kevin2_c_jmax,"jmax")
 
-kevin_vj <- merge(kevin_vcmax_plotmean,kevin_jmax_plotmean,by=c("exp"),all.x=TRUE,all.y=TRUE)
+kevin_ecosystem <- as.data.frame(kevin2_c_vcmax %>% group_by(exp,ecosystem) %>% summarise(number=n()))
+
+kevin_vj <- merge(kevin_vcmax_plotmean,kevin_jmax_plotmean,by=c("exp"),all.x=TRUE)
 
 kevin_vj_ecosystem <- merge(kevin_vj,kevin_ecosystem[,c("exp","ecosystem")],by=c("exp"),all.x=TRUE)
 
@@ -198,6 +227,8 @@ smith_all_plotmean$exp[smith_all_plotmean$exp=="Headley"] <- "headley_qp_c";
 smith_all_plotmean$exp[smith_all_plotmean$exp=="Viesalm"] <- "vielsalm_c"
 
 #check if smith and GCME have consistent site (but not sometimes consistent species!)
+kevin_othervars <- read.csv("~/data/gcme/kevin_20220222/MESI_2022.csv")
+
 unique(subset(smith_all_simple,exp_nam=="OakOTC")[,c("lon","lat","Genus","Species")])
 unique(subset(kevin_othervars,exp=="mi_c")[,c("lon","lat","dominant_species")])
 
@@ -555,6 +586,8 @@ low_high_dataset <- low_high_dataset[ , -which(names(low_high_dataset) %in% c("T
 prediction <- read.csv("~/data/gcme/prediction/prediction.csv")
 names(prediction) <- c("X","exp","lon","lat","pred_vcmax","pred_jmax","pred_jmax_vcmax",
                        "treatment","ref","comments")
+#correct a site-name
+prediction$exp[prediction$exp=="rhine-aspenface_c"] <- "aspenface_c"
 
 #first, merge to get prediction data
 obs_co2_pred <- merge(obs_co2[,c("exp","vcmax","jmax","ecosystem")],prediction, by=c("exp"),all.x=TRUE)
@@ -569,10 +602,30 @@ all_obs_pred <- dplyr::bind_rows(obs_co2_pred, obs_warming_pred,obs_light_pred,l
 all_obs_pred$jmax_vcmax <- all_obs_pred$jmax - all_obs_pred$vcmax
 names(all_obs_pred)
 
-
 #finally, for meta-analysis
 #anpp, bnpp, nmass, LAI, soil N
-kevin_othervars
+kevin_othervars <- read.csv("~/data/gcme/kevin_20220222/MESI_2022.csv")
+kevin_othervars <- rename(kevin_othervars, c(ambient = x_c, elevated=x_t, ambient_Sd=sd_c, elevated_Sd=sd_t,ambient_Se=se_c,elevated_Se=se_t,n_plots=rep_c,
+                                             z=elevation, co2_a=c_c, co2_e=c_t, nfertQ_a = n_c, nfertQ_e = n_t, pfertQ_a = p_c, pfertQ_e = p_t,kfertQ_a = k_c, kfertQ_e = k_t,
+                                             warmQ_e1 = w_t1, warmQ_e2 = w_t2, warmQ_e3 = w_t3, Unit=x_units))
+kevin_othervars$ambient <-as.numeric(kevin_othervars$ambient)
+kevin_othervars$elevated <-as.numeric(kevin_othervars$elevated)
+kevin_othervars$ambient_Sd  <-as.numeric(kevin_othervars$ambient_Sd)
+kevin_othervars$elevated_Sd  <-as.numeric(kevin_othervars$elevated_Sd)
+kevin_othervars$ambient_Se <- as.numeric(kevin_othervars$ambient_Se)
+kevin_othervars$elevated_Se <- as.numeric(kevin_othervars$elevated_Se)
+kevin_othervars$n_plots  <-as.numeric(kevin_othervars$n_plots)
+kevin_othervars$z <- as.numeric(kevin_othervars$z)
+kevin_othervars$exp_nam <- kevin_othervars$site
+
+##combine some site-name
+#we  also keep popface (where not applying N-fertilzied) and euroface (where applying N-fertilzied) separately.
+kevin_othervars$exp[kevin_othervars$exp=="soyfacesoy1_c"] <- "soyfacesoy2_c"
+kevin_othervars$exp[kevin_othervars$exp=="riceface_japan_ko_2012_3558_13960_c"] <- "riceface_japan_ko_2013_3558_13960_c"
+kevin_othervars$exp[kevin_othervars$exp=="riceface_japan_l_2007_3938_14057_c"] <- "riceface_japan_l_2008_3938_14057_c"
+kevin_othervars$exp[kevin_othervars$exp=="riceface_japan_ta_2012_3558_13960_c"] <- "riceface_japan_ta_2013_3558_13960_c"
+kevin_othervars$exp[kevin_othervars$exp=="riceface_japan_a_2003_3938_14057_c"] <- "riceface_japan_a_2004_3938_14057_c"
+
 
 #filter plots only within vcmax and jmax
 photo_plot <- c(unique(all_obs_pred$exp),c("duke2_f","euroface4_pa_f","euroface4_pe_f","euroface4_pn_f","new_zealand_face_f"),
@@ -837,7 +890,7 @@ final5$ecm_type[final5$exp=="glycinece"] <- "Nfix"
 final5$vcmax[final5$exp=="facts_ii_face3_pt_c"] <- agg_meta_sen_coef(response_ratio_v2(subset(kevin2_c_vcmax,exp=="facts_ii_face3_pt_c" & citation!="darbah_et_al_2010b" & citation!="darbah_et_al_2010a")),"vcmax")$vcmax
 final5$vcmax[final5$exp=="facts_ii_face4_bp_c"] <- agg_meta_sen_coef(response_ratio_v2(subset(kevin2_c_vcmax,exp=="facts_ii_face4_bp_c" & citation!="darbah_et_al_2010b")),"vcmax")$vcmax
 
-#add popface (i.e. euroface)'s soil 
+#add popface's soil 
 old_data <- read_csv("~/data/gcme/data_received_190325/NewData_wide_CORRECTED2.csv") %>%
   mutate( ambient_Sd  = as.numeric(ambient_Sd),  ambient_Se  = as.numeric(ambient_Se), 
           elevated_Sd = as.numeric(elevated_Sd), elevated_Se = as.numeric(elevated_Se),
@@ -905,7 +958,7 @@ euroface4_pn_lai <- log((LAI_e/LAI_a))/log(550/368)
 #anpp still missing
 check <- subset(kevin_othervars,exp=="facts_ii_face3_pt_c")%>% group_by(response,Unit)  %>% summarise(number = n())
 
-#root/shoot = bgb/agb?
+#root/shoot = bgb/agb
 bgb_a <- mean(subset(kevin_othervars,exp=="facts_ii_face3_pt_c" & response=="bgb" & Unit=="g_m2")$ambient)
 bgb_e <- mean(subset(kevin_othervars,exp=="facts_ii_face3_pt_c" & response=="bgb" & Unit=="g_m2")$elevated)
 agb_a <- mean(subset(kevin_othervars,exp=="facts_ii_face3_pt_c" & response=="agb" & Unit=="g_m2")$ambient)
