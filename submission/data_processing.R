@@ -47,9 +47,8 @@ agg_meta_sen_coef <- function(df,name){
 }
 
 #####3. CO2 effect data
-#read Kevin
 #read Kevin's most recent data
-###old vcmax dataset was ("~/data/gcme/kevin/orig_vcmax/JunkePeng_11252021.csv") - don't delete it since we used this to construct forcing info (this old csv has better sampling measurement year format than MESI.csv so was used to collect forcing file)
+###old vcmax dataset was ("~/data/gcme/kevin/orig_vcmax/JunkePeng_11252021.csv"). Don't delete this old vcmax dataset, since we used this to construct forcing info (this csv has better sampling measurement year data than MESI.csv as it has been well de-bugged for measurement year). However, MESI's vcmax has provided one more plot (biforface_c), all others data don't change. So we use MESI version here.
 kevin_othervars <- read.csv("~/data/gcme/kevin_20220222/MESI_2022.csv")
 kevin_othervars <- rename(kevin_othervars, c(ambient = x_c, elevated=x_t, ambient_Sd=sd_c, elevated_Sd=sd_t,ambient_Se=se_c,elevated_Se=se_t,n_plots=rep_c,
                                              z=elevation, co2_a=c_c, co2_e=c_t, nfertQ_a = n_c, nfertQ_e = n_t, pfertQ_a = p_c, pfertQ_e = p_t,kfertQ_a = k_c, kfertQ_e = k_t,
