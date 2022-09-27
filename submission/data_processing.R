@@ -202,7 +202,7 @@ smith_all_plotmean$exp[smith_all_plotmean$exp=="PineOTC"] <- "christchurch_pr_c"
 smith_all_plotmean$exp[smith_all_plotmean$exp=="RichmondGH"] <- "australiacotton_c";
 smith_all_plotmean$exp[smith_all_plotmean$exp=="UIAPine"] <- "ua_otc_c";
 smith_all_plotmean$exp[smith_all_plotmean$exp=="PHACE"] <- "phace_c";
-smith_all_plotmean$exp[smith_all_plotmean$exp=="AspenFACE"] <- "rhine-aspenface_c";
+smith_all_plotmean$exp[smith_all_plotmean$exp=="AspenFACE"] <- "aspenface_c";
 smith_all_plotmean$exp[smith_all_plotmean$exp=="BilyKriz"] <- "bily_kriz_c";
 smith_all_plotmean$exp[smith_all_plotmean$exp=="Headley"] <- "headley_qp_c";
 smith_all_plotmean$exp[smith_all_plotmean$exp=="Viesalm"] <- "vielsalm_c"
@@ -227,7 +227,7 @@ unique(subset(smith_all_simple,exp_nam=="PHACE")[,c("lon","lat","Genus","Species
 unique(subset(kevin_othervars,exp=="phace_c")[,c("lon","lat","dominant_species")])
 
 unique(subset(smith_all_simple,exp_nam=="AspenFACE")[,c("lon","lat","Genus","Species")])
-unique(subset(kevin_othervars,exp=="rhine-aspenface_c")[,c("lon","lat","dominant_species")])
+unique(subset(kevin_othervars,exp=="aspenface_c")[,c("lon","lat","dominant_species")])
 
 unique(subset(smith_all_simple,exp_nam=="BilyKriz")[,c("lon","lat","Genus","Species")])
 unique(subset(kevin_othervars,exp=="bily_kriz_c")[,c("lon","lat","dominant_species")])
@@ -869,37 +869,40 @@ final5$soil_mineral_N[final5$exp=="euroface4_pe_c"] <- new_popface$soil_mineral_
 final5$soil_mineral_N[final5$exp=="euroface4_pn_c"] <- new_popface$soil_mineral_N[new_popface$exp=="popface_pn"]
 
 #corret one outlier of bgb_coarse
-
-#add two plots from Cesar -->after adding them --becoming weaker!
+#Data from Cesar's email
 Cesar_anpp <- read.csv("~/data/gcme/cesar/ANPP.csv")
 phace <- log(112.6493/111.8533)/log(600/384)
-Aspen <- (log(669.6334/517.9303)/log(550/360) + log(621.7131/429.4247)/log(550/360))/2
+Aspen <- (log(669.6334/517.9303)/log(550/376) + log(621.7131/429.4247)/log(550/376))/2
 
 #further look
 final5$anpp[final5$exp=="phace_c"] <- phace
-final5$anpp[final5$exp=="rhine-aspenface_c"] <- Aspen
+final5$anpp[final5$exp=="aspenface_c"] <- Aspen
 
 ###add more data: eucface - LAI
+#Paper Canopy leaf area of a mature evergreen Eucalyptus woodland does not respond to elevated atmospheric [CO2] but tracks water availability
 #from https://onlinelibrary.wiley.com/doi/full/10.1111/gcb.13151?casa_token=6CKcWQ_OHHwAAAAA%3AEsLJPJXb45rz2WxE807-NvACiQmFkELScHJiV_eaRUEPd0psT7co5ZnJp8Mo7CKaPFt4H6dkKe8XqZFXJw
 eucface_lai_df <- read.csv("~/data/Duursma_gcb/EucFACE_DUURSMA_GCB_LEAFAREAINDEX/data/FACE_RA_P0037_GAPFRACLAI_20121026-20150225_L2.csv")
 #150 as given in paper, also consistent with our df
 subset(kevin2_c_vcmax,exp=="eucface_c")$co2_e[1];subset(kevin2_c_vcmax,exp=="eucface_c")$co2_a[1]
 eucface_lai <- log(mean(subset(eucface_lai_df,treatment=="elevated")$LAI,na.rm=TRUE)/mean(subset(eucface_lai_df,treatment=="ambient")$LAI,na.rm=TRUE))/log(540/394)
 
-###biocon_c - LAI
+###biocon_c - LAI = agb/lma (both in unit = g/m2)
 #LMA, everything is LMA (g/cm2) now, though shown as cm2/g - converting to g/m2
 #lma: g/m2
+unique(subset(logr_c_LMA,exp=="biocon_c")$Unit) #only using g/cm2
 lma_a <-10000*mean(subset(logr_c_LMA,exp=="biocon_c"&Unit=="cm2/g")$ambient)
 lma_e <-10000*mean(subset(logr_c_LMA,exp=="biocon_c"&Unit=="cm2/g")$elevated,na.rm=TRUE)
-check <- subset(kevin_othervars,exp=="biocon_c")%>% group_by(response,Unit)  %>% summarise(number = n())
+
 #agb: g/m2
+unique(subset(kevin_othervars,exp=="biocon_c" & response=="agb")$Unit) #only using g_m2
 agb_a <- mean(subset(kevin_othervars,exp=="biocon_c" & response=="agb" & Unit=="g_m2")$ambient)
 agb_e <- mean(subset(kevin_othervars,exp=="biocon_c" & response=="agb" & Unit=="g_m2")$elevated)
 agb_a/lma_a;agb_e/lma_e # looks ok
 subset(kevin2_c_vcmax,exp=="biocon_c")$co2_a;subset(kevin2_c_vcmax,exp=="biocon_c")$co2_e
 biocon_lai <- log((agb_e/lma_e)/(agb_a/lma_a))/log(570/367)
 
-#??? biocon_c - root/shoot = bgb/agb?
+#biocon_c - root/shoot = bgb/agb
+unique(subset(kevin_othervars,exp=="biocon_c" & response=="bgb")$Unit)#only using g_m2
 bgb_a <- mean(subset(kevin_othervars,exp=="biocon_c" & response=="bgb" & Unit=="g_m2")$ambient)
 bgb_e <- mean(subset(kevin_othervars,exp=="biocon_c" & response=="bgb" & Unit=="g_m2")$elevated)
 biocon_root_shoot <- log((bgb_e/agb_e)/(bgb_a/agb_a))/log(570/367)
@@ -907,24 +910,20 @@ biocon_root_shoot <- log((bgb_e/agb_e)/(bgb_a/agb_a))/log(570/367)
 ###brandbjerg_c - LAI and ANPP missing after investigation
 check <- subset(kevin_othervars,exp=="brandbjerg_c")%>% group_by(response,Unit)  %>% summarise(number = n())
 
-###euroface4_pn_c
-check <- subset(kevin_othervars,exp=="euroface4_pn_c")%>% group_by(response,Unit)  %>% summarise(number = n())
-#LAI
-LAI_a <- mean(subset(kevin_othervars,exp=="euroface4_pn_c" & response=="lai_max"& citation=="liberloo_et_al_2006")$ambient,na.rm=TRUE)
-LAI_e <- mean(subset(kevin_othervars,exp=="euroface4_pn_c" & response=="lai_max"& citation=="liberloo_et_al_2006")$elevated,na.rm=TRUE)
-euroface4_pn_lai <- log((LAI_e/LAI_a))/log(550/368)
+###euroface4_pa_c - LMA filled by narea/nmass
+nmass_a <- mean(subset(kevin_othervars,exp=="euroface4_pa_c"& response=="leaf_n"& response=="leaf_n"&Unit=="g_100g")$ambient)
+narea_a <- mean(subset(kevin_othervars,exp=="euroface4_pa_c"& response=="leaf_n"& response=="leaf_n"&Unit=="g_m2")$ambient)
 
-#bnpp derived from SI of: https://www.pnas.org/doi/10.1073/pnas.0706518104#supplementary-materials
-#Table S3
-bnpp_e <- 2.46
-bnpp_a <- 1.76
-euroface4_pn_bnpp <- log((2.46/1.76))/log(550/368)
+nmass_e <- mean(subset(kevin_othervars,exp=="euroface4_pa_c"& response=="leaf_n"& response=="leaf_n"&Unit=="g_100g")$elevated)
+narea_e <- mean(subset(kevin_othervars,exp=="euroface4_pa_c"& response=="leaf_n"& response=="leaf_n"&Unit=="g_m2")$elevated)
+unique(subset(kevin_othervars,response=="leaf_n"&exp=="euroface4_pa_c")[,c("co2_a","co2_e")])
+euroface4_pa_c_lma <- log((narea_e/nmass_e)/(narea_a/nmass_a))/log(550/368)
 
 #####facts_ii_face3_pt_c
 #anpp still missing
 check <- subset(kevin_othervars,exp=="facts_ii_face3_pt_c")%>% group_by(response,Unit)  %>% summarise(number = n())
 
-#??? root/shoot = bgb/agb?
+#root/shoot = bgb/agb?
 bgb_a <- mean(subset(kevin_othervars,exp=="facts_ii_face3_pt_c" & response=="bgb" & Unit=="g_m2")$ambient)
 bgb_e <- mean(subset(kevin_othervars,exp=="facts_ii_face3_pt_c" & response=="bgb" & Unit=="g_m2")$elevated)
 agb_a <- mean(subset(kevin_othervars,exp=="facts_ii_face3_pt_c" & response=="agb" & Unit=="g_m2")$ambient)
@@ -936,75 +935,40 @@ facts_ii_face3_pt_c_root_shoot <- log((bgb_e/agb_e)/(bgb_a/agb_a))/log(co2_e/co2
 
 ####new_zealand
 check <- subset(kevin_othervars,exp=="new_zealand_face_c")%>% group_by(response,Unit)  %>% summarise(number = n())
-#??? root/shoot = bgb/agb?
-#using g/g is better because it is completely mass unit with reasonable values
+#root/shoot = bgb/agb
+#using g_100g is better because it is completely mass unit with reasonable values
+subset(kevin_othervars,exp=="new_zealand_face_c" & response=="bgb_c")$Unit
+subset(kevin_othervars,exp=="new_zealand_face_c" & response=="agb_c")$Unit
+
 bgb_a <-subset(kevin_othervars,exp=="new_zealand_face_c" & response=="bgb_c")$ambient
 bgb_e <- subset(kevin_othervars,exp=="new_zealand_face_c" & response=="bgb_c")$elevated
 agb_a <- subset(kevin_othervars,exp=="new_zealand_face_c" & response=="agb_c")$ambient
 agb_e <-subset(kevin_othervars,exp=="new_zealand_face_c" & response=="agb_c")$elevated
-
+unique(subset(kevin_othervars,exp=="new_zealand_face_c" & response=="agb_c")[,c("co2_a","co2_e")])
 new_zealand_c_root_shoot <- log((bgb_e/agb_e)/(bgb_a/agb_a))/log(475/364)
 
 #LAI from LMA and agb
+unique(subset(logr_c_LMA,exp=="new_zealand_face_c")$Unit)
 lma_a <-mean(subset(logr_c_LMA,exp=="new_zealand_face_c"&Unit=="g/m_")$ambient)
 lma_e <-mean(subset(logr_c_LMA,exp=="new_zealand_face_c"&Unit=="g/m_")$elevated)
 #agb: g/m2
+unique(subset(kevin_othervars,exp=="new_zealand_face_c" & response=="agb")$Unit) #only using g/m2
 agb_a <- mean(subset(kevin_othervars,exp=="new_zealand_face_c" & response=="agb" & Unit=="g_m2")$ambient)
 agb_e <- mean(subset(kevin_othervars,exp=="new_zealand_face_c" & response=="agb" & Unit=="g_m2")$elevated)
 agb_a/lma_a;agb_e/lma_e # looks ok
+unique(subset(kevin_othervars,exp=="new_zealand_face_c" & response=="agb" & Unit=="g_m2")[,c("co2_a","co2_e")])
 new_zealand_face_c_lai <- log((agb_e/lma_e)/(agb_a/lma_a))/log(475/364)
 
-####duke2_c
+####duke2_c - 
 check <- subset(kevin_othervars,exp=="duke2_c")%>% group_by(response,Unit)  %>% summarise(number = n())
-
-#LMA obtained from leaf_c in area and mass basis
-Cmass_a <- mean(subset(kevin_othervars,exp=="duke2_c" & response=="leaf_c" & Unit=="g_100g" & citation=="hamilton_et_al_2004")$ambient)
-Cmass_e <- mean(subset(kevin_othervars,exp=="duke2_c" & response=="leaf_c" & Unit=="g_100g" & citation=="hamilton_et_al_2004")$elevated)
-
-Carea_a <- mean(subset(kevin_othervars,exp=="duke2_c" & response=="leaf_c" & Unit=="gc_m2" & citation=="hamilton_et_al_2002")$ambient)
-Carea_e <- mean(subset(kevin_othervars,exp=="duke2_c" & response=="leaf_c" & Unit=="gc_m2" & citation=="hamilton_et_al_2002")$elevated)
-
-#LMA = Carea/Cmass
-duke2_c_lma <- log((Carea_e/Cmass_e)/(Carea_a/Cmass_a))/log(563/363)
-
-#??? root/shoot = bgb/agb?
-bgb_a <- mean(subset(kevin_othervars,exp=="duke2_c" & response=="bgb" & Unit=="g_m2" &co2_a==363)$ambient)
-bgb_e <- mean(subset(kevin_othervars,exp=="duke2_c" & response=="bgb" & Unit=="g_m2"&co2_e==563)$elevated)
-agb_a <- mean(subset(kevin_othervars,exp=="duke2_c" & response=="agb" & Unit=="gc_m2"& citation=="schlesinger_and_lichter_2001")$ambient) # too keep column constant
-agb_e <- mean(subset(kevin_othervars,exp=="duke2_c" & response=="agb" & Unit=="gc_m2" & citation=="schlesinger_and_lichter_2001")$elevated)
-duke2_c_lma <- log((bgb_e/agb_e)/(bgb_a/agb_a))/log(563/363)
-
-#LAI still missing
-check <- subset(kevin_othervars,exp=="duke2_c")%>% group_by(response,Unit)  %>% summarise(number = n())
-
-###duke2_c
-#??? root/shoot = bgb/agb?
+#root/shoot = bgb/agb
 bgb_a <- mean(subset(kevin_othervars,exp=="duke2_c" & response=="bgb" & Unit=="g_m2" & co2_a==363)$ambient)
 bgb_e <- mean(subset(kevin_othervars,exp=="duke2_c" & response=="bgb" & Unit=="g_m2" & co2_e==563)$elevated)
-agb_a <- mean(subset(kevin_othervars,exp=="duke2_c" & response=="agb" & Unit=="g_m2")$ambient,na.rm=TRUE)
-agb_e <- mean(subset(kevin_othervars,exp=="duke2_c" & response=="agb" & Unit=="g_m2")$elevated,na.rm=TRUE)
+agb_a <- mean(subset(kevin_othervars,exp=="duke2_c" & response=="agb" & Unit=="g_m2"& co2_a==363)$ambient,na.rm=TRUE)
+agb_e <- mean(subset(kevin_othervars,exp=="duke2_c" & response=="agb" & Unit=="g_m2"& co2_e==563)$elevated,na.rm=TRUE)
 duke2_c_root_shoot <- log((bgb_e/agb_e)/(bgb_a/agb_a))/log(563/363)
 
-#ANPP and BNPP. See: Table S1 of https://nph.onlinelibrary.wiley.com/doi/10.1111/j.1469-8137.2009.03078.x
-#McCarthy HR, Oren R, Johnsen KH, Gallet‐Budynek A, Pritchard SG, Cook CW, et al. 2010. Re‐assessment of plant carbon dynamics at the Duke free‐air CO2 enrichment site: interactions of atmospheric [CO2] with nitrogen and water availability over stand development. New Phytologist, 185(2): 514-528.
-#it has foliage, branch, stem and coarse root production
-#we compare R1 and R2, where R1 is ambient and R2 is elevated (for 9 years)
-foliage_a <- 131+144+135+177+182+194+174+173+207; foliage_e <-140+176+203+210+222+224+211+201+255
-branch_a <- 83+81+65+84+99+74+36+67+72; branch_e <- 77+92+84+102+110+87+45+68+74
-stem_a <- 467+468+378+492+592+451+220+409+446;stem_e <- 455+553+512+628+691+558+292+441+490
-root_a <- 112+109+91+112+145+105+53+91+103;root_e <- 109+128+126+150+161+131+67+99+110
-
-duke2_c_anpp <- log((foliage_e+branch_e+stem_e)/(foliage_a+branch_a+stem_a))/log(563/363)
-duke2_c_bnpp <- log((root_e)/(root_a))/log(563/363)
-
-######ignore duke2_cf
-
 ########euroface4_pe_c
-#LAI
-check <- subset(kevin_othervars,exp=="euroface4_pe_c")%>% group_by(response,Unit)  %>% summarise(number = n())
-LAI_a <- mean(subset(kevin_othervars,exp=="euroface4_pe_c" & response=="lai_max"& citation=="liberloo_et_al_2006")$ambient,na.rm=TRUE)
-LAI_e <- mean(subset(kevin_othervars,exp=="euroface4_pe_c" & response=="lai_max"& citation=="liberloo_et_al_2006")$elevated,na.rm=TRUE)
-euroface4_pe_lai <- log((LAI_e/LAI_a))/log(550/368)
 #LMA
 nmass_a <- mean(subset(kevin_othervars,exp=="euroface4_pe_c" & response=="leaf_n"&Unit=="g_kg")$ambient,na.rm=TRUE)/1000 #convert to g/g
 nmass_e <- mean(subset(kevin_othervars,exp=="euroface4_pe_c" & response=="leaf_n"&Unit=="g_kg")$elevated,na.rm=TRUE)/1000
@@ -1021,7 +985,7 @@ check <- subset(kevin_othervars,exp=="ornerp_liqui_c")%>% group_by(response,Unit
 #LAI calculated from: https://data.ess-dive.lbl.gov/view/doi%3A10.15485%2F1480325#ess-dive-ddd1cfa81a329ba-20181119T143441660
 lai_amb <- mean(as.numeric(subset(read.csv("~/data/ORNL_FACE/ORNL_ax.csv"),co2=="AMB")$ptrait_lai),na.rm=T)
 lai_elv <- mean(as.numeric(subset(read.csv("~/data/ORNL_FACE/ORNL_ax.csv"),co2=="ELE")$ptrait_lai),na.rm=T)
-
+unique(subset(kevin_othervars,exp=="ornerp_liqui_c")[,c("co2_a","co2_e")])
 ornerp_liqui_lai <- log((lai_elv/lai_amb))/log(560/380)
 
 ######soyfacesoy2_c: bnpp and root/shoot still missing
@@ -1029,8 +993,8 @@ check <- subset(kevin_othervars,exp=="soyfacesoy2_c")%>% group_by(response,Unit)
 #narea = lma * nmass /10
 narea_a <- mean(subset(logr_c_LMA,exp=="soyfacesoy2_c"&Unit=="cm_/g")$ambient)*mean(subset(kevin_othervars,exp=="soyfacesoy2_c"&response=="leaf_n" & Unit=="g_kg")$ambient)/10
 narea_e <- mean(subset(logr_c_LMA,exp=="soyfacesoy2_c"&Unit=="cm_/g")$elevated)*mean(subset(kevin_othervars,exp=="soyfacesoy2_c"&response=="leaf_n" & Unit=="g_kg")$elevated)/10
+unique(subset(logr_c_LMA,exp=="soyfacesoy2_c")[,c("co2_a","co2_e")])
 soyfacesoy2_narea <- log((narea_e/narea_a))/log(548/373)
-
 
 ######facts_ii_face4_bp_c missing jmax (only has J), anpp, bnpp and root/shoot missing
 check <- subset(kevin_othervars,exp=="facts_ii_face4_bp_c")%>% group_by(response,Unit)  %>% summarise(number = n())
@@ -1039,29 +1003,25 @@ check <- subset(kevin_othervars,exp=="facts_ii_face4_bp_c")%>% group_by(response
 check <- subset(kevin_othervars,exp=="nevada_desert_face_c")%>% group_by(response,Unit)  %>% summarise(number = n())
 # it is Scrubland, so can be considered as grassland
 
-
-#Leaf area obtained from https://link.springer.com/content/pdf/10.1007/s10021-005-0124-4.pdf Housman D. C., Naumburg E., Huxman T.E., Charlet T.N., Nowak R.S., Smith S.D. (2006) Increase in Desert Shrub Produvtivity under Elevated Carbon Dioxide Vary with Water Availability. Ecosystems 9: 374-385
+#Leaf area obtained from https://link.springer.com/content/pdf/10.1007/s10021-005-0124-4.pdf
+#Housman D. C., Naumburg E., Huxman T.E., Charlet T.N., Nowak R.S., Smith S.D. (2006) Increase in Desert Shrub Produvtivity under Elevated Carbon Dioxide Vary with Water Availability. Ecosystems 9: 374-385
 #only has ratio of LA
 LA_ratio <- mean(1.18,0.92,1.06,1.28,1.10,1.33)
 leafCN_ratio <- mean(subset(kevin_othervars,exp=="nevada_desert_face_c"&response=="leaf_cn")$elevated/subset(kevin_othervars,exp=="nevada_desert_face_c"&response=="leaf_cn")$ambient)
 leafNmass_ratio <- mean(subset(kevin_othervars,exp=="nevada_desert_face_c"&response=="leaf_n")$elevated/subset(kevin_othervars,exp=="nevada_desert_face_c"&response=="leaf_n")$ambient)
 
-LMA_ratio <- LA_ratio/(leafNmass_ratio*leafCN_ratio)
+unique(subset(kevin_othervars,exp=="nevada_desert_face_c")[,c("co2_a","co2_e")])
+
+LMA_ratio <- (leafNmass_ratio*leafCN_ratio)/LA_ratio
 narea_ratio <- LMA_ratio*leafNmass_ratio
 nevada_desert_face_c_lma <- log(LMA_ratio)/log(550/364)
 nevada_desert_face_c_narea <- log(narea_ratio)/log(550/364)
 
 #######euroface4_pa_c
 check <- subset(kevin_othervars,exp=="euroface4_pa_c")%>% group_by(response,Unit)  %>% summarise(number = n())
-
-#lai
-LAI_a <- mean(subset(kevin_othervars,exp=="euroface4_pa_c" & response=="lai_max"& citation=="liberloo_et_al_2006")$ambient,na.rm=TRUE)
-LAI_e <- mean(subset(kevin_othervars,exp=="euroface4_pa_c" & response=="lai_max"& citation=="liberloo_et_al_2006")$elevated,na.rm=TRUE)
-euroface4_pa_lai <- log((LAI_e/LAI_a))/log(550/368)
-
-#anpp, narea, nmass, lma lacked 
+#lma lacked 
 subset(kevin_othervars,exp=="euroface4_pa_c")$dominant_species[1]
-#Na, Nm and LMA cannot be filled by https://www.sciencedirect.com/science/article/pii/S0269749106005434
+#LMA cannot be filled by https://www.sciencedirect.com/science/article/pii/S0269749106005434
 # Marinari S, Calfapietra C, De Angelis P, Mugnozza GS, Grego S (2007) Impact of elevated CO2 and nitrogen fertilization on foliar elemental composition in a short rotation poplar plantation. Environmental Pollution 147:507–515
 # it only has controlled condition, but not ambient condition
 
@@ -1070,51 +1030,43 @@ check <- subset(kevin_othervars,exp=="mi_c")%>% group_by(response,Unit)  %>% sum
 
 #root/shoot = leaf biomass/bgb biomass
 #make sure co2 condition is the same
-root_shoot_a <- mean(subset(kevin_othervars,exp=="mi_c"&response=="leaf_biomass"&co2_e==760)$ambient)/mean(subset(kevin_othervars,exp=="mi_c"&response=="bgb"&co2_e==760)$ambient)
+root_shoot_a <- mean(subset(kevin_othervars,exp=="mi_c"&response=="leaf_biomass"&co2_a==410)$ambient)/mean(subset(kevin_othervars,exp=="mi_c"&response=="bgb"&co2_a==410)$ambient)
 root_shoot_e <- mean(subset(kevin_othervars,exp=="mi_c"&response=="leaf_biomass"&co2_e==760)$elevated)/mean(subset(kevin_othervars,exp=="mi_c"&response=="bgb"&co2_e==760)$elevated)
 
 mi_root_shoot <- log((root_shoot_e/root_shoot_a))/log(760/410)
 
-######soyfacesoy1_c: Nmass, Narea, bnpp and root/shoot missing
-check <- subset(kevin_othervars,exp=="soyfacesoy1_c")%>% group_by(response,Unit)  %>% summarise(number = n())
-
-#lma = leaf biomass (g/m2) /LAI
-leaf_biomass_a <- mean(subset(kevin_othervars,exp=="soyfacesoy2_c" & response=="leaf_biomass")$ambient)
-leaf_biomass_e <- mean(subset(kevin_othervars,exp=="soyfacesoy2_c" & response=="leaf_biomass")$elevated)
-
-LAI_a <- mean(subset(kevin_othervars,exp=="soyfacesoy2_c" & response=="lai")$ambient)
-LAI_e <- mean(subset(kevin_othervars,exp=="soyfacesoy2_c" & response=="lai")$elevated)
-
-soyfacesoy2_lma <- log((leaf_biomass_e/LAI_e)/(leaf_biomass_a/LAI_a))/log(552/371)
+######soyfacesoy2_c: Nmass, Narea, bnpp and root/shoot missing
+check <- subset(kevin_othervars,exp=="soyfacesoy2_c")%>% group_by(response,Unit)  %>% summarise(number = n())
 
 ######soyfacetobacco9_c: missing LAI, anpp, bnpp, root/shoot
 check <- subset(kevin_othervars,exp=="soyfacetobacco9_c")%>% group_by(response,Unit)  %>% summarise(number = n())
 
 #narea = nmass * LMA
+unique(subset(kevin_othervars,exp=="soyfacetobacco9_c")[,c("co2_a","co2_e")])
 soyfacetobacco9_narea <- final_mean$nmass[final_mean$exp=="soyfacetobacco9_c"] + final_mean$LMA[final_mean$exp=="soyfacetobacco9_c"]
 
 #######giface - filling LAI (m2/m2) and LMA, Nmass and Narea
 LAI_a <- mean(subset(kevin_othervars,exp=="giface_c" & response=="lai_max")$ambient)
 LAI_e <- mean(subset(kevin_othervars,exp=="giface_c" & response=="lai_max")$elevated)
+unique(subset(kevin_othervars,exp=="giface_c"& response=="lai_max")[,c("co2_a","co2_e")])
 
 giface_c_lai <- log((LAI_e/LAI_a))/log(450/380)
 
 #lma = agb (g/m2) /LAI in grassland
 leaf_biomass_a <- mean(subset(kevin_othervars,exp=="giface_c" & response=="agb" & Unit=="g_m2")$ambient)
 leaf_biomass_e <- mean(subset(kevin_othervars,exp=="giface_c" & response=="agb"& Unit=="g_m2")$elevated)
+unique(subset(kevin_othervars,exp=="giface_c"& response=="agb")[,c("co2_a","co2_e")])
 
 giface_c_lma <- log((leaf_biomass_e/LAI_e)/(leaf_biomass_a/LAI_a))/log(450/380)
 
 #Nmass and Narea were filled by below publication
 #Carbon dioxide fertilisation and supressed respiration induce enhanced spring biomass production in a mixed species temperate meadow exposed to moderate carbon dioxide enrichment
+#https://pubmed.ncbi.nlm.nih.gov/32480439/
 # in table 5, see Nmass (mg/g), Cmass was also recorded but not put here.
 #co2 changes from 400 to 480
 Nmass_a <- (34+41.2+26.4+36.3+31.8+43.5)/6/1000 # averaged them, then converted from mg/g to g/g
 Nmass_e <- (32.7+40.7+24.2+33.3+31.4+42.4)/6/1000 # in mg/g 
 giface_c_nmass <- log((Nmass_e/Nmass_a))/log(480/400)
-
-#since Narea = Nmass * LMA # one paper increases from 380 to 450, another increases from 400 to 480. Not different too much - here we just used one of them
-giface_c_narea <- log((Nmass_e*leaf_biomass_e/LAI_e)/(Nmass_a*leaf_biomass_a/LAI_a))/log(480/400)
 
 #######soyfacemaiz4_c cannot be filled - just one old paper without available info
 aa <- subset(kevin_othervars,exp=="riceface_japan_ko_2012_3558_13960_c")%>% group_by(response,Unit)  %>% summarise(number = n())
@@ -1126,9 +1078,6 @@ subset(kevin_othervars,response=="lai_max")%>% group_by(exp)  %>% summarise(numb
 #final5 <- final4 
 final5$lai[final5$exp=="eucface_c"] <- eucface_lai
 final5$lai[final5$exp=="biocon_c"] <- biocon_lai
-#final5$lai[final5$exp=="euroface4_pa_c"] <- euroface4_pa_lai
-#final5$lai[final5$exp=="euroface4_pn_c"] <- euroface4_pn_lai
-#final5$lai[final5$exp=="euroface4_pe_c"] <- euroface4_pe_lai
 final5$lai[final5$exp=="new_zealand_face_c"] <- new_zealand_face_c_lai
 final5$lai[final5$exp=="ornerp_liqui_c"] <- ornerp_liqui_lai
 final5$lai[final5$exp=="giface_c"] <- giface_c_lai
@@ -1136,25 +1085,18 @@ final5$lai[final5$exp=="giface_c"] <- giface_c_lai
 final5$root_shoot_ratio[final5$exp=="biocon_c"] <- biocon_root_shoot
 final5$root_shoot_ratio[final5$exp=="facts_ii_face3_pt_c"] <- facts_ii_face3_pt_c_root_shoot
 final5$root_shoot_ratio[final5$exp=="new_zealand_face_c"] <- new_zealand_c_root_shoot
-#final5$root_shoot_ratio[final5$exp=="duke_c"] <- duke_c_root_shoot
 final5$root_shoot_ratio[final5$exp=="duke2_c"] <- duke2_c_root_shoot
 final5$root_shoot_ratio[final5$exp=="mi_c"] <- mi_root_shoot
 
-#this can be imputed - as it was derived from literatures well
-#final5$anpp[final5$exp=="duke2_c"] <- duke2_c_anpp
-#final5$bnpp[final5$exp=="duke2_c"] <- duke2_c_bnpp
-#final5$bnpp[final5$exp=="euroface4_pn_c"] <- euroface4_pn_bnpp
-
-#final5$LMA[final5$exp=="duke_c"] <- duke_c_lma
 final5$LMA[final5$exp=="euroface4_pe_c"] <- euroface4_pe_lma
 final5$LMA[final5$exp=="nevada_desert_face_c"] <- nevada_desert_face_c_lma
 #final5$LMA[final5$exp=="soyfacesoy1_c"] <- soyfacesoy1_lma
 final5$LMA[final5$exp=="giface_c"] <- giface_c_lma
+final5$LMA[final5$exp=="euroface4_pa_c"] <- euroface4_pa_c_lma
 
 final5$narea[final5$exp=="soyfacesoy2_c"] <- soyfacesoy2_narea
 final5$narea[final5$exp=="nevada_desert_face_c"] <- nevada_desert_face_c_narea
 final5$narea[final5$exp=="soyfacetobacco9_c"] <- soyfacetobacco9_narea
-final5$narea[final5$exp=="giface_c"] <- giface_c_narea
 
 final5$nmass[final5$exp=="giface_c"] <- giface_c_nmass
 
@@ -1193,7 +1135,9 @@ a2 <- subset(kevin2_cf_jmax,exp=="duke2_cf")[,c("ambient","elevated","logr","cit
 duke2_cf_jmax <- (mean(a2$logr) - mean(a1$logr,na.rm=TRUE))/log(563/363)
 
 #  LMA and narea were corrected by maier_et_al_2008 -https://academic.oup.com/treephys/article/28/4/597/1720624
+#Short-term effects of fertilization on photosynthesis and leaf morphology of field-grown loblolly pine following long-term exposure to elevated CO2 concentration
 #corrected by their table 2 (using 1-year old data)
+unique(subset(logr_c_LMA,exp=="duke2_c")[,c("co2_a","co2_e")])
 duke2_cf_lma <- log(113.3/100.6)/log(563/363)
 
 duke2_cf_narea <- log(1.34/1.44)/log(563/363)
@@ -1203,7 +1147,7 @@ subset(logr_f_lai,exp=="duke2_f")[,c("ambient","elevated","logr","citation")]
 subset(logr_cf_lai,exp=="duke2_cf")[,c("ambient","elevated","logr","citation")]
 # oishi_et_al_2014 - lai too low - below has problem - ambient should be 3.8 not 38!
 #calculate it directly 
-duke2_cf_lai <- log(4.8/4.05)/log(563/363)
+duke2_cf_lai <- log(4.3/4.05)/log(563/363)
 
 final5$jmax[final5$exp=="duke2_cf"] <- duke2_cf_jmax
 final5$jmax_vcmax[final5$exp=="duke2_cf"] <- final5$jmax[final5$exp=="duke2_cf"] -final5$vcmax[final5$exp=="duke2_cf"] 
@@ -1221,38 +1165,11 @@ final5$vcmax[final5$exp=="duke2_cf"] <- duke2_cf_vcmax
 final5$comments[final5$condition=="light"] <- "vcmax and jmax are sensitivity coefficients = log(vcmax-ele/vcmax-amb)"
 final5$jmax_vcmax <- final5$jmax-final5$vcmax
 
-#remove popface, and gap-fill euroface data (if euroface has no data but popface does)
-#final5$narea[final5$exp=="euroface4_pa_c"] <-final5$narea[final5$exp=="popface_pa_c"]
-#final5$nmass[final5$exp=="euroface4_pa_c"] <-final5$nmass[final5$exp=="popface_pa_c"]
-#final5$LMA[final5$exp=="euroface4_pa_c"] <-final5$LMA[final5$exp=="popface_pa_c"]
-
-#final5$bnpp[final5$exp=="euroface4_pa_c"] <-final5$bnpp[final5$exp=="popface_pa_c"]
-#final5$bnpp[final5$exp=="euroface4_pe_c"] <-final5$bnpp[final5$exp=="popface_pe_c"]
-
-#final5$soil_mineral_N[final5$exp=="euroface4_pa_c"] <-final5$soil_mineral_N[final5$exp=="popface_pa_c"]
-#final5$soil_mineral_N[final5$exp=="euroface4_pe_c"] <-final5$soil_mineral_N[final5$exp=="popface_pe_c"]
-#final5$soil_mineral_N[final5$exp=="euroface4_pn_c"] <-final5$soil_mineral_N[final5$exp=="popface_pn_c"]
-
-#final5 <- subset(final5,exp!="popface_pa_c"&exp!="popface_pe_c"&exp!="popface_pn_c")
-
 csvfile <- paste("~/data/gcme/MS_data/plot_data.csv")
 write.csv(final5, csvfile, row.names = TRUE)
 
-#list of things 
-#re-check Nfer all results - especially, why some: from low to high vcmax even more decreased???
-#inform kevin about
-#remove the one with 4.2, which cannot be parallel to cf on below, and the values looked wrong
-#a1$logr[a1$citation=="oishi_et_al_2014"] <- NA
-# oishi_et_al_2014 - lai too low - below has problem - ambient should be 3.8 not 38!
-#how to best cite?
-#ask kevin about popface/euroface + rice_japan
-
 
 #check japan_face
-japan_rice <- kevin_othervars_cf[grep("riceface_japan", kevin_othervars_cf$exp),] #remove with co2 elevated measurements
-unique(japan_rice[,c("exp","response")])
-unique(japan_rice[,c("exp","citation")])
-
 #https://academic.oup.com/pcp/article/55/2/381/1862434#85129527
 #ko: Koshihikari
 #Ta: Takanari
