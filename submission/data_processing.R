@@ -863,7 +863,9 @@ co2_a <- mean(subset(kevin_othervars_cf,exp=="euroface4_pe_cf"&response=="leaf_n
 co2_e <- mean(subset(kevin_othervars_cf,exp=="euroface4_pe_cf"&response=="leaf_n" & Unit=="g_kg")$co2_e)
 final5$LMA[final5$exp=="euroface4_pe_cf"] <- log((narea_cf/nmass_cf)/(narea_f/nmass_f))/log(co2_e/co2_a)
  
-#fill some euroface4's root_shoot_ratio data - not combing them yet - since they belong to different trees (different measurement years so cannot be calculated from bgb/agb)
+#fill some euroface4's root_shoot_ratio data
+#not combing them yet - since they belong to different trees (different measurement years so cannot be calculated from bgb/agb)
+#especially if we combine cf and f to calculate co2 effect at N fertiliation - it is important - we have to make sure it must be the same tree if gap-fill root/shoot
 #bgb_pa_cf_e <- (subset(kevin_othervars,exp=="euroface4_pa_cf" & response=="bgb" & Unit=="t_ha")$elevated) #one unit, in t/ha
 #bgb_pa_f_e <- (subset(kevin_othervars,exp=="euroface4_pa_f" & response=="bgb" & Unit=="t_ha")$elevated)
 #agb_pa_cf_e <- mean(subset(kevin_othervars,exp=="euroface4_pa_cf" & response=="agb" & Unit=="g_m2")$elevated) #two numbers, both in in g_m2
@@ -1193,12 +1195,12 @@ final5$lai[final5$exp=="new_zealand_face_c"] <- new_zealand_face_c_lai
 final5$lai[final5$exp=="ornerp_liqui_c"] <- ornerp_liqui_lai
 final5$lai[final5$exp=="giface_c"] <- giface_c_lai
 
-final5$root_shoot_ratio[final5$exp=="biocon_c"] <- biocon_root_shoot
-final5$root_shoot_ratio[final5$exp=="facts_ii_face3_pt_c"] <- facts_ii_face3_pt_c_root_shoot
-final5$root_shoot_ratio[final5$exp=="new_zealand_face_c"] <- new_zealand_c_root_shoot
-final5$root_shoot_ratio[final5$exp=="duke_c"] <- duke_c_root_shoot
-final5$root_shoot_ratio[final5$exp=="duke2_c"] <- duke2_c_root_shoot
-final5$root_shoot_ratio[final5$exp=="mi_c"] <- mi_root_shoot
+#final5$root_shoot_ratio[final5$exp=="biocon_c"] <- biocon_root_shoot
+#final5$root_shoot_ratio[final5$exp=="facts_ii_face3_pt_c"] <- facts_ii_face3_pt_c_root_shoot
+#final5$root_shoot_ratio[final5$exp=="new_zealand_face_c"] <- new_zealand_c_root_shoot
+#final5$root_shoot_ratio[final5$exp=="duke_c"] <- duke_c_root_shoot
+#final5$root_shoot_ratio[final5$exp=="duke2_c"] <- duke2_c_root_shoot
+#final5$root_shoot_ratio[final5$exp=="mi_c"] <- mi_root_shoot
 
 final5$LMA[final5$exp=="duke_c"] <- duke_c_lma
 final5$LMA[final5$exp=="euroface4_pe_c"] <- euroface4_pe_lma
