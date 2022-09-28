@@ -584,7 +584,19 @@ obs_light_pred <- obs_light_pred[ , -which(names(obs_light_pred) %in% c("exp.x",
 all_obs_pred <- dplyr::bind_rows(obs_co2_pred, obs_warming_pred,obs_light_pred,low_high_dataset) 
 
 all_obs_pred$jmax_vcmax <- all_obs_pred$jmax - all_obs_pred$vcmax
-names(all_obs_pred)
+
+#corrected observed jmax/vcmax data in some combined points 
+#(since they have different co2_a, co2_e, so sensitivity coefficient of jmax/vcmax not equal to jmax_vcmax)
+#kevin2_c_vcmax$sen_coef <- kevin2_c_vcmax$logr/log(kevin2_c_vcmax$co2_e/kevin2_c_vcmax$co2_a)
+#kevin2_c_jmax$sen_coef <- kevin2_c_jmax$logr/log(kevin2_c_jmax$co2_e/kevin2_c_jmax$co2_a)
+#kevin2_c_vcmax_sm <- aggregate(kevin2_c_vcmax,by=list(kevin2_c_vcmax$expgroup), FUN=mean, na.rm=TRUE)[,c("Group.1","sen_coef")]
+#kevin2_c_jmax_sm <- aggregate(kevin2_c_jmax,by=list(kevin2_c_jmax$expgroup),FUN=mean, na.rm=TRUE)[,c("Group.1","sen_coef")]
+#soyfacesoy2_c changed
+#all_obs_pred$jmax_vcmax[all_obs_pred$exp=="soyfacesoy2_c"] <- mean(c(kevin2_c_jmax_sm$sen_coef[kevin2_c_jmax_sm$Group.1=="soyfacesoy2"]-kevin2_c_vcmax_sm$sen_coef[kevin2_c_vcmax_sm$Group.1=="soyfacesoy2"],kevin2_c_jmax_sm$sen_coef[kevin2_c_jmax_sm$Group.1=="soyfacesoy1"]-kevin2_c_vcmax_sm$sen_coef[kevin2_c_vcmax_sm$Group.1=="soyfacesoy1"]))
+#all_obs_pred$jmax_vcmax[all_obs_pred$exp=="riceface_japan_ko_2013_3558_13960_c"] <- mean(c(kevin2_c_jmax_sm$sen_coef[kevin2_c_jmax_sm$Group.1=="riceface_japan_ko_2013_3558_13960"]-kevin2_c_vcmax_sm$sen_coef[kevin2_c_vcmax_sm$Group.1=="riceface_japan_ko_2013_3558_13960"],kevin2_c_jmax_sm$sen_coef[kevin2_c_jmax_sm$Group.1=="riceface_japan_ko_2012_3558_13960"]-kevin2_c_vcmax_sm$sen_coef[kevin2_c_vcmax_sm$Group.1=="riceface_japan_ko_2012_3558_13960"]))
+#all_obs_pred$jmax_vcmax[all_obs_pred$exp=="riceface_japan_l_2008_3938_14057_c"] <- mean(c(kevin2_c_jmax_sm$sen_coef[kevin2_c_jmax_sm$Group.1=="riceface_japan_l_2008_3938_14057"]-kevin2_c_vcmax_sm$sen_coef[kevin2_c_vcmax_sm$Group.1=="riceface_japan_l_2008_3938_14057"],kevin2_c_jmax_sm$sen_coef[kevin2_c_jmax_sm$Group.1=="riceface_japan_l_2007_3938_14057"]-kevin2_c_vcmax_sm$sen_coef[kevin2_c_vcmax_sm$Group.1=="riceface_japan_l_2007_3938_14057"]))
+#all_obs_pred$jmax_vcmax[all_obs_pred$exp=="riceface_japan_ta_2013_3558_13960_c"] <- mean(c(kevin2_c_jmax_sm$sen_coef[kevin2_c_jmax_sm$Group.1=="riceface_japan_ta_2013_3558_13960"]-kevin2_c_vcmax_sm$sen_coef[kevin2_c_vcmax_sm$Group.1=="riceface_japan_ta_2013_3558_13960"],kevin2_c_jmax_sm$sen_coef[kevin2_c_jmax_sm$Group.1=="riceface_japan_ta_2012_3558_13960"]-kevin2_c_vcmax_sm$sen_coef[kevin2_c_vcmax_sm$Group.1=="riceface_japan_ta_2012_3558_13960"]))
+
 
 #finally, for meta-analysis
 #anpp, bnpp, nmass, LAI, soil N
@@ -1188,13 +1200,15 @@ biforface_c_lma <- log(lma_e/lma_a)/log(558/408)
 #final5 <- final4 
 final5$lai[final5$exp=="eucface_c"] <- eucface_lai
 final5$lai[final5$exp=="biocon_c"] <- biocon_lai
+final5$lai[final5$exp=="ornerp_liqui_c"] <- ornerp_liqui_lai
+final5$lai[final5$exp=="giface_c"] <- giface_c_lai
+
 final5$lai[final5$exp=="euroface4_pa_c"] <- euroface4_pa_lai
 final5$lai[final5$exp=="euroface4_pn_c"] <- euroface4_pn_lai
 final5$lai[final5$exp=="euroface4_pe_c"] <- euroface4_pe_lai
 final5$lai[final5$exp=="new_zealand_face_c"] <- new_zealand_face_c_lai
-final5$lai[final5$exp=="ornerp_liqui_c"] <- ornerp_liqui_lai
-final5$lai[final5$exp=="giface_c"] <- giface_c_lai
 
+#not using root/shoot from bgb/agb
 #final5$root_shoot_ratio[final5$exp=="biocon_c"] <- biocon_root_shoot
 #final5$root_shoot_ratio[final5$exp=="facts_ii_face3_pt_c"] <- facts_ii_face3_pt_c_root_shoot
 #final5$root_shoot_ratio[final5$exp=="new_zealand_face_c"] <- new_zealand_c_root_shoot
@@ -1205,12 +1219,14 @@ final5$lai[final5$exp=="giface_c"] <- giface_c_lai
 final5$LMA[final5$exp=="duke_c"] <- duke_c_lma
 final5$LMA[final5$exp=="euroface4_pe_c"] <- euroface4_pe_lma
 final5$LMA[final5$exp=="nevada_desert_face_c"] <- nevada_desert_face_c_lma
-final5$LMA[final5$exp=="giface_c"] <- giface_c_lma
 final5$LMA[final5$exp=="biforface_c"] <- biforface_c_lma
+
+final5$LMA[final5$exp=="giface_c"] <- giface_c_lma
 
 final5$narea[final5$exp=="soyfacesoy2_c"] <- soyfacesoy2_narea
 final5$narea[final5$exp=="nevada_desert_face_c"] <- nevada_desert_face_c_narea
 final5$narea[final5$exp=="soyfacetobacco9_c"] <- soyfacetobacco9_narea
+
 final5$narea[final5$exp=="giface_c"] <- giface_c_narea
 
 final5$nmass[final5$exp=="giface_c"] <- giface_c_nmass
