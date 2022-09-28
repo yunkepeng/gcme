@@ -844,15 +844,6 @@ final5$lai[final5$exp=="euroface4_pa_cf"] <- log(subset(kevin_othervars_cf,exp==
 final5$lai[final5$exp=="euroface4_pe_cf"] <- log(subset(kevin_othervars_cf,exp=="euroface4_pe_cf" &response=="lai_max")$elevated/subset(kevin_othervars_cf,exp=="euroface4_pe_f" &response=="lai_max")$elevated)/(log(subset(kevin_othervars_cf,exp=="euroface4_pe_cf" &response=="lai_max")$co2_e/subset(kevin_othervars_cf,exp=="euroface4_pe_cf" &response=="lai_max")$co2_a))
 final5$lai[final5$exp=="euroface4_pn_cf"] <- log(subset(kevin_othervars_cf,exp=="euroface4_pn_cf" &response=="lai_max")$elevated/subset(kevin_othervars_cf,exp=="euroface4_pn_f" &response=="lai_max")$elevated)/(log(subset(kevin_othervars_cf,exp=="euroface4_pn_cf" &response=="lai_max")$co2_e/subset(kevin_othervars_cf,exp=="euroface4_pn_cf" &response=="lai_max")$co2_a))
 
-#fill dukeface's root/shoot - not combing them yet - since they belong to different trees (different measurement years so cannot be calculated from bgb/agb)
-#bgb_du_cf_e <- (subset(kevin_othervars,exp=="duke2_cf" & response=="bgb" & Unit=="g_m2")$elevated) #all units, in t/ha
-#bgb_du_f_e <- (subset(kevin_othervars,exp=="duke2_f" & response=="bgb" & Unit=="g_m2")$elevated)
-#agb_du_cf_e <- mean(subset(kevin_othervars,exp=="duke2_cf" & response=="agb" & Unit=="g_m2")$elevated) 
-#agb_du_f_e <- mean(subset(kevin_othervars,exp=="duke2_f" & response=="agb" & Unit=="g_m2")$elevated) 
-#co2_a <- (subset(kevin_othervars,exp=="duke2_cf" & response=="bgb" & Unit=="g_m2")$co2_a)
-#co2_e <- (subset(kevin_othervars,exp=="duke2_cf" & response=="bgb" & Unit=="g_m2")$co2_e)
-#final5$root_shoot_ratio[final5$exp=="duke2_cf"] <- log((bgb_du_cf_e/agb_du_cf_e)/(bgb_du_f_e/agb_du_f_e))/log(co2_e/co2_a)
-
 #fill dukeface's anpp - something looked wrong here (why ambient all has same values. Not combined yet)
 subset(kevin_othervars,exp=="duke2_cf"& response=="anpp")[,c("Unit","citation","ambient","elevated")]
 
@@ -874,33 +865,6 @@ co2_a <- mean(subset(kevin_othervars_cf,exp=="euroface4_pe_cf"&response=="leaf_n
 co2_e <- mean(subset(kevin_othervars_cf,exp=="euroface4_pe_cf"&response=="leaf_n" & Unit=="g_kg")$co2_e)
 final5$LMA[final5$exp=="euroface4_pe_cf"] <- log((narea_cf/nmass_cf)/(narea_f/nmass_f))/log(co2_e/co2_a)
  
-#fill some euroface4's root_shoot_ratio data
-#not combing them yet - since they belong to different trees (different measurement years so cannot be calculated from bgb/agb)
-#especially if we combine cf and f to calculate co2 effect at N fertiliation - it is important - we have to make sure it must be the same tree if gap-fill root/shoot
-#bgb_pa_cf_e <- (subset(kevin_othervars,exp=="euroface4_pa_cf" & response=="bgb" & Unit=="t_ha")$elevated) #one unit, in t/ha
-#bgb_pa_f_e <- (subset(kevin_othervars,exp=="euroface4_pa_f" & response=="bgb" & Unit=="t_ha")$elevated)
-#agb_pa_cf_e <- mean(subset(kevin_othervars,exp=="euroface4_pa_cf" & response=="agb" & Unit=="g_m2")$elevated) #two numbers, both in in g_m2
-#agb_pa_f_e <- mean(subset(kevin_othervars,exp=="euroface4_pa_f" & response=="agb" & Unit=="g_m2")$elevated) #two numbers, both in in g_m2
-#co2_a <- (subset(kevin_othervars,exp=="euroface4_pa_cf" & response=="bgb" & Unit=="t_ha")$co2_a)
-#co2_e <- (subset(kevin_othervars,exp=="euroface4_pa_cf" & response=="bgb" & Unit=="t_ha")$co2_e)
-#final5$root_shoot_ratio[final5$exp=="euroface4_pa_cf"] <- log((bgb_pa_cf_e/agb_pa_cf_e)/(bgb_pa_f_e/agb_pa_f_e))/log(co2_e/co2_a)
-
-#bgb_pe_cf_e <- (subset(kevin_othervars,exp=="euroface4_pe_cf" & response=="bgb" & Unit=="t_ha")$elevated) #one unit, in t/ha
-#bgb_pe_f_e <- (subset(kevin_othervars,exp=="euroface4_pe_f" & response=="bgb" & Unit=="t_ha")$elevated)
-#agb_pe_cf_e <- mean(subset(kevin_othervars,exp=="euroface4_pe_cf" & response=="agb" & Unit=="g_m2")$elevated) #two numbers, both in in g_m2
-#agb_pe_f_e <- mean(subset(kevin_othervars,exp=="euroface4_pe_f" & response=="agb" & Unit=="g_m2")$elevated) #two numbers, both in in g_m2
-#co2_a <- (subset(kevin_othervars,exp=="euroface4_pe_cf" & response=="bgb" & Unit=="t_ha")$co2_a)
-#co2_e <- (subset(kevin_othervars,exp=="euroface4_pe_cf" & response=="bgb" & Unit=="t_ha")$co2_e)
-#final5$root_shoot_ratio[final5$exp=="euroface4_pe_cf"] <- log((bgb_pe_cf_e/agb_pe_cf_e)/(bgb_pe_f_e/agb_pe_f_e))/log(co2_e/co2_a)
-
-#bgb_pn_cf_e <- (subset(kevin_othervars,exp=="euroface4_pn_cf" & response=="bgb" & Unit=="t_ha")$elevated) #one unit, in t/ha
-#bgb_pn_f_e <- (subset(kevin_othervars,exp=="euroface4_pn_f" & response=="bgb" & Unit=="t_ha")$elevated)
-#agb_pn_cf_e <- mean(subset(kevin_othervars,exp=="euroface4_pn_cf" & response=="agb" & Unit=="g_m2")$elevated) #two numbers, both in in g_m2
-#agb_pn_f_e <- mean(subset(kevin_othervars,exp=="euroface4_pn_f" & response=="agb" & Unit=="g_m2")$elevated) #two numbers, both in in g_m2
-#co2_a <- (subset(kevin_othervars,exp=="euroface4_pn_cf" & response=="bgb" & Unit=="t_ha")$co2_a)
-#co2_e <- (subset(kevin_othervars,exp=="euroface4_pn_cf" & response=="bgb" & Unit=="t_ha")$co2_e)
-#final5$root_shoot_ratio[final5$exp=="euroface4_pn_cf"] <- log((bgb_pn_cf_e/agb_pn_cf_e)/(bgb_pn_f_e/agb_pn_f_e))/log(co2_e/co2_a)
-
 #pa doens't have leaf n
 
 #check if n fertilization at eCO2 is all site-species
