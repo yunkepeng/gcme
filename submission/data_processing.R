@@ -586,7 +586,7 @@ all_obs_pred <- dplyr::bind_rows(obs_co2_pred, obs_warming_pred,obs_light_pred,l
 all_obs_pred$jmax_vcmax <- all_obs_pred$jmax - all_obs_pred$vcmax
 
 #corrected observed jmax/vcmax data in some combined points 
-#(since they have different co2_a, co2_e within site, so site-mean level sensitivity coefficient of jmax/vcmax not equal to jmax_vcmax...)
+#(since they have different co2_a, co2_e within site, so site-mean level sensitivity coefficient of jmax/vcmax is not completely equal to sensitivitiy coefficient of jmax - vcmax...but this not affect results too much..only affects soybean while others 3 no change)
 #kevin2_c_vcmax$sen_coef <- kevin2_c_vcmax$logr/log(kevin2_c_vcmax$co2_e/kevin2_c_vcmax$co2_a)
 #kevin2_c_jmax$sen_coef <- kevin2_c_jmax$logr/log(kevin2_c_jmax$co2_e/kevin2_c_jmax$co2_a)
 #kevin2_c_vcmax_sm <- aggregate(kevin2_c_vcmax,by=list(kevin2_c_vcmax$expgroup), FUN=mean, na.rm=TRUE)[,c("Group.1","sen_coef")]
