@@ -65,7 +65,7 @@ kevin_othervars$exp_nam <- kevin_othervars$site
 
 ##combine some site-name
 #we  also keep popface (where not applying N-fertilzied) and euroface (where applying N-fertilzied) separately.
-kevin_othervars$exp[kevin_othervars$exp=="soyfacesoy1_c"] <- "soyfacesoy2_c"
+kevin_othervars$exp[kevin_othervars$exp=="soyfacesoy1_c"] <- "soyfacesoy2_c" # by checking bernacchi_et_al_2005 (https://www.jstor.org/stable/23388810#metadata_info_tab_contents) they are just different measurement years (2001, 2002) so can be combined
 kevin_othervars$exp[kevin_othervars$exp=="riceface_japan_ko_2012_3558_13960_c"] <- "riceface_japan_ko_2013_3558_13960_c"
 kevin_othervars$exp[kevin_othervars$exp=="riceface_japan_l_2007_3938_14057_c"] <- "riceface_japan_l_2008_3938_14057_c"
 kevin_othervars$exp[kevin_othervars$exp=="riceface_japan_ta_2012_3558_13960_c"] <- "riceface_japan_ta_2013_3558_13960_c"
@@ -556,6 +556,23 @@ prediction <- read.csv("~/data/gcme/prediction/prediction.csv")
 names(prediction) <- c("X","exp","lon","lat","pred_vcmax","pred_jmax","pred_jmax_vcmax",
                        "treatment","ref","comments")
 
+#combine two years data to one-site data (consistent with obseravtion site-level data)
+prediction$pred_vcmax[prediction$exp=="soyfacesoy2_c"] <- mean(c(prediction$pred_vcmax[prediction$exp=="soyfacesoy2_c"],prediction$pred_vcmax[prediction$exp=="soyfacesoy1_c"]))
+prediction$pred_jmax[prediction$exp=="soyfacesoy2_c"] <- mean(c(prediction$pred_jmax[prediction$exp=="soyfacesoy2_c"],prediction$pred_jmax[prediction$exp=="soyfacesoy1_c"]))
+prediction$pred_jmax_vcmax[prediction$exp=="soyfacesoy2_c"] <- mean(c(prediction$pred_jmax_vcmax[prediction$exp=="soyfacesoy2_c"],prediction$pred_jmax_vcmax[prediction$exp=="soyfacesoy1_c"]))
+prediction$pred_vcmax[prediction$exp=="riceface_japan_ko_2013_3558_13960_c"] <- mean(c(prediction$pred_vcmax[prediction$exp=="riceface_japan_ko_2013_3558_13960_c"],prediction$pred_vcmax[prediction$exp=="riceface_japan_ko_2012_3558_13960_c"]))
+prediction$pred_jmax[prediction$exp=="riceface_japan_ko_2013_3558_13960_c"] <- mean(c(prediction$pred_jmax[prediction$exp=="riceface_japan_ko_2013_3558_13960_c"],prediction$pred_jmax[prediction$exp=="riceface_japan_ko_2012_3558_13960_c"]))
+prediction$pred_jmax_vcmax[prediction$exp=="riceface_japan_ko_2013_3558_13960_c"] <- mean(c(prediction$pred_jmax_vcmax[prediction$exp=="riceface_japan_ko_2013_3558_13960_c"],prediction$pred_jmax_vcmax[prediction$exp=="riceface_japan_ko_2012_3558_13960_c"]))
+prediction$pred_vcmax[prediction$exp=="riceface_japan_l_2008_3938_14057_c"] <- mean(c(prediction$pred_vcmax[prediction$exp=="riceface_japan_l_2008_3938_14057_c"],prediction$pred_vcmax[prediction$exp=="riceface_japan_l_2007_3938_14057_c"]))
+prediction$pred_jmax[prediction$exp=="riceface_japan_l_2008_3938_14057_c"] <- mean(c(prediction$pred_jmax[prediction$exp=="riceface_japan_l_2008_3938_14057_c"],prediction$pred_jmax[prediction$exp=="riceface_japan_l_2007_3938_14057_c"]))
+prediction$pred_jmax_vcmax[prediction$exp=="riceface_japan_l_2008_3938_14057_c"] <- mean(c(prediction$pred_jmax_vcmax[prediction$exp=="riceface_japan_l_2008_3938_14057_c"],prediction$pred_jmax_vcmax[prediction$exp=="riceface_japan_l_2007_3938_14057_c"]))
+prediction$pred_vcmax[prediction$exp=="riceface_japan_ta_2013_3558_13960_c"] <- mean(c(prediction$pred_vcmax[prediction$exp=="riceface_japan_ta_2013_3558_13960_c"],prediction$pred_vcmax[prediction$exp=="riceface_japan_ta_2012_3558_13960_c"]))
+prediction$pred_jmax[prediction$exp=="riceface_japan_ta_2013_3558_13960_c"] <- mean(c(prediction$pred_jmax[prediction$exp=="riceface_japan_ta_2013_3558_13960_c"],prediction$pred_jmax[prediction$exp=="riceface_japan_ta_2012_3558_13960_c"]))
+prediction$pred_jmax_vcmax[prediction$exp=="riceface_japan_ta_2013_3558_13960_c"] <- mean(c(prediction$pred_jmax_vcmax[prediction$exp=="riceface_japan_ta_2013_3558_13960_c"],prediction$pred_jmax_vcmax[prediction$exp=="riceface_japan_ta_2012_3558_13960_c"]))
+prediction$pred_vcmax[prediction$exp=="riceface_japan_a_2004_3938_14057_c"] <- mean(c(prediction$pred_vcmax[prediction$exp=="riceface_japan_a_2004_3938_14057_c"],prediction$pred_vcmax[prediction$exp=="riceface_japan_a_2003_3938_14057_c"]))
+prediction$pred_jmax[prediction$exp=="riceface_japan_a_2004_3938_14057_c"] <- mean(c(prediction$pred_jmax[prediction$exp=="riceface_japan_a_2004_3938_14057_c"],prediction$pred_jmax[prediction$exp=="riceface_japan_a_2003_3938_14057_c"]))
+prediction$pred_jmax_vcmax[prediction$exp=="riceface_japan_a_2004_3938_14057_c"] <- mean(c(prediction$pred_jmax_vcmax[prediction$exp=="riceface_japan_a_2004_3938_14057_c"],prediction$pred_jmax_vcmax[prediction$exp=="riceface_japan_a_2003_3938_14057_c"]))
+
 #first, merge to get prediction data
 obs_co2_pred <- merge(obs_co2[,c("exp","vcmax","jmax","ecosystem")],prediction, by=c("exp"),all.x=TRUE)
 obs_warming_pred <- merge(obs_warming[,c("exp","vcmax","jmax")],prediction, by=c("exp"),all.x=TRUE)
@@ -624,7 +641,7 @@ duke_2_f_nh4no3 <- (soil_nh4no3$elevated.x[soil_nh4no3$exp=="duke2_f"]+soil_nh4n
 co2_a <- soil_nh4no3$co2_a[soil_nh4no3$exp=="duke2_cf"]
 co2_e <- soil_nh4no3$co2_e[soil_nh4no3$exp=="duke2_cf"]
 
-duke2_cf_soil <- log(duke_2_cf_nh4no3/duke_2_f_nh4no3)/log(co2_e/co2_a)
+duke2_cf_soil <- log(duke_2_cf_nh4no3/duke_2_f_nh4no3)/log(co2_e/co2_a) #will be added at the end
 
 soil_nh4no3$soil_mineral_N[soil_nh4no3$exp=="duke2_cf"] <- duke2_cf_soil
 
@@ -700,9 +717,9 @@ root_shoot_ratio_plot <- agg_meta_sen_coef(logr_c_root_shoot_ratio,"root_shoot_r
 unique(subset(kevin_othervars_cf,response=="anpp")$Unit)
 #firstly, only combing with gC/m2/yr data. Remove below unit first.
 anpp_new1 <- subset(kevin_othervars_cf,response=="anpp"&Unit!="t_ha"&Unit!="g_m2"&Unit!="gc_m2"&Unit!="mg"&Unit!="g_plant")
-unique(anpp_new1$Unit)
+unique(anpp_new1[,c("Unit","exp")])
 
-# this data should be included, although it is g/m2 but it is actually flux data
+# this data should be included, although it is g/m2 but it is actually flux data in popface
 anpp_new2 <- subset(kevin_othervars_cf,response=="anpp"&Unit=="gc_m2"&citation=="finzi_et_al_2007")
 #combine
 anpp_new <- rbind(anpp_new1,anpp_new2)
@@ -715,8 +732,8 @@ anpp_plot1
 
 #second, have a look at 'other unit'
 anpp_others <- subset(kevin_othervars_cf,response=="anpp"& (Unit=="t_ha"|Unit=="g_m2"|Unit=="gc_m2"|Unit=="mg"|Unit=="g_plant"))
-unique(anpp_others[,c("exp")])
-#checked those sites one-by-one (only need to add nevada_desert_face_c and soyfacesoy2_c)
+unique(anpp_others[,c("exp","citation")])
+#checked those sites one-by-one (only need to add nevada_desert_face_c and soyfacesoy2_c; while duke2_cf will be added at the end)
 
 #nevada_desert_face_c - checked - unit is mg, these are seed mass, cannot be used
 subset(anpp_others,exp=="nevada_desert_face_c") 
@@ -780,11 +797,11 @@ cal_nfer <- function(df_f,df_cf,name_f,name_cf){
   #-----------------------------------------------------------------------
 }
 #check which variable are missing, which are not
-unique(subset(kevin_othervars_cf,exp=="euroface4_pa_cf")$response) 
-unique(subset(kevin_othervars_cf,exp=="euroface4_pe_cf")$response) 
-unique(subset(kevin_othervars_cf,exp=="euroface4_pn_cf")$response) 
-unique(subset(kevin_othervars_cf,exp=="new_zealand_face_cf")$response) 
-unique(subset(kevin_othervars_cf,exp=="duke2_cf")$response) 
+unique(subset(kevin_othervars_cf,exp=="euroface4_pa_cf")$response)  #checked 
+unique(subset(kevin_othervars_cf,exp=="euroface4_pe_cf")$response)#checked 
+unique(subset(kevin_othervars_cf,exp=="euroface4_pn_cf")$response) #checked 
+unique(subset(kevin_othervars_cf,exp=="new_zealand_face_cf")$response) #checked 
+unique(subset(kevin_othervars_cf,exp=="duke2_cf")$response) #checked 
 
 #fill them
 final5$vcmax[final5$exp=="euroface4_pa_cf"] <- cal_nfer(kevin2_f_vcmax,kevin2_cf_vcmax,"euroface4_pa_f","euroface4_pa_cf")
@@ -811,6 +828,67 @@ final5$nmass[final5$exp=="euroface4_pn_cf"] <-  cal_nfer(logr_f_nmass,logr_cf_nm
 final5$anpp[final5$exp=="euroface4_pa_cf"] <- cal_nfer(anpp_new_f,anpp_new_cf,"euroface4_pa_f","euroface4_pa_cf")
 final5$anpp[final5$exp=="euroface4_pe_cf"] <-  cal_nfer(anpp_new_f,anpp_new_cf,"euroface4_pe_f","euroface4_pe_cf")
 final5$anpp[final5$exp=="euroface4_pn_cf"] <-  cal_nfer(anpp_new_f,anpp_new_cf,"euroface4_pn_f","euroface4_pn_cf")
+
+final5$lai[final5$exp=="euroface4_pa_cf"] <- log(subset(kevin_othervars_cf,exp=="euroface4_pa_cf" &response=="lai_max")$elevated/subset(kevin_othervars_cf,exp=="euroface4_pa_f" &response=="lai_max")$elevated)/(log(subset(kevin_othervars_cf,exp=="euroface4_pa_cf" &response=="lai_max")$co2_e/subset(kevin_othervars_cf,exp=="euroface4_pa_cf" &response=="lai_max")$co2_a))
+final5$lai[final5$exp=="euroface4_pe_cf"] <- log(subset(kevin_othervars_cf,exp=="euroface4_pe_cf" &response=="lai_max")$elevated/subset(kevin_othervars_cf,exp=="euroface4_pe_f" &response=="lai_max")$elevated)/(log(subset(kevin_othervars_cf,exp=="euroface4_pe_cf" &response=="lai_max")$co2_e/subset(kevin_othervars_cf,exp=="euroface4_pe_cf" &response=="lai_max")$co2_a))
+final5$lai[final5$exp=="euroface4_pn_cf"] <- log(subset(kevin_othervars_cf,exp=="euroface4_pn_cf" &response=="lai_max")$elevated/subset(kevin_othervars_cf,exp=="euroface4_pn_f" &response=="lai_max")$elevated)/(log(subset(kevin_othervars_cf,exp=="euroface4_pn_cf" &response=="lai_max")$co2_e/subset(kevin_othervars_cf,exp=="euroface4_pn_cf" &response=="lai_max")$co2_a))
+
+#fill dukeface's root/shoot - not combing them yet - since they belong to different trees (different measurement years so cannot be calculated from bgb/agb)
+#bgb_du_cf_e <- (subset(kevin_othervars,exp=="duke2_cf" & response=="bgb" & Unit=="g_m2")$elevated) #all units, in t/ha
+#bgb_du_f_e <- (subset(kevin_othervars,exp=="duke2_f" & response=="bgb" & Unit=="g_m2")$elevated)
+#agb_du_cf_e <- mean(subset(kevin_othervars,exp=="duke2_cf" & response=="agb" & Unit=="g_m2")$elevated) 
+#agb_du_f_e <- mean(subset(kevin_othervars,exp=="duke2_f" & response=="agb" & Unit=="g_m2")$elevated) 
+#co2_a <- (subset(kevin_othervars,exp=="duke2_cf" & response=="bgb" & Unit=="g_m2")$co2_a)
+#co2_e <- (subset(kevin_othervars,exp=="duke2_cf" & response=="bgb" & Unit=="g_m2")$co2_e)
+#final5$root_shoot_ratio[final5$exp=="duke2_cf"] <- log((bgb_du_cf_e/agb_du_cf_e)/(bgb_du_f_e/agb_du_f_e))/log(co2_e/co2_a)
+
+#fill dukeface's anpp - something looked wrong here (why ambient all has same values. Not combined yet)
+subset(kevin_othervars,exp=="duke2_cf"& response=="anpp")[,c("Unit","citation","ambient","elevated")]
+
+#soil mineral N was added (see above)
+final5$soil_mineral_N[final5$exp=="duke2_cf"] <- duke2_cf_soil
+
+#anpp
+subset(kevin_othervars,exp=="duke2_cf" & response=="anpp")[,c("Unit","citation")]
+
+#fill euroface4_pe_cf's LMA
+unique(subset(kevin_othervars_cf,exp=="euroface4_pe_cf"&response=="leaf_n")$Unit)
+unique(subset(kevin_othervars_cf,exp=="euroface4_pe_f"&response=="leaf_n")$Unit)
+
+nmass_cf <- mean(subset(kevin_othervars_cf,exp=="euroface4_pe_cf"&response=="leaf_n" & Unit=="g_kg")$elevated)
+nmass_f <- mean(subset(kevin_othervars_cf,exp=="euroface4_pe_f"&response=="leaf_n" & Unit=="g_kg")$elevated)
+narea_cf <- mean(subset(kevin_othervars_cf,exp=="euroface4_pe_cf"&response=="leaf_n" & Unit=="g_m2")$elevated)
+narea_f <- mean(subset(kevin_othervars_cf,exp=="euroface4_pe_f"&response=="leaf_n" & Unit=="g_m2")$elevated)
+co2_a <- mean(subset(kevin_othervars_cf,exp=="euroface4_pe_cf"&response=="leaf_n" & Unit=="g_kg")$co2_a)
+co2_e <- mean(subset(kevin_othervars_cf,exp=="euroface4_pe_cf"&response=="leaf_n" & Unit=="g_kg")$co2_e)
+final5$LMA[final5$exp=="euroface4_pe_cf"] <- log((narea_cf/nmass_cf)/(narea_f/nmass_f))/log(co2_e/co2_a)
+ 
+#fill some euroface4's root_shoot_ratio data - not combing them yet - since they belong to different trees (different measurement years so cannot be calculated from bgb/agb)
+#bgb_pa_cf_e <- (subset(kevin_othervars,exp=="euroface4_pa_cf" & response=="bgb" & Unit=="t_ha")$elevated) #one unit, in t/ha
+#bgb_pa_f_e <- (subset(kevin_othervars,exp=="euroface4_pa_f" & response=="bgb" & Unit=="t_ha")$elevated)
+#agb_pa_cf_e <- mean(subset(kevin_othervars,exp=="euroface4_pa_cf" & response=="agb" & Unit=="g_m2")$elevated) #two numbers, both in in g_m2
+#agb_pa_f_e <- mean(subset(kevin_othervars,exp=="euroface4_pa_f" & response=="agb" & Unit=="g_m2")$elevated) #two numbers, both in in g_m2
+#co2_a <- (subset(kevin_othervars,exp=="euroface4_pa_cf" & response=="bgb" & Unit=="t_ha")$co2_a)
+#co2_e <- (subset(kevin_othervars,exp=="euroface4_pa_cf" & response=="bgb" & Unit=="t_ha")$co2_e)
+#final5$root_shoot_ratio[final5$exp=="euroface4_pa_cf"] <- log((bgb_pa_cf_e/agb_pa_cf_e)/(bgb_pa_f_e/agb_pa_f_e))/log(co2_e/co2_a)
+
+#bgb_pe_cf_e <- (subset(kevin_othervars,exp=="euroface4_pe_cf" & response=="bgb" & Unit=="t_ha")$elevated) #one unit, in t/ha
+#bgb_pe_f_e <- (subset(kevin_othervars,exp=="euroface4_pe_f" & response=="bgb" & Unit=="t_ha")$elevated)
+#agb_pe_cf_e <- mean(subset(kevin_othervars,exp=="euroface4_pe_cf" & response=="agb" & Unit=="g_m2")$elevated) #two numbers, both in in g_m2
+#agb_pe_f_e <- mean(subset(kevin_othervars,exp=="euroface4_pe_f" & response=="agb" & Unit=="g_m2")$elevated) #two numbers, both in in g_m2
+#co2_a <- (subset(kevin_othervars,exp=="euroface4_pe_cf" & response=="bgb" & Unit=="t_ha")$co2_a)
+#co2_e <- (subset(kevin_othervars,exp=="euroface4_pe_cf" & response=="bgb" & Unit=="t_ha")$co2_e)
+#final5$root_shoot_ratio[final5$exp=="euroface4_pe_cf"] <- log((bgb_pe_cf_e/agb_pe_cf_e)/(bgb_pe_f_e/agb_pe_f_e))/log(co2_e/co2_a)
+
+#bgb_pn_cf_e <- (subset(kevin_othervars,exp=="euroface4_pn_cf" & response=="bgb" & Unit=="t_ha")$elevated) #one unit, in t/ha
+#bgb_pn_f_e <- (subset(kevin_othervars,exp=="euroface4_pn_f" & response=="bgb" & Unit=="t_ha")$elevated)
+#agb_pn_cf_e <- mean(subset(kevin_othervars,exp=="euroface4_pn_cf" & response=="agb" & Unit=="g_m2")$elevated) #two numbers, both in in g_m2
+#agb_pn_f_e <- mean(subset(kevin_othervars,exp=="euroface4_pn_f" & response=="agb" & Unit=="g_m2")$elevated) #two numbers, both in in g_m2
+#co2_a <- (subset(kevin_othervars,exp=="euroface4_pn_cf" & response=="bgb" & Unit=="t_ha")$co2_a)
+#co2_e <- (subset(kevin_othervars,exp=="euroface4_pn_cf" & response=="bgb" & Unit=="t_ha")$co2_e)
+#final5$root_shoot_ratio[final5$exp=="euroface4_pn_cf"] <- log((bgb_pn_cf_e/agb_pn_cf_e)/(bgb_pn_f_e/agb_pn_f_e))/log(co2_e/co2_a)
+
+#pa doens't have leaf n
 
 #check if n fertilization at eCO2 is all site-species
 unique(subset(kevin_othervars,exp=="duke2_cf")$dominant_species)
@@ -1016,7 +1094,7 @@ check <- subset(kevin_othervars,exp=="nevada_desert_face_c")%>% group_by(respons
 #Leaf area obtained from https://link.springer.com/content/pdf/10.1007/s10021-005-0124-4.pdf
 #Housman D. C., Naumburg E., Huxman T.E., Charlet T.N., Nowak R.S., Smith S.D. (2006) Increase in Desert Shrub Produvtivity under Elevated Carbon Dioxide Vary with Water Availability. Ecosystems 9: 374-385
 #only has ratio of LA
-LA_ratio <- mean(1.18,0.92,1.06,1.28,1.10,1.33)
+LA_ratio <- mean(c(1.18,0.92,1.06,1.28,1.10,1.33))
 leafCN_ratio <- mean(subset(kevin_othervars,exp=="nevada_desert_face_c"&response=="leaf_cn")$elevated/subset(kevin_othervars,exp=="nevada_desert_face_c"&response=="leaf_cn")$ambient)
 leafNmass_ratio <- mean(subset(kevin_othervars,exp=="nevada_desert_face_c"&response=="leaf_n")$elevated/subset(kevin_othervars,exp=="nevada_desert_face_c"&response=="leaf_n")$ambient)
 
@@ -1156,16 +1234,28 @@ final5$ecosystem[final5$ecosystem=="cropland"] <- "Cropland"
 
 
 #gap-fill duke2_cf
+#vcmax - duke2 and duke cannot be merged since they duke2 is used for non-fertilization vs. fertilization.
+#duke2 face description: Since 2005, the rings were split into quadrants and N fertilization (11.2 g of N m−2yr−1 as ammonium nitrate) was applied to half of them. 
+#From: https://www.sciencedirect.com/science/article/pii/S0168192316303823
+#by looking at measurement time - duke2 has been measured for >10 years (which means, from 2005, starts with N fertilization), while duke has been measured just for 3 years (from 1996-1999, without any fertilization). So it should be separate
+subset(kevin2_f_vcmax,exp=="duke2_f")[,c("ambient","elevated","logr","citation")];subset(kevin2_cf_vcmax,exp=="duke2_cf")[,c("ambient","elevated","logr","citation")];
+subset(kevin2_c_vcmax,exp=="duke_c")[,c("ambient","elevated","co2_a","co2_e","logr","citation")]
+head(subset(kevin2_c_vcmax,exp=="duke_c"));head(subset(kevin2_c_vcmax,exp=="duke2_c"))
+
 #because this cannot be merged by individuals-level. We can only calculate them at site-level
 duke2_cf_vcmax <-(mean(kevin2_cf_vcmax$logr[kevin2_cf_vcmax$exp=="duke2_cf"]) - mean(kevin2_f_vcmax$logr[kevin2_f_vcmax$exp=="duke2_f"]))/
   log(kevin2_cf_vcmax$co2_e[kevin2_cf_vcmax$exp=="duke2_cf"][1]/kevin2_cf_vcmax$co2_a[kevin2_cf_vcmax$exp=="duke2_cf"][1])
+
+#jmax
+subset(kevin2_f_jmax,exp=="duke2_f")[,c("ambient","elevated","logr","citation")];subset(kevin2_cf_jmax,exp=="duke2_cf")[,c("ambient","elevated","logr","citation")];
+subset(kevin2_c_jmax,exp=="duke_c")[,c("ambient","elevated","co2_a","co2_e","logr","citation")]
 
 a1 <- subset(kevin2_f_jmax,exp=="duke2_f")[,c("ambient","elevated","logr","citation")]
 #remove the one with 4.2, which cannot be parallel to cf on below, and the values looked wrong
 a1$logr[a1$citation=="oishi_et_al_2014"] <- NA
 
 a2 <- subset(kevin2_cf_jmax,exp=="duke2_cf")[,c("ambient","elevated","logr","citation")]
-
+a1;a2
 #recalculate logr = logcf - cf
 duke2_cf_jmax <- (mean(a2$logr) - mean(a1$logr,na.rm=TRUE))/log(563/363)
 
@@ -1181,7 +1271,7 @@ subset(logr_c_lai,exp=="duke2_c")[,c("ambient","elevated","logr","citation")]
 subset(logr_f_lai,exp=="duke2_f")[,c("ambient","elevated","logr","citation")]
 subset(logr_cf_lai,exp=="duke2_cf")[,c("ambient","elevated","logr","citation")]
 # oishi_et_al_2014 - lai too low - below has problem - ambient should be 3.8 not 38!
-#calculate it directly 
+#calculate it from domec_et_al_2012 directly 
 duke2_cf_lai <- log(4.3/4.05)/log(563/363)
 
 final5$jmax[final5$exp=="duke2_cf"] <- duke2_cf_jmax
@@ -1202,7 +1292,6 @@ final5$jmax_vcmax <- final5$jmax-final5$vcmax
 
 csvfile <- paste("~/data/gcme/MS_data/plot_data.csv")
 write.csv(final5, csvfile, row.names = TRUE)
-
 
 #check japan_face
 #https://academic.oup.com/pcp/article/55/2/381/1862434#85129527
