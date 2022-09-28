@@ -585,6 +585,18 @@ all_obs_pred <- dplyr::bind_rows(obs_co2_pred, obs_warming_pred,obs_light_pred,l
 
 all_obs_pred$jmax_vcmax <- all_obs_pred$jmax - all_obs_pred$vcmax
 
+#corrected observed jmax/vcmax data in some combined points 
+#(since they have different co2_a, co2_e within site, so site-mean level sensitivity coefficient of jmax/vcmax not equal to jmax_vcmax...)
+#kevin2_c_vcmax$sen_coef <- kevin2_c_vcmax$logr/log(kevin2_c_vcmax$co2_e/kevin2_c_vcmax$co2_a)
+#kevin2_c_jmax$sen_coef <- kevin2_c_jmax$logr/log(kevin2_c_jmax$co2_e/kevin2_c_jmax$co2_a)
+#kevin2_c_vcmax_sm <- aggregate(kevin2_c_vcmax,by=list(kevin2_c_vcmax$expgroup), FUN=mean, na.rm=TRUE)[,c("Group.1","sen_coef")]
+#kevin2_c_jmax_sm <- aggregate(kevin2_c_jmax,by=list(kevin2_c_jmax$expgroup),FUN=mean, na.rm=TRUE)[,c("Group.1","sen_coef")]
+#soyfacesoy2_c changed
+#all_obs_pred$jmax_vcmax[all_obs_pred$exp=="soyfacesoy2_c"] <- mean(c(kevin2_c_jmax_sm$sen_coef[kevin2_c_jmax_sm$Group.1=="soyfacesoy2"]-kevin2_c_vcmax_sm$sen_coef[kevin2_c_vcmax_sm$Group.1=="soyfacesoy2"],kevin2_c_jmax_sm$sen_coef[kevin2_c_jmax_sm$Group.1=="soyfacesoy1"]-kevin2_c_vcmax_sm$sen_coef[kevin2_c_vcmax_sm$Group.1=="soyfacesoy1"]))
+#all_obs_pred$jmax_vcmax[all_obs_pred$exp=="riceface_japan_ko_2013_3558_13960_c"] <- mean(c(kevin2_c_jmax_sm$sen_coef[kevin2_c_jmax_sm$Group.1=="riceface_japan_ko_2013_3558_13960"]-kevin2_c_vcmax_sm$sen_coef[kevin2_c_vcmax_sm$Group.1=="riceface_japan_ko_2013_3558_13960"],kevin2_c_jmax_sm$sen_coef[kevin2_c_jmax_sm$Group.1=="riceface_japan_ko_2012_3558_13960"]-kevin2_c_vcmax_sm$sen_coef[kevin2_c_vcmax_sm$Group.1=="riceface_japan_ko_2012_3558_13960"]))
+#all_obs_pred$jmax_vcmax[all_obs_pred$exp=="riceface_japan_l_2008_3938_14057_c"] <- mean(c(kevin2_c_jmax_sm$sen_coef[kevin2_c_jmax_sm$Group.1=="riceface_japan_l_2008_3938_14057"]-kevin2_c_vcmax_sm$sen_coef[kevin2_c_vcmax_sm$Group.1=="riceface_japan_l_2008_3938_14057"],kevin2_c_jmax_sm$sen_coef[kevin2_c_jmax_sm$Group.1=="riceface_japan_l_2007_3938_14057"]-kevin2_c_vcmax_sm$sen_coef[kevin2_c_vcmax_sm$Group.1=="riceface_japan_l_2007_3938_14057"]))
+#all_obs_pred$jmax_vcmax[all_obs_pred$exp=="riceface_japan_ta_2013_3558_13960_c"] <- mean(c(kevin2_c_jmax_sm$sen_coef[kevin2_c_jmax_sm$Group.1=="riceface_japan_ta_2013_3558_13960"]-kevin2_c_vcmax_sm$sen_coef[kevin2_c_vcmax_sm$Group.1=="riceface_japan_ta_2013_3558_13960"],kevin2_c_jmax_sm$sen_coef[kevin2_c_jmax_sm$Group.1=="riceface_japan_ta_2012_3558_13960"]-kevin2_c_vcmax_sm$sen_coef[kevin2_c_vcmax_sm$Group.1=="riceface_japan_ta_2012_3558_13960"]))
+
 #finally, for meta-analysis
 #anpp, bnpp, nmass, LAI, soil N
 kevin_othervars
@@ -1307,3 +1319,18 @@ write.csv(final5, csvfile, row.names = TRUE)
 #https://academic.oup.com/pcp/article/55/2/370/1861701?login=true#85129192：
 #L: another place
 #japan should be combined
+
+#calculate site-info
+final5 <- read.csv("~/data/gcme/MS_data/plot_data.csv")
+final5$type_name[is.na(final5$type_name)==T]<-"others"
+dim(subset(final5,condition=="co2"))
+dim(subset(final5,condition=="co2" &(type_name)=="others")) # vcmax numbers
+
+dim(subset(final5,is.na(nmass)==F))
+dim(subset(final5,is.na(narea)==F))
+dim(subset(final5,is.na(LMA)==F))
+dim(subset(final5,is.na(anpp)==F))
+dim(subset(final5,is.na(bnpp)==F))
+dim(subset(final5,is.na(lai)==F))
+dim(subset(final5,is.na(root_shoot_ratio)==F))
+dim(subset(final5,is.na(soil_mineral_N)==F))
