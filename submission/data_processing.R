@@ -1059,6 +1059,7 @@ check <- subset(kevin_othervars,exp=="soyfacesoy2_c")%>% group_by(response,Unit)
 narea_a <- mean(subset(logr_c_LMA,exp=="soyfacesoy2_c"&Unit=="cm_/g")$ambient)*mean(subset(kevin_othervars,exp=="soyfacesoy2_c"&response=="leaf_n" & Unit=="g_kg")$ambient)/10
 narea_e <- mean(subset(logr_c_LMA,exp=="soyfacesoy2_c"&Unit=="cm_/g")$elevated)*mean(subset(kevin_othervars,exp=="soyfacesoy2_c"&response=="leaf_n" & Unit=="g_kg")$elevated)/10
 unique(subset(logr_c_LMA,exp=="soyfacesoy2_c")[,c("co2_a","co2_e")])
+unique(subset(kevin_othervars,exp=="soyfacesoy2_c"&response=="leaf_n" & Unit=="g_kg")[,c("co2_a","co2_e")])
 soyfacesoy2_narea <- log((narea_e/narea_a))/log(548/373)
 
 ######facts_ii_face4_bp_c missing jmax (only has J), anpp, bnpp and root/shoot missing
