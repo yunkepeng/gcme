@@ -939,12 +939,6 @@ agb_a/lma_a;agb_e/lma_e # looks ok
 subset(kevin2_c_vcmax,exp=="biocon_c")$co2_a;subset(kevin2_c_vcmax,exp=="biocon_c")$co2_e
 biocon_lai <- log((agb_e/lma_e)/(agb_a/lma_a))/log(570/367)
 
-#biocon_c - root/shoot = bgb/agb
-unique(subset(kevin_othervars,exp=="biocon_c" & response=="bgb")$Unit)#only using g_m2
-bgb_a <- mean(subset(kevin_othervars,exp=="biocon_c" & response=="bgb" & Unit=="g_m2")$ambient)
-bgb_e <- mean(subset(kevin_othervars,exp=="biocon_c" & response=="bgb" & Unit=="g_m2")$elevated)
-biocon_root_shoot <- log((bgb_e/agb_e)/(bgb_a/agb_a))/log(570/367)
-
 ###brandbjerg_c - LAI and ANPP missing after investigation
 check <- subset(kevin_othervars,exp=="brandbjerg_c")%>% group_by(response,Unit)  %>% summarise(number = n())
 
@@ -960,29 +954,12 @@ euroface4_pn_lai <- log((LAI_e/LAI_a))/log(550/368)
 #anpp still missing
 check <- subset(kevin_othervars,exp=="facts_ii_face3_pt_c")%>% group_by(response,Unit)  %>% summarise(number = n())
 
-#root/shoot = bgb/agb
-bgb_a <- mean(subset(kevin_othervars,exp=="facts_ii_face3_pt_c" & response=="bgb" & Unit=="g_m2")$ambient)
-bgb_e <- mean(subset(kevin_othervars,exp=="facts_ii_face3_pt_c" & response=="bgb" & Unit=="g_m2")$elevated)
-agb_a <- mean(subset(kevin_othervars,exp=="facts_ii_face3_pt_c" & response=="agb" & Unit=="g_m2")$ambient)
-agb_e <- mean(subset(kevin_othervars,exp=="facts_ii_face3_pt_c" & response=="agb" & Unit=="g_m2")$elevated)
-co2_a <- mean(c(subset(kevin_othervars,exp=="facts_ii_face3_pt_c" & response=="bgb" & Unit=="g_m2")$co2_a,subset(kevin_othervars,exp=="facts_ii_face3_pt_c" & response=="agb" & Unit=="g_m2")$co2_a))
-co2_e <- mean(c(subset(kevin_othervars,exp=="facts_ii_face3_pt_c" & response=="bgb" & Unit=="g_m2")$co2_e,subset(kevin_othervars,exp=="facts_ii_face3_pt_c" & response=="agb" & Unit=="g_m2")$co2_e))
-
-facts_ii_face3_pt_c_root_shoot <- log((bgb_e/agb_e)/(bgb_a/agb_a))/log(co2_e/co2_a)
-
 ####new_zealand
 check <- subset(kevin_othervars,exp=="new_zealand_face_c")%>% group_by(response,Unit)  %>% summarise(number = n())
 #root/shoot = bgb/agb
 #using g_100g is better because it is completely mass unit with reasonable values
 subset(kevin_othervars,exp=="new_zealand_face_c" & response=="bgb_c")$Unit
 subset(kevin_othervars,exp=="new_zealand_face_c" & response=="agb_c")$Unit
-
-bgb_a <-subset(kevin_othervars,exp=="new_zealand_face_c" & response=="bgb_c")$ambient
-bgb_e <- subset(kevin_othervars,exp=="new_zealand_face_c" & response=="bgb_c")$elevated
-agb_a <- subset(kevin_othervars,exp=="new_zealand_face_c" & response=="agb_c")$ambient
-agb_e <-subset(kevin_othervars,exp=="new_zealand_face_c" & response=="agb_c")$elevated
-unique(subset(kevin_othervars,exp=="new_zealand_face_c" & response=="agb_c")[,c("co2_a","co2_e")])
-new_zealand_c_root_shoot <- log((bgb_e/agb_e)/(bgb_a/agb_a))/log(475/364)
 
 #LAI from LMA and agb
 unique(subset(logr_c_LMA,exp=="new_zealand_face_c")$Unit)
@@ -1009,25 +986,12 @@ Carea_e <- mean(subset(kevin_othervars,exp=="duke_c" & response=="leaf_c" & Unit
 #LMA = Carea/Cmass
 duke_c_lma <- log((Carea_e/Cmass_e)/(Carea_a/Cmass_a))/log(563/363)
 
-#??? root/shoot = bgb/agb?
-bgb_a <- mean(subset(kevin_othervars,exp=="duke_c" & response=="bgb" & Unit=="g_m2" &co2_a==363)$ambient)
-bgb_e <- mean(subset(kevin_othervars,exp=="duke_c" & response=="bgb" & Unit=="g_m2"&co2_e==563)$elevated)
-agb_a <- mean(subset(kevin_othervars,exp=="duke_c" & response=="agb" & Unit=="gc_m2"& citation=="schlesinger_and_lichter_2001")$ambient) # too keep column constant
-agb_e <- mean(subset(kevin_othervars,exp=="duke_c" & response=="agb" & Unit=="gc_m2" & citation=="schlesinger_and_lichter_2001")$elevated)
-duke_c_root_shoot <- log((bgb_e/agb_e)/(bgb_a/agb_a))/log(563/363)
-
 #LAI still missing
 check <- subset(kevin_othervars,exp=="duke2_c")%>% group_by(response,Unit)  %>% summarise(number = n())
 
 
 ####duke2_c
 check <- subset(kevin_othervars,exp=="duke2_c")%>% group_by(response,Unit)  %>% summarise(number = n())
-#root/shoot = bgb/agb
-bgb_a <- mean(subset(kevin_othervars,exp=="duke2_c" & response=="bgb" & Unit=="g_m2" & co2_a==363)$ambient)
-bgb_e <- mean(subset(kevin_othervars,exp=="duke2_c" & response=="bgb" & Unit=="g_m2" & co2_e==563)$elevated)
-agb_a <- mean(subset(kevin_othervars,exp=="duke2_c" & response=="agb" & Unit=="g_m2"& co2_a==363)$ambient,na.rm=TRUE)
-agb_e <- mean(subset(kevin_othervars,exp=="duke2_c" & response=="agb" & Unit=="g_m2"& co2_e==563)$elevated,na.rm=TRUE)
-duke2_c_root_shoot <- log((bgb_e/agb_e)/(bgb_a/agb_a))/log(563/363)
 
 ########euroface4_pe_c
 #LAI
@@ -1102,13 +1066,6 @@ subset(kevin_othervars,exp=="euroface4_pa_c")$dominant_species[1]
 #######mi: missing nmass, narea, lma
 check <- subset(kevin_othervars,exp=="mi_c")%>% group_by(response,Unit)  %>% summarise(number = n())
 
-#root/shoot = leaf biomass/bgb biomass
-#make sure co2 condition is the same
-root_shoot_a <- mean(subset(kevin_othervars,exp=="mi_c"&response=="leaf_biomass"&co2_a==410)$ambient)/mean(subset(kevin_othervars,exp=="mi_c"&response=="bgb"&co2_a==410)$ambient)
-root_shoot_e <- mean(subset(kevin_othervars,exp=="mi_c"&response=="leaf_biomass"&co2_e==760)$elevated)/mean(subset(kevin_othervars,exp=="mi_c"&response=="bgb"&co2_e==760)$elevated)
-
-mi_root_shoot <- log((root_shoot_e/root_shoot_a))/log(760/410)
-
 ######soyfacesoy2_c: Nmass, Narea, bnpp and root/shoot missing
 check <- subset(kevin_othervars,exp=="soyfacesoy2_c")%>% group_by(response,Unit)  %>% summarise(number = n())
 
@@ -1173,14 +1130,6 @@ final5$lai[final5$exp=="euroface4_pa_c"] <- euroface4_pa_lai
 final5$lai[final5$exp=="euroface4_pn_c"] <- euroface4_pn_lai
 final5$lai[final5$exp=="euroface4_pe_c"] <- euroface4_pe_lai
 final5$lai[final5$exp=="new_zealand_face_c"] <- new_zealand_face_c_lai
-
-#not using root/shoot from bgb/agb
-#final5$root_shoot_ratio[final5$exp=="biocon_c"] <- biocon_root_shoot
-#final5$root_shoot_ratio[final5$exp=="facts_ii_face3_pt_c"] <- facts_ii_face3_pt_c_root_shoot
-#final5$root_shoot_ratio[final5$exp=="new_zealand_face_c"] <- new_zealand_c_root_shoot
-#final5$root_shoot_ratio[final5$exp=="duke_c"] <- duke_c_root_shoot
-#final5$root_shoot_ratio[final5$exp=="duke2_c"] <- duke2_c_root_shoot
-#final5$root_shoot_ratio[final5$exp=="mi_c"] <- mi_root_shoot
 
 final5$LMA[final5$exp=="duke_c"] <- duke_c_lma
 final5$LMA[final5$exp=="euroface4_pe_c"] <- euroface4_pe_lma
