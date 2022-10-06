@@ -89,8 +89,12 @@ kevin_vcmax_plotmean <- agg_meta_sen_coef(kevin2_c_vcmax,"vcmax")
 kevin_jmax_plotmean <- agg_meta_sen_coef(kevin2_c_jmax,"jmax")
 
 kevin_vj <- merge(kevin_vcmax_plotmean,kevin_jmax_plotmean,by=c("exp"),all.x=TRUE)
-
 kevin_vj_ecosystem <- merge(kevin_vj,kevin_ecosystem[,c("exp","ecosystem")],by=c("exp"),all.x=TRUE)
+
+#only select sites that primarily measures vcmax (and then a subset measuring jmax).
+#there are two plots (riceface_japan_a_2003_3938_14057_c and riceface_japan_a_2004_3938_14057_c) measuring jmax and not measuring vcmax. Quite surprising.
+# by checking their original source (https://www.jstor.org/stable/42796062?seq=6#metadata_info_tab_contents)
+# jmax and vcmax was available in figure but not in numbers. So not filling them here.
 
 #Smith's data
 smith_co2 <- read.csv("~/data/smith_keenan_gcb/gcb_co2/co2_data.csv")
