@@ -750,10 +750,12 @@ unique(anpp_others[,c("exp","citation")])
 subset(anpp_others,exp=="nevada_desert_face_c") 
 
 #soyfacesoy2_c - checked (https://onlinelibrary.wiley.com/doi/full/10.1111/j.1365-2486.2005.001017.x)
-#See its Fig.3. It is cumulative anpp within one year (i.e. including multiple (bi-weekly) harvest)
-#so its data should be added to sum first, and then calculate to logr (following Kevin's suggestion)
-subset(anpp_others,exp=="soyfacesoy2_c") 
-soyfacesoy2_c_anpp <- log(sum(subset(anpp_others,exp=="soyfacesoy2_c")$elevated)/sum(subset(anpp_others,exp=="soyfacesoy2_c")$ambient))/log(subset(anpp_others,exp=="soyfacesoy2_c")$co2_e[1]/subset(anpp_others,exp=="soyfacesoy2_c")$co2_a[1])
+#See its Fig.3. It is cumulative anpp within one year
+#so the data should be at last measurment time (15_10_2002)
+subset(anpp_others,exp=="soyfacesoy2_c")[,c("ambient","elevated","sampling_date")] 
+soyfacesoy2_c_anpp <- log((subset(anpp_others,exp=="soyfacesoy2_c"&sampling_date=="15_10_2002")$elevated)/
+                            (subset(anpp_others,exp=="soyfacesoy2_c"&sampling_date=="15_10_2002")$ambient))/
+  log(subset(anpp_others,exp=="soyfacesoy2_c"&sampling_date=="15_10_2002")$co2_e/subset(anpp_others,exp=="soyfacesoy2_c"&sampling_date=="15_10_2002")$co2_a)
 anpp_plot3 <- tibble(exp="soyfacesoy2_c",anpp=soyfacesoy2_c_anpp)
 
 #combine

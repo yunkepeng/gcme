@@ -1009,7 +1009,7 @@ final_prediction <- final_prediction[,c("exp","lon","lat","vcmax","jmax","jmax_v
 kevin_othervars <- read.csv("~/data/gcme/kevin_20220222/MESI_2022.csv")
 unique(subset(kevin_othervars,exp=="biforface_c" & response=="vcmax")[,c("lon","lat","elevation","start_year","sampling_year","c_c","c_t")])
 #add them here
-siteinfo_site <- tibble(sitename="kevin61",lon=-2.3,lat=52.8,elv=108,year_start=2012,year_end=2016) # forcing data was saved in ~/data/gcme/kevin/forcing/climate/kevin61.csv
+siteinfo_site <- tibble(sitename="kevin61",lon=-2.3,lat=52.8,elv=108,year_start=2012,year_end=2016) # forcing data was saved in ~/data/gcme/kevin/forcing/climate/kevin61.csv - using same code from 92-129
 sitename <- "biforface_c"
 
 df1 <- read.csv("~/data/gcme/kevin/forcing/climate/kevin61.csv") # this is for ambient
