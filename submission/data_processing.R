@@ -1070,3 +1070,8 @@ dim(subset(final5,is.na(bnpp)==F))
 dim(subset(final5,is.na(lai)==F))
 dim(subset(final5,is.na(root_shoot_ratio)==F))
 dim(subset(final5,is.na(soil_mineral_N)==F))
+
+subset(final5,ecm_type=="Nfix")$jmax
+summary(subset(final5,ecm_type=="Nfix")$jmax)
+summary(subset(final5,is.na(ecm_type)==T)$jmax)
+length(na.omit(subset(final5,is.na(ecm_type)==T)$jmax))
