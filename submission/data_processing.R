@@ -63,14 +63,6 @@ kevin_othervars$n_plots  <-as.numeric(kevin_othervars$n_plots)
 kevin_othervars$z <- as.numeric(kevin_othervars$z)
 kevin_othervars$exp_nam <- kevin_othervars$site
 
-##combine some site-name
-#we  also keep popface (where not applying N-fertilzied) and euroface (where applying N-fertilzied) separately.
-kevin_othervars$exp[kevin_othervars$exp=="soyfacesoy1_c"] <- "soyfacesoy2_c" # by checking bernacchi_et_al_2005 (https://www.jstor.org/stable/23388810#metadata_info_tab_contents) they are just different measurement years (2001, 2002) so can be combined
-kevin_othervars$exp[kevin_othervars$exp=="riceface_japan_ko_2012_3558_13960_c"] <- "riceface_japan_ko_2013_3558_13960_c"
-kevin_othervars$exp[kevin_othervars$exp=="riceface_japan_l_2007_3938_14057_c"] <- "riceface_japan_l_2008_3938_14057_c"
-kevin_othervars$exp[kevin_othervars$exp=="riceface_japan_ta_2012_3558_13960_c"] <- "riceface_japan_ta_2013_3558_13960_c"
-kevin_othervars$exp[kevin_othervars$exp=="riceface_japan_a_2003_3938_14057_c"] <- "riceface_japan_a_2004_3938_14057_c"
-
 kevin_vcmax <- subset(kevin_othervars,response =="vcmax"|response =="jmax")
 kevin2_final <- response_ratio_v2(kevin_vcmax)
 
@@ -556,23 +548,6 @@ prediction <- read.csv("~/data/gcme/prediction/prediction.csv")
 names(prediction) <- c("X","exp","lon","lat","pred_vcmax","pred_jmax","pred_jmax_vcmax",
                        "treatment","ref","comments")
 
-#combine two years data to one-site data (consistent with obseravtion site-level data)
-prediction$pred_vcmax[prediction$exp=="soyfacesoy2_c"] <- mean(c(prediction$pred_vcmax[prediction$exp=="soyfacesoy2_c"],prediction$pred_vcmax[prediction$exp=="soyfacesoy1_c"]))
-prediction$pred_jmax[prediction$exp=="soyfacesoy2_c"] <- mean(c(prediction$pred_jmax[prediction$exp=="soyfacesoy2_c"],prediction$pred_jmax[prediction$exp=="soyfacesoy1_c"]))
-prediction$pred_jmax_vcmax[prediction$exp=="soyfacesoy2_c"] <- mean(c(prediction$pred_jmax_vcmax[prediction$exp=="soyfacesoy2_c"],prediction$pred_jmax_vcmax[prediction$exp=="soyfacesoy1_c"]))
-prediction$pred_vcmax[prediction$exp=="riceface_japan_ko_2013_3558_13960_c"] <- mean(c(prediction$pred_vcmax[prediction$exp=="riceface_japan_ko_2013_3558_13960_c"],prediction$pred_vcmax[prediction$exp=="riceface_japan_ko_2012_3558_13960_c"]))
-prediction$pred_jmax[prediction$exp=="riceface_japan_ko_2013_3558_13960_c"] <- mean(c(prediction$pred_jmax[prediction$exp=="riceface_japan_ko_2013_3558_13960_c"],prediction$pred_jmax[prediction$exp=="riceface_japan_ko_2012_3558_13960_c"]))
-prediction$pred_jmax_vcmax[prediction$exp=="riceface_japan_ko_2013_3558_13960_c"] <- mean(c(prediction$pred_jmax_vcmax[prediction$exp=="riceface_japan_ko_2013_3558_13960_c"],prediction$pred_jmax_vcmax[prediction$exp=="riceface_japan_ko_2012_3558_13960_c"]))
-prediction$pred_vcmax[prediction$exp=="riceface_japan_l_2008_3938_14057_c"] <- mean(c(prediction$pred_vcmax[prediction$exp=="riceface_japan_l_2008_3938_14057_c"],prediction$pred_vcmax[prediction$exp=="riceface_japan_l_2007_3938_14057_c"]))
-prediction$pred_jmax[prediction$exp=="riceface_japan_l_2008_3938_14057_c"] <- mean(c(prediction$pred_jmax[prediction$exp=="riceface_japan_l_2008_3938_14057_c"],prediction$pred_jmax[prediction$exp=="riceface_japan_l_2007_3938_14057_c"]))
-prediction$pred_jmax_vcmax[prediction$exp=="riceface_japan_l_2008_3938_14057_c"] <- mean(c(prediction$pred_jmax_vcmax[prediction$exp=="riceface_japan_l_2008_3938_14057_c"],prediction$pred_jmax_vcmax[prediction$exp=="riceface_japan_l_2007_3938_14057_c"]))
-prediction$pred_vcmax[prediction$exp=="riceface_japan_ta_2013_3558_13960_c"] <- mean(c(prediction$pred_vcmax[prediction$exp=="riceface_japan_ta_2013_3558_13960_c"],prediction$pred_vcmax[prediction$exp=="riceface_japan_ta_2012_3558_13960_c"]))
-prediction$pred_jmax[prediction$exp=="riceface_japan_ta_2013_3558_13960_c"] <- mean(c(prediction$pred_jmax[prediction$exp=="riceface_japan_ta_2013_3558_13960_c"],prediction$pred_jmax[prediction$exp=="riceface_japan_ta_2012_3558_13960_c"]))
-prediction$pred_jmax_vcmax[prediction$exp=="riceface_japan_ta_2013_3558_13960_c"] <- mean(c(prediction$pred_jmax_vcmax[prediction$exp=="riceface_japan_ta_2013_3558_13960_c"],prediction$pred_jmax_vcmax[prediction$exp=="riceface_japan_ta_2012_3558_13960_c"]))
-prediction$pred_vcmax[prediction$exp=="riceface_japan_a_2004_3938_14057_c"] <- mean(c(prediction$pred_vcmax[prediction$exp=="riceface_japan_a_2004_3938_14057_c"],prediction$pred_vcmax[prediction$exp=="riceface_japan_a_2003_3938_14057_c"]))
-prediction$pred_jmax[prediction$exp=="riceface_japan_a_2004_3938_14057_c"] <- mean(c(prediction$pred_jmax[prediction$exp=="riceface_japan_a_2004_3938_14057_c"],prediction$pred_jmax[prediction$exp=="riceface_japan_a_2003_3938_14057_c"]))
-prediction$pred_jmax_vcmax[prediction$exp=="riceface_japan_a_2004_3938_14057_c"] <- mean(c(prediction$pred_jmax_vcmax[prediction$exp=="riceface_japan_a_2004_3938_14057_c"],prediction$pred_jmax_vcmax[prediction$exp=="riceface_japan_a_2003_3938_14057_c"]))
-
 #first, merge to get prediction data
 obs_co2_pred <- merge(obs_co2[,c("exp","vcmax","jmax","ecosystem")],prediction, by=c("exp"),all.x=TRUE)
 obs_warming_pred <- merge(obs_warming[,c("exp","vcmax","jmax")],prediction, by=c("exp"),all.x=TRUE)
@@ -584,18 +559,6 @@ obs_light_pred <- obs_light_pred[ , -which(names(obs_light_pred) %in% c("exp.x",
 all_obs_pred <- dplyr::bind_rows(obs_co2_pred, obs_warming_pred,obs_light_pred,low_high_dataset) 
 
 all_obs_pred$jmax_vcmax <- all_obs_pred$jmax - all_obs_pred$vcmax
-
-#corrected observed jmax/vcmax data in some combined points 
-#(since they have different co2_a, co2_e within site, so site-mean level sensitivity coefficient of jmax/vcmax is not completely equal to sensitivitiy coefficient of jmax - vcmax...but this not affect results too much..only affects soybean while others 3 no change)
-kevin2_c_vcmax$sen_coef <- kevin2_c_vcmax$logr/log(kevin2_c_vcmax$co2_e/kevin2_c_vcmax$co2_a)
-kevin2_c_jmax$sen_coef <- kevin2_c_jmax$logr/log(kevin2_c_jmax$co2_e/kevin2_c_jmax$co2_a)
-kevin2_c_vcmax_sm <- aggregate(kevin2_c_vcmax,by=list(kevin2_c_vcmax$expgroup), FUN=mean, na.rm=TRUE)[,c("Group.1","sen_coef")]
-kevin2_c_jmax_sm <- aggregate(kevin2_c_jmax,by=list(kevin2_c_jmax$expgroup),FUN=mean, na.rm=TRUE)[,c("Group.1","sen_coef")]
-#only soyfacesoy2_c changed
-all_obs_pred$jmax_vcmax[all_obs_pred$exp=="soyfacesoy2_c"] <- mean(c(kevin2_c_jmax_sm$sen_coef[kevin2_c_jmax_sm$Group.1=="soyfacesoy2"]-kevin2_c_vcmax_sm$sen_coef[kevin2_c_vcmax_sm$Group.1=="soyfacesoy2"],kevin2_c_jmax_sm$sen_coef[kevin2_c_jmax_sm$Group.1=="soyfacesoy1"]-kevin2_c_vcmax_sm$sen_coef[kevin2_c_vcmax_sm$Group.1=="soyfacesoy1"]))
-all_obs_pred$jmax_vcmax[all_obs_pred$exp=="riceface_japan_ko_2013_3558_13960_c"] <- mean(c(kevin2_c_jmax_sm$sen_coef[kevin2_c_jmax_sm$Group.1=="riceface_japan_ko_2013_3558_13960"]-kevin2_c_vcmax_sm$sen_coef[kevin2_c_vcmax_sm$Group.1=="riceface_japan_ko_2013_3558_13960"],kevin2_c_jmax_sm$sen_coef[kevin2_c_jmax_sm$Group.1=="riceface_japan_ko_2012_3558_13960"]-kevin2_c_vcmax_sm$sen_coef[kevin2_c_vcmax_sm$Group.1=="riceface_japan_ko_2012_3558_13960"]))
-all_obs_pred$jmax_vcmax[all_obs_pred$exp=="riceface_japan_l_2008_3938_14057_c"] <- mean(c(kevin2_c_jmax_sm$sen_coef[kevin2_c_jmax_sm$Group.1=="riceface_japan_l_2008_3938_14057"]-kevin2_c_vcmax_sm$sen_coef[kevin2_c_vcmax_sm$Group.1=="riceface_japan_l_2008_3938_14057"],kevin2_c_jmax_sm$sen_coef[kevin2_c_jmax_sm$Group.1=="riceface_japan_l_2007_3938_14057"]-kevin2_c_vcmax_sm$sen_coef[kevin2_c_vcmax_sm$Group.1=="riceface_japan_l_2007_3938_14057"]))
-all_obs_pred$jmax_vcmax[all_obs_pred$exp=="riceface_japan_ta_2013_3558_13960_c"] <- mean(c(kevin2_c_jmax_sm$sen_coef[kevin2_c_jmax_sm$Group.1=="riceface_japan_ta_2013_3558_13960"]-kevin2_c_vcmax_sm$sen_coef[kevin2_c_vcmax_sm$Group.1=="riceface_japan_ta_2013_3558_13960"],kevin2_c_jmax_sm$sen_coef[kevin2_c_jmax_sm$Group.1=="riceface_japan_ta_2012_3558_13960"]-kevin2_c_vcmax_sm$sen_coef[kevin2_c_vcmax_sm$Group.1=="riceface_japan_ta_2012_3558_13960"]))
 
 #finally, for meta-analysis
 #anpp, bnpp, nmass, LAI, soil N
@@ -916,14 +879,6 @@ Aspen <- (log(669.6334/517.9303)/log(550/376) + log(621.7131/429.4247)/log(550/3
 final5$anpp[final5$exp=="phace_c"] <- phace
 final5$anpp[final5$exp=="aspenface_c"] <- Aspen
 
-###add more data: eucface - LAI
-#Paper Canopy leaf area of a mature evergreen Eucalyptus woodland does not respond to elevated atmospheric [CO2] but tracks water availability
-#from https://onlinelibrary.wiley.com/doi/full/10.1111/gcb.13151?casa_token=6CKcWQ_OHHwAAAAA%3AEsLJPJXb45rz2WxE807-NvACiQmFkELScHJiV_eaRUEPd0psT7co5ZnJp8Mo7CKaPFt4H6dkKe8XqZFXJw
-eucface_lai_df <- read.csv("~/data/Duursma_gcb/EucFACE_DUURSMA_GCB_LEAFAREAINDEX/data/FACE_RA_P0037_GAPFRACLAI_20121026-20150225_L2.csv")
-#150 as given in paper, also consistent with our df
-subset(kevin2_c_vcmax,exp=="eucface_c")$co2_e[1];subset(kevin2_c_vcmax,exp=="eucface_c")$co2_a[1]
-eucface_lai <- log(mean(subset(eucface_lai_df,treatment=="elevated")$LAI,na.rm=TRUE)/mean(subset(eucface_lai_df,treatment=="ambient")$LAI,na.rm=TRUE))/log(540/394)
-
 ###euroface4_pn_c
 check <- subset(kevin_othervars,exp=="euroface4_pn_c")%>% group_by(response,Unit)  %>% summarise(number = n())
 subset(kevin_othervars,exp=="euroface4_pn_c" & response=="lai_max"& citation=="liberloo_et_al_2006")[,c("co2_a","co2_e")]
@@ -959,13 +914,6 @@ narea_a <- mean(subset(kevin_othervars,exp=="euroface4_pe_c" & response=="leaf_n
 narea_e <- mean(subset(kevin_othervars,exp=="euroface4_pe_c" & response=="leaf_n"&Unit=="g_m2")$elevated,na.rm=TRUE)
 #LMA = Narea/Nmass
 euroface4_pe_lma <- log((narea_e/nmass_e)/(narea_a/nmass_a))/log(550/368)
-
-
-#LAI calculated from: https://data.ess-dive.lbl.gov/view/doi%3A10.15485%2F1480325#ess-dive-ddd1cfa81a329ba-20181119T143441660
-lai_amb <- mean(as.numeric(subset(read.csv("~/data/ORNL_FACE/ORNL_ax.csv"),co2=="AMB")$ptrait_lai),na.rm=T)
-lai_elv <- mean(as.numeric(subset(read.csv("~/data/ORNL_FACE/ORNL_ax.csv"),co2=="ELE")$ptrait_lai),na.rm=T)
-unique(subset(kevin_othervars,exp=="ornerp_liqui_c")[,c("co2_a","co2_e")])
-ornerp_liqui_lai <- log((lai_elv/lai_amb))/log(560/380)
 
 ######soyfacesoy2_c: bnpp and root/shoot still missing
 check <- subset(kevin_othervars,exp=="soyfacesoy2_c")%>% group_by(response,Unit)  %>% summarise(number = n())
@@ -1068,11 +1016,10 @@ subset(logr_cf_lai,exp=="duke2_cf")[,c("ambient","elevated","logr","citation")]
 duke2_cf_lai <- log(4.3/4.05)/log(563/363)
 
 #include all!
-final5$lai[final5$exp=="eucface_c"] <- eucface_lai
-final5$lai[final5$exp=="ornerp_liqui_c"] <- ornerp_liqui_lai
 final5$lai[final5$exp=="euroface4_pa_c"] <- euroface4_pa_lai
 final5$lai[final5$exp=="euroface4_pn_c"] <- euroface4_pn_lai
 final5$lai[final5$exp=="euroface4_pe_c"] <- euroface4_pe_lai
+
 final5$LMA[final5$exp=="duke_c"] <- duke_c_lma
 final5$LMA[final5$exp=="euroface4_pe_c"] <- euroface4_pe_lma
 final5$LMA[final5$exp=="nevada_desert_face_c"] <- nevada_desert_face_c_lma
