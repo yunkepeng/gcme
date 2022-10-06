@@ -1060,6 +1060,7 @@ final5 <- read.csv("~/data/gcme/MS_data/plot_data.csv")
 final5$type_name[is.na(final5$type_name)==T]<-"others"
 dim(subset(final5,condition=="co2"))
 dim(subset(final5,condition=="co2" &(type_name)=="others")) # vcmax numbers
+dim(subset(final5,condition=="co2" &(type_name)=="others"&is.na(jmax)==F)) # jmax numbers
 
 dim(subset(final5,is.na(nmass)==F))
 dim(subset(final5,is.na(narea)==F))
