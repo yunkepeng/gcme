@@ -362,16 +362,16 @@ plot1[,c("species","lon","lat","z","Year","Vcmax","Jmax","narea","SLA",
 
 #plot2: https://www.sciencedirect.com/science/article/pii/S0269749105001260
 plot2 <- subset(walker,Author=="Calfapietra et al 2005")
-#checked the original sources from Calfapietra et al 2005 - it is at Popface - already included in GCME!
+#checked the original sources from Calfapietra et al 2005 - it is at popface - already repeated to our database
 
 #plot3: https://nph.onlinelibrary.wiley.com/doi/10.1111/j.1469-8137.2004.01028.x
 plot3 <- subset(walker,Author=="Sholtis et al 2004")
-#by checking original reference- it is located in  ORNL FACE - already included in GCME!
+#by checking original reference- it is located in ORNL FACE - already repeated to our database (ornerp_liqui_c).
 
 #plot4
 plot4 <- subset(walker,Author=="Watanabe et al 2011")
 unique(plot4[,c("lon","lat")])
-#this site is repeated to our site: ornerp_liqui_c - so not included
+#this site is repeated to our site (betulace) 
 
 ####Input Warming data 
 #Input data, and combine dataset to get Tleaf
