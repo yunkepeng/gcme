@@ -350,6 +350,28 @@ light_vcmax_points$site_species <- paste(light_vcmax_points$lon,light_vcmax_poin
 
 obs_light <- light_vcmax_points %>% group_by(lon,lat,site_species,type_name)  %>% summarise(vcmax = mean(vcmax),jmax=mean(jmax))
 
+###Walker's repeated data check
+# four eCO2 sites from Walker: they are not included because (1) it is repeated to our GCME or Smith database after checking coordinates or literatures or (2) it didn't fit the selection criteria.
+walker <- read.csv("~/data/leaf_traits/Walker/LEAF_PHOTOSYNTHESIS_TRAITS_1224/data/Leaf_Photosynthesis_Traits.csv")
+#plot1
+plot1 <- subset(walker,Author=="Bauer et al 2001")
+plot1[,c("species","lon","lat","z","Year","Vcmax","Jmax","narea","SLA",
+         "Treatment_CO2","Treatment_N","Treatment_P","Treatment_light")]
+#all measured co2 effect on vcmax at low N-fertilisation environments. This didn't fit our criteria so not used.
+#We want data either measured co2 effect without N fertilisation, or measured co2 effect with 'levels of fertilisation' (non-fertilisation vs. fertilisation OR high-fertilisation vs. low-fertilisation).
+
+#plot2: https://www.sciencedirect.com/science/article/pii/S0269749105001260
+plot2 <- subset(walker,Author=="Calfapietra et al 2005")
+#checked the original sources from Calfapietra et al 2005 - it is at Popface - already included in GCME!
+
+#plot3: https://nph.onlinelibrary.wiley.com/doi/10.1111/j.1469-8137.2004.01028.x
+plot3 <- subset(walker,Author=="Sholtis et al 2004")
+#by checking original reference- it is located in  ORNL FACE - already included in GCME!
+
+#plot4
+plot4 <- subset(walker,Author=="Watanabe et al 2011")
+unique(plot4[,c("lon","lat")])
+#this site is repeated to our site: ornerp_liqui_c - so not included
 
 ####Input Warming data 
 #Input data, and combine dataset to get Tleaf
