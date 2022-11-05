@@ -716,7 +716,7 @@ unique(subset(kevin_othervars_cf,response=="anpp")$Unit)
 anpp_new1 <- subset(kevin_othervars_cf,response=="anpp"&Unit!="t_ha"&Unit!="g_m2"&Unit!="gc_m2"&Unit!="mg"&Unit!="g_plant")
 unique(anpp_new1[,c("Unit","exp")])
 
-# this data should be included, although it is g/m2 but it is actually flux data in popface
+# this data should be included, although it is g/m2 but it is actually flux data in popface at forest
 anpp_new2 <- subset(kevin_othervars_cf,response=="anpp"&Unit=="gc_m2"&citation=="finzi_et_al_2007")
 anpp_new2
 #combine
