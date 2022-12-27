@@ -182,13 +182,13 @@ smith_all_simple <- subset(vcmax25_warmingco2_siteinfo,exp_nam!="NZFACE" &exp_na
 
 smith_all_plotmean <- aggregate(smith_all_simple,by=list(smith_all_simple$SiteID,smith_all_simple$ecosystem), FUN=mean, na.rm=TRUE)[,c("Group.1","Group.2","sen_coef_v","sen_coef_j")]
 names(smith_all_plotmean) <- c("exp","ecosystem","vcmax","jmax")
-smith_all_plotmean$exp[smith_all_plotmean$exp=="OakOTC"] <- "mi_c";
-smith_all_plotmean$exp[smith_all_plotmean$exp=="ORNL"] <- "ornerp_liqui_c";
+smith_all_plotmean$exp[smith_all_plotmean$exp=="OakOTC"] <- "mi_c"; # including both Smith and GCME
+smith_all_plotmean$exp[smith_all_plotmean$exp=="ORNL"] <- "ornerp_liqui_c"; # including both Smith and GCME
 smith_all_plotmean$exp[smith_all_plotmean$exp=="PineOTC"] <- "christchurch_pr_c";
-smith_all_plotmean$exp[smith_all_plotmean$exp=="RichmondGH"] <- "australiacotton_c";
-smith_all_plotmean$exp[smith_all_plotmean$exp=="UIAPine"] <- "ua_otc_c";
-smith_all_plotmean$exp[smith_all_plotmean$exp=="PHACE"] <- "phace_c";
-smith_all_plotmean$exp[smith_all_plotmean$exp=="AspenFACE"] <- "aspenface_c";
+smith_all_plotmean$exp[smith_all_plotmean$exp=="RichmondGH"] <- "australiacotton_c";# including both Smith and GCME
+smith_all_plotmean$exp[smith_all_plotmean$exp=="UIAPine"] <- "ua_otc_c";# including both Smith and GCME
+smith_all_plotmean$exp[smith_all_plotmean$exp=="PHACE"] <- "phace_c";# including both Smith and GCME
+smith_all_plotmean$exp[smith_all_plotmean$exp=="AspenFACE"] <- "aspenface_c";# including both Smith and GCME
 smith_all_plotmean$exp[smith_all_plotmean$exp=="BilyKriz"] <- "bily_kriz_c";
 smith_all_plotmean$exp[smith_all_plotmean$exp=="Headley"] <- "headley_qp_c";
 smith_all_plotmean$exp[smith_all_plotmean$exp=="Viesalm"] <- "vielsalm_c"
@@ -998,7 +998,7 @@ subset(kevin2_f_jmax,exp=="duke2_f")[,c("ambient","elevated","logr","citation")]
 subset(kevin2_c_jmax,exp=="duke_c")[,c("ambient","elevated","co2_a","co2_e","logr","citation")]
 
 a1 <- subset(kevin2_f_jmax,exp=="duke2_f")[,c("ambient","elevated","logr","citation")]
-#remove the one with 4.2, which cannot be parallel to cf on below, and the values looked wrong
+#oishi_et_al_2014 appeared to be wrong (confirmed by Kevin): 
 a1$logr[a1$citation=="oishi_et_al_2014"] <- NA
 
 a2 <- subset(kevin2_cf_jmax,exp=="duke2_cf")[,c("ambient","elevated","logr","citation")]
@@ -1016,7 +1016,7 @@ duke2_cf_narea <- log(1.34/1.44)/log(563/363)
 
 subset(logr_f_lai,exp=="duke2_f")[,c("ambient","elevated","logr","citation")]
 subset(logr_cf_lai,exp=="duke2_cf")[,c("ambient","elevated","logr","citation")]
-# oishi_et_al_2014 - lai too low - below has problem - ambient should be 3.8 not 38!
+#oishi_et_al_2014 appeared to be wrong (confirmed by Kevin): 
 #calculate it from domec_et_al_2012 directly 
 duke2_cf_lai <- log(4.3/4.05)/log(563/363)
 
