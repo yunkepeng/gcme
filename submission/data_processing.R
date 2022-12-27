@@ -1076,7 +1076,18 @@ write.csv(final5, csvfile, row.names = TRUE)
 
 #https://academic.oup.com/pcp/article/55/2/370/1861701?login=true#85129192：
 #L: another place
-#japan should be combined
+
+#measured in different years with different co2
+#soyface_1_2:
+subset(kevin_othervars,exp=="soyfacesoy1_c"&response=="vcmax")$co2_a
+subset(kevin_othervars,exp=="soyfacesoy2_c"&response=="vcmax")$co2_a
+#riceface: measured 
+subset(kevin_othervars,exp=="riceface_japan_l_2008_3938_14057_c"&response=="vcmax")$co2_a
+subset(kevin_othervars,exp=="riceface_japan_l_2007_3938_14057_c"&response=="vcmax")$co2_a
+subset(kevin_othervars,exp=="riceface_japan_ko_2012_3558_13960_c"&response=="vcmax")$co2_a
+subset(kevin_othervars,exp=="riceface_japan_ko_2013_3558_13960_c"&response=="vcmax")$co2_a
+subset(kevin_othervars,exp=="riceface_japan_ta_2012_3558_13960_c"&response=="vcmax")$co2_a
+subset(kevin_othervars,exp=="riceface_japan_ta_2013_3558_13960_c"&response=="vcmax")$co2_a
 
 #calculate site-info
 final5 <- read.csv("~/data/gcme/MS_data/plot_data.csv")
