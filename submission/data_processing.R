@@ -998,9 +998,8 @@ subset(kevin2_f_jmax,exp=="duke2_f")[,c("ambient","elevated","logr","citation")]
 subset(kevin2_c_jmax,exp=="duke_c")[,c("ambient","elevated","co2_a","co2_e","logr","citation")]
 
 a1 <- subset(kevin2_f_jmax,exp=="duke2_f")[,c("ambient","elevated","logr","citation")]
-#oishi_et_al_2014 appeared to be wrong (confirmed by Kevin): 
+#oishi_et_al_2014 appeared to be wrong and should be removed, as this one is not jmax but lai, see below: 
 a1$logr[a1$citation=="oishi_et_al_2014"] <- NA
-
 a2 <- subset(kevin2_cf_jmax,exp=="duke2_cf")[,c("ambient","elevated","logr","citation")]
 a1;a2
 #recalculate logr = logcf - cf
@@ -1014,11 +1013,13 @@ duke2_cf_lma <- log(113.3/100.6)/log(563/363)
 
 duke2_cf_narea <- log(1.34/1.44)/log(563/363)
 
+#LAI
+#Quoted from Kevin's email: "I just checked and corrected the data in our database. You were right that the '38' had to be '3.8', and the line with jmax for the reference Oishi et al. 2014 should actually not be jmax, but also lai, with control again 3.8 and treatment 4.2."
+subset(kevin2_f_jmax,exp=="duke2_f"&citation=="oishi_et_al_2014")[,c("ambient","elevated","logr","citation")]
 subset(logr_f_lai,exp=="duke2_f")[,c("ambient","elevated","logr","citation")]
 subset(logr_cf_lai,exp=="duke2_cf")[,c("ambient","elevated","logr","citation")]
-#oishi_et_al_2014 appeared to be wrong (confirmed by Kevin): 
-#calculate it from domec_et_al_2012 directly 
-duke2_cf_lai <- log(4.3/4.05)/log(563/363)
+#calculate it from domec_et_al_2012 and oishi_et_al_2014
+duke2_cf_lai <- ( log(4.3/4.05)/log(563/363) + log(4.8/4.2)/log(563/363) )/2
 
 #include all!
 final5$lai[final5$exp=="euroface4_pa_c"] <- euroface4_pa_lai
