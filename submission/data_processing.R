@@ -1089,7 +1089,7 @@ subset(kevin_othervars,exp=="riceface_japan_ko_2013_3558_13960_c"&response=="vcm
 subset(kevin_othervars,exp=="riceface_japan_ta_2012_3558_13960_c"&response=="vcmax")$co2_a
 subset(kevin_othervars,exp=="riceface_japan_ta_2013_3558_13960_c"&response=="vcmax")$co2_a
 
-#calculate site-info
+#calculate site-info (about number of sites cited in paper)
 final5 <- read.csv("~/data/gcme/MS_data/plot_data.csv")
 final5$type_name[is.na(final5$type_name)==T]<-"others"
 dim(subset(final5,condition=="co2"))
