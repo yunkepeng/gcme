@@ -293,6 +293,7 @@ low_high_vcmax$co2_change[low_high_vcmax$lon==-84.04] <- log(560/360)
 low_high_vcmax$co2_change[low_high_vcmax$lon==20.00] <- log(700/350) 
 #https://www.researchgate.net/publication/242459413_Nutrient_and_genotypic_effects_on_CO2-responsiveness_Photosynthetic_regulation_in_Leucadendron_species_of_a_nutrient-poor_environment
 low_high_vcmax$co2_change[low_high_vcmax$lon==89.14] <- log(720/360) 
+#https://academic.oup.com/treephys/article/26/11/1457/1733702
 
 low_high_vcmax$vcmax <- low_high_vcmax$logr_vcmax/low_high_vcmax$co2_change
 low_high_vcmax$jmax <- low_high_vcmax$logr_jmax/low_high_vcmax$co2_change
