@@ -872,6 +872,9 @@ final5$ecm_type[final5$exp=="glycinece"] <- "Nfix"
 #further process (gap-filling, correcting bugs)
 
 #2. remove high Tleaf measurement's vcmax (actually, two papers: darbah_et_al_2010a and darbah_et_al_2010b)
+#darbah_et_al_2010a: https://www.sciencedirect.com/science/article/pii/S0269749109005211?via%3Dihub
+#darbah_et_al_2010b: https://www.sciencedirect.com/science/article/pii/S0269749109005181 
+#darbah_et_al_2010b:leaf (Ci) were measured at naturally occurring leaf temperatures and binned into measurements at 32–35 °C, 36–39 °C and 40–41 °C as air temperatures ranged between 32 and 38 °C 
 final5$vcmax[final5$exp=="facts_ii_face3_pt_c"] <- agg_meta_sen_coef(response_ratio_v2(subset(kevin2_c_vcmax,exp=="facts_ii_face3_pt_c" & citation!="darbah_et_al_2010b" & citation!="darbah_et_al_2010a")),"vcmax")$vcmax
 final5$vcmax[final5$exp=="facts_ii_face4_bp_c"] <- agg_meta_sen_coef(response_ratio_v2(subset(kevin2_c_vcmax,exp=="facts_ii_face4_bp_c" & citation!="darbah_et_al_2010b")),"vcmax")$vcmax
 
