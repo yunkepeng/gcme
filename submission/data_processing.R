@@ -1094,23 +1094,3 @@ subset(kevin_othervars,exp=="riceface_japan_ko_2013_3558_13960_c"&response=="vcm
 subset(kevin_othervars,exp=="riceface_japan_ta_2012_3558_13960_c"&response=="vcmax")$co2_a
 subset(kevin_othervars,exp=="riceface_japan_ta_2013_3558_13960_c"&response=="vcmax")$co2_a
 
-#calculate site-info (about number of sites cited in paper)
-final5 <- read.csv("~/data/gcme/MS_data/plot_data.csv")
-final5$type_name[is.na(final5$type_name)==T]<-"others"
-dim(subset(final5,condition=="co2"))
-dim(subset(final5,condition=="co2" &(type_name)=="others")) # vcmax numbers
-dim(subset(final5,condition=="co2" &(type_name)=="others"&is.na(jmax)==F)) # jmax numbers
-
-dim(subset(final5,is.na(nmass)==F))
-dim(subset(final5,is.na(narea)==F))
-dim(subset(final5,is.na(LMA)==F))
-dim(subset(final5,is.na(anpp)==F))
-dim(subset(final5,is.na(bnpp)==F))
-dim(subset(final5,is.na(lai)==F))
-dim(subset(final5,is.na(root_shoot_ratio)==F))
-dim(subset(final5,is.na(soil_mineral_N)==F))
-
-subset(final5,ecm_type=="Nfix")$jmax
-summary(subset(final5,ecm_type=="Nfix")$jmax)
-summary(subset(final5,is.na(ecm_type)==T)$jmax)
-length(na.omit(subset(final5,is.na(ecm_type)==T)$jmax))
