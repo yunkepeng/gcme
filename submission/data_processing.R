@@ -26,6 +26,9 @@ library(scales)
 library(ggpubr)
 library(MAd)
 
+source("/Users/yunpeng/yunkepeng/gcme/submission/data_transfer.R") #please adjust this to the file path shown in Github's clone one.
+
+
 #response_ratio_v2: calculate response ratio of each individuals
 response_ratio_v2 <- function(df){
   df$logr <- log(df$elevated/df$ambient)
@@ -49,7 +52,7 @@ agg_meta_sen_coef <- function(df,name){
 #####3. CO2 effect data
 #read Kevin's most recent data
 ###old vcmax dataset was ("~/data/gcme/kevin/orig_vcmax/JunkePeng_11252021.csv"). Don't delete this old vcmax dataset, since we used this to construct forcing info (this csv has better sampling measurement year data than MESI.csv as it has been well de-bugged for measurement year). However, MESI's vcmax has provided one more plot (biforface_c), all others data don't change. So we use MESI version here.
-kevin_othervars <- read.csv("~/data/gcme/kevin_20220222/MESI_2022.csv")
+kevin_othervars <- read.csv(mesi_path)
 kevin_othervars <- rename(kevin_othervars, c(ambient = x_c, elevated=x_t, ambient_Sd=sd_c, elevated_Sd=sd_t,ambient_Se=se_c,elevated_Se=se_t,n_plots=rep_c,
                                              z=elevation, co2_a=c_c, co2_e=c_t, nfertQ_a = n_c, nfertQ_e = n_t, pfertQ_a = p_c, pfertQ_e = p_t,kfertQ_a = k_c, kfertQ_e = k_t,
                                              warmQ_e1 = w_t1, warmQ_e2 = w_t2, warmQ_e3 = w_t3, Unit=x_units))
@@ -97,7 +100,7 @@ kevin_vj_ecosystem <- merge(kevin_vj,kevin_ecosystem[,c("exp","ecosystem")],by=c
 # however the dataset only records jmax25 and not records vcmax25 which is an incomplete collection. We don't include this "incomplete site" now.
 
 #Smith's data
-smith_co2 <- read.csv("~/data/smith_keenan_gcb/gcb_co2/co2_data.csv")
+smith_co2 <- read.csv(smith_path)
 smith_co2$exp_nam <- smith_co2$SiteID
 smith_co2 <- subset(smith_co2,is.na(lat)==FALSE) # remove empty column
 summary(smith_co2)
@@ -231,7 +234,7 @@ smith_all_plotmean <- smith_all_plotmean[,c("exp","vcmax","jmax","ecosystem")]
 obs_co2 <- rbind(kevin_vj_ecosystem,smith_all_plotmean)
 
 #N fertilization data from Walker 
-walker <- read.csv("~/data/leaf_traits/Walker/LEAF_PHOTOSYNTHESIS_TRAITS_1224/data/Leaf_Photosynthesis_Traits.csv")
+walker <- read.csv(walker_path)
 
 Nfer_vcmax <- subset(walker,Treatment_N!="not applicable" &Treatment_CO2!="not applicable" & Vcmax>0)
 Nfer_vcmax2 <- Nfer_vcmax[,c("lon","lat","species","Treatment_N","Treatment_P",
@@ -306,7 +309,7 @@ low_high_dataset <- low_high_vcmax[,c("lon","lat","site_species","Treatment_N",
 low_high_dataset
 
 #####2. Input light effect data (we only obtain vcmax and jmax)
-walker <- read.csv("~/data/leaf_traits/Walker/LEAF_PHOTOSYNTHESIS_TRAITS_1224/data/Leaf_Photosynthesis_Traits.csv")
+walker <- read.csv(walker_path)
 
 light_vcmax <- subset(walker,(Treatment_light=="shade"|Treatment_light=="sun"|
                                 Treatment_light=="high"|Treatment_light=="low") & Vcmax>0)
@@ -353,7 +356,7 @@ obs_light <- light_vcmax_points %>% group_by(lon,lat,site_species,type_name)  %>
 
 ###Walker's repeated data check
 # four eCO2 sites from Walker: they are not included because (1) it is repeated to our GCME or Smith database after checking coordinates or literatures or (2) it didn't fit the selection criteria.
-walker <- read.csv("~/data/leaf_traits/Walker/LEAF_PHOTOSYNTHESIS_TRAITS_1224/data/Leaf_Photosynthesis_Traits.csv")
+walker <- read.csv(walker_path)
 #plot1
 plot1 <- subset(walker,Author=="Bauer et al 2001")
 plot1[,c("species","lon","lat","z","Year","Vcmax","Jmax","narea","SLA",
@@ -376,7 +379,7 @@ unique(plot4[,c("lon","lat")])
 
 ####Input Warming data 
 #Input data, and combine dataset to get Tleaf
-df3 <- read_csv("~/data/Kumarathunge_2020_newphy/kumarathunge_2020_newphy/Data/PPC-TGlob_V1.0.csv")
+df3 <- read_csv(kumarathunge_path)
 df3 <- subset(df3,Growth_condition=="Glasshouse"|Growth_condition=="Whole tree chambers")
 # select sites - only these sites have available Temp information and matched our purpose.
 df3 <- df3 %>% filter(Dataset %in% c("Black Spruce, ON, Canada",
@@ -400,7 +403,7 @@ df3$jmax25 <- df3$Jmax*exp((43540/8.314)*((1/(df3$Tleaf+273.15))-(1/298.15)))
 
 
 #now, fill temp treatment information - needs to check original data
-df1 <- read_csv("~/data/Kumarathunge_2020_newphy/kumarathunge_2020_newphy/Data/ACi-TGlob_V1.0.csv")
+df1 <- read_csv(kumarathunge_path2)
 df1 <- subset(df1,Growth_condition=="Glasshouse"|Growth_condition=="Whole tree chambers")
 
 #For "Black Spruce, ON, Canada" - temperature was given in its original A-Ci data
@@ -574,7 +577,7 @@ low_high_dataset <- low_high_dataset[ , -which(names(low_high_dataset) %in% c("T
 
 #merged prediction data one-by-one
 #now, combine with prediction data
-prediction <- read.csv("~/data/gcme/prediction/prediction.csv")
+prediction <- read.csv(prediction_path)
 names(prediction) <- c("X","exp","lon","lat","pred_vcmax","pred_jmax","pred_jmax_vcmax",
                        "treatment","ref","comments")
 
@@ -662,7 +665,7 @@ soil_mineral_3 <- tibble(exp="facts_ii_face3_pt_c",
 soil_mineral_dry <- rbind(soil_mineral_1,soil_mineral_3)
 
 #LMA
-kevin_LMA <- read.csv("~/data/gcme/kevin/orig_leaf/LMA.csv")
+kevin_LMA <- read.csv(LMA_path)
 kevin_LMA <- rename(kevin_LMA, c(ambient = x_c, elevated=x_t, ambient_Sd=sd_c, elevated_Sd=sd_t,ambient_Se=se_c,elevated_Se=se_t,n_plots=rep_c,
                                  z=elevation, co2_a=c_c, co2_e=c_t, nfertQ_a = n_c, nfertQ_e = n_t, pfertQ_a = p_c, pfertQ_e = p_t,kfertQ_a = k_c, kfertQ_e = k_t,
                                  warmQ_e1 = w_t1, warmQ_e2 = w_t2, warmQ_e3 = w_t3, Unit=x_units))
@@ -880,7 +883,7 @@ final5$jmax[final5$exp=="facts_ii_face3_pt_c"] <- agg_meta_sen_coef(response_rat
 final5$vcmax[final5$exp=="facts_ii_face4_bp_c"] <- agg_meta_sen_coef(response_ratio_v2(subset(kevin2_c_vcmax,exp=="facts_ii_face4_bp_c" & citation!="darbah_et_al_2010b")),"vcmax")$vcmax
 
 #add popface's soil 
-old_data <- read_csv("~/data/gcme/data_received_190325/NewData_wide_CORRECTED2.csv") %>%
+old_data <- read_csv(gcme_old_path) %>%
   mutate( ambient_Sd  = as.numeric(ambient_Sd),  ambient_Se  = as.numeric(ambient_Se), 
           elevated_Sd = as.numeric(elevated_Sd), elevated_Se = as.numeric(elevated_Se),
           co2_a  = as.numeric(co2_a),  co2_e  = as.numeric(co2_e), 
@@ -1070,7 +1073,7 @@ final5$ecosystem[final5$ecosystem=="cropland"] <- "Cropland"
 final5$comments[final5$condition=="light"] <- "vcmax and jmax are sensitivity coefficients = log(vcmax-ele/vcmax-amb)"
 final5$jmax_vcmax <- final5$jmax-final5$vcmax
 
-csvfile <- paste("~/data/gcme/MS_data/plot_data.csv")
+csvfile <- paste(output_path)
 write.csv(final5, csvfile, row.names = TRUE)
 
 #check japan_face
