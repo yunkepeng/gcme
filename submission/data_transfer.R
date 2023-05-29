@@ -11,8 +11,8 @@ output_path <- "~/data/gcme/MS_data/plot_data.csv"
 
 
 #Data path for further users (geco-users, and readers) to run:
-#prediction_path <- "data/prediction.csv" #this one was saved in repository, please adjust this to the file path shown in Github's clone one in local. 
-#output_path <- "data/plot_data.csv" #this one was saved in repository, please adjust this to the file path shown in Github's clone one in local. Ohters on below are saved in geco archive.
+#prediction_path <- "data/prediction.csv" #this one was saved in this repository, please adjust this file path when clone it locally.
+#output_path <- "data/plot_data.csv" #this one was saved in this repository, please adjust this file path when clone it locally. Others on below are saved in geco archive.
 
 #mesi_path <- "/data/archive_restricted/mesi_vansundert_2022/MESI_2022.csv"
 #gcme_old_path <- "/data/archive_restricted/mesi_vansundert_2022/NewData_wide_CORRECTED2.csv"
