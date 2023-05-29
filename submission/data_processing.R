@@ -26,7 +26,7 @@ library(scales)
 library(ggpubr)
 library(MAd)
 
-source("/Users/yunpeng/yunkepeng/gcme/submission/data_transfer.R") #please adjust this to the file path shown in Github's clone one.
+source("/Users/yunpeng/yunkepeng/gcme/submission/data_transfer.R") # please adjust this file path when clone it locally.
 
 
 #response_ratio_v2: calculate response ratio of each individuals
