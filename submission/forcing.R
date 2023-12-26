@@ -59,7 +59,8 @@ summary(kevin$Year)
 #correct elevation
 aaa <- aggregate(kevin,by=list(kevin$lon,kevin$lat), FUN=mean, na.rm=TRUE)[,c("lon","lat")]
 aaa$sitename <- paste("c",1:length(aaa$lon),sep="")
-devtools::load_all("~/yunkepeng/gcme/pmodel/ingestr/")
+devtools::load_all("/Users/yunpeng/yunkepeng/latest_packages/ingestr/")
+
 df_etopo <- ingest(aaa,source = "etopo1",dir = "~/data/etopo/" )
 aaa$elv <- as.numeric(as.data.frame(df_etopo$data))
 kevin_z <- merge(kevin,aaa[,c("lon","lat","elv")],by=c("lon","lat"),all.x=TRUE)
@@ -86,7 +87,7 @@ siteinfo_final <- kevin_forcing_sitemean[,c("sitename","lon","lat","elv","year_s
 csvfile <- paste("~/data/gcme/kevin/forcing/forcing_info.csv")
 write.csv(siteinfo_final, csvfile, row.names = TRUE)
 
-devtools::load_all("~/yunkepeng/gcme/pmodel/ingestr/")
+devtools::load_all("/Users/yunpeng/yunkepeng/latest_packages/ingestr/")
 devtools::load_all("~/yunkepeng/gcme/pmodel/rsofun/")
 
 #for (i in 1:(nrow(siteinfo_final))){
@@ -667,7 +668,8 @@ d6 <- tibble(
 obs_warming <- as.data.frame(rbind(d1,d2,d3,d4,d5,d6))
 
 obs_warming$sitename <- paste("kumarathunge",1:length(obs_warming$lon),sep="")
-devtools::load_all("~/yunkepeng/gcme/pmodel/ingestr/")
+devtools::load_all("/Users/yunpeng/yunkepeng/latest_packages/ingestr/")
+
 df_etopo <- ingest(obs_warming,source = "etopo1",dir = "~/data/etopo/" )
 obs_warming$elv <- as.numeric(as.data.frame(df_etopo$data))
 siteinfo_final <- as.data.frame(obs_warming[,c("sitename","lon","lat","elv","year_start","year_end")])

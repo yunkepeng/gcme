@@ -87,6 +87,8 @@ kevin2_c_jmax <- subset(kevin2_final, treatment=="c" & response =="jmax")
 kevin2_f_jmax <- subset(kevin2_final, treatment=="f" & response =="jmax")
 kevin2_cf_jmax <- subset(kevin2_final, treatment=="cf" & response =="jmax")
 
+ref_k1 <- unique(subset(kevin2_final,treatment=="c"|treatment=="f"|treatment=="cf")[,c("exp","citation")])
+
 kevin_vcmax_plotmean <- agg_meta_sen_coef(kevin2_c_vcmax,"vcmax")
 
 kevin_jmax_plotmean <- agg_meta_sen_coef(kevin2_c_jmax,"jmax")
@@ -337,7 +339,7 @@ light1a$type_name <- "shade_to_sun"
 
 light2 <- subset(light_vcmax,Treatment_light=="high"|Treatment_light=="low")
 light2 <- light2[,c("lon","lat","species","Treatment_N","Treatment_P",
-                         "Treatment_CO2","Treatment_light","Vcmax","Jmax")]
+                    "Treatment_CO2","Treatment_light","Vcmax","Jmax")]
 light2a <- merge(subset(light2,Treatment_light=="low"),subset(light2,Treatment_light=="high"),
                  by=c("lon","lat","species","Treatment_N","Treatment_P","Treatment_CO2"),
                  all.x=TRUE)
@@ -611,6 +613,8 @@ logr_c_nmass <- as_tibble(response_ratio_v2(subset(nmass,treatment=="c")));
 logr_f_nmass <- as_tibble(response_ratio_v2(subset(nmass,treatment=="f")));
 logr_cf_nmass <- as_tibble(response_ratio_v2(subset(nmass,treatment=="cf")))
 
+ref_k2 <- unique(dplyr::bind_rows(logr_c_nmass[,c("exp","citation")],logr_f_nmass[,c("exp","citation")],logr_cf_nmass[,c("exp","citation")]))
+
 narea <- subset(kevin_othervars_cf,response=="leaf_n") %>%         
   filter(Unit %in% c("g_m2","mg_cm2","mg_m2","mmol_m2","ug_cm3","umol_m2"))
 narea$response <- "narea"
@@ -619,17 +623,23 @@ logr_c_narea <- as_tibble(response_ratio_v2(subset(narea,treatment=="c")));
 logr_f_narea <- as_tibble(response_ratio_v2(subset(narea,treatment=="f")));
 logr_cf_narea <- as_tibble(response_ratio_v2(subset(narea,treatment=="cf")))
 
+ref_k3 <- unique(dplyr::bind_rows(logr_c_narea[,c("exp","citation")],logr_f_narea[,c("exp","citation")],logr_cf_narea[,c("exp","citation")]))
+
 #bnpp
 
 #root data 1 - all used
 root1 <- subset(kevin_othervars_cf,response=="root_production" & Unit!="g_m2") 
 unique(root1[,c("exp","Unit")]) # the unit g_m2 was in brandbjerg_c, which was already been covered by the data with g_m2y
 
+ref_k4 <- unique(root1[,c("exp","citation")])
+
 #root data 2: alternatively, use fine root production (but remove non-useful data)
 root2 <- subset(kevin_othervars_cf,response=="fine_root_production" & Unit!="km_m3"& Unit!="m_m2")
 
 root2_rest <- subset(root2,exp!="new_zealand_face_c"&exp!="eucface_c"&exp!="mi_c"&exp!="ornerp_liqui_c"&
                        exp!="duke_c"&exp!="biocon_c"&exp!="aspenface_c"&exp!="brandbjerg_c")
+
+ref_k5 <- unique(root2_rest[,c("exp","citation")])
 
 unique(root2_rest[,c("exp","response","Unit","citation")])  # all unit works well (finzi_et_al_2007 has unit gc_m2, but it should be the value from the whole year i.e. can be gc_m2_yr)
 
@@ -642,6 +652,10 @@ soil_no3 <- subset(kevin_othervars_cf,response=="soil_no3-n") %>% group_by(exp,U
 soil_nh4no3 <- na.omit(merge(soil_nh4,soil_no3,by=c("exp","Unit","co2_a","co2_e"),all.x=TRUE))
 soil_nh4no3
 soil_nh4no3$soil_mineral_N <- log((soil_nh4no3$elevated.x+soil_nh4no3$elevated.y)/(soil_nh4no3$ambient.x+soil_nh4no3$ambient.y))/log(soil_nh4no3$co2_e/soil_nh4no3$co2_a)
+
+ref_k6 <- unique(rbind(subset(kevin_othervars_cf,response=="soil_nh4-n")[,c("exp","citation")],
+                       subset(kevin_othervars_cf,response=="soil_no3-n")[,c("exp","citation")]))
+
 # calculate duke_2_cf
 duke_2_cf_nh4no3 <- (soil_nh4no3$elevated.x[soil_nh4no3$exp=="duke2_cf"]+soil_nh4no3$elevated.y[soil_nh4no3$exp=="duke2_cf"])
 duke_2_f_nh4no3 <- (soil_nh4no3$elevated.x[soil_nh4no3$exp=="duke2_f"]+soil_nh4no3$elevated.y[soil_nh4no3$exp=="duke2_f"])
@@ -664,6 +678,8 @@ soil_mineral_3 <- tibble(exp="facts_ii_face3_pt_c",
                                                            "soil_mineral_N")$soil_mineral_N)
 soil_mineral_dry <- rbind(soil_mineral_1,soil_mineral_3)
 
+ref_k7 <- unique(subset(kevin_othervars_cf,response=="soil_in")[,c("exp","citation")])
+
 #LMA
 kevin_LMA <- read.csv(LMA_path)
 kevin_LMA <- rename(kevin_LMA, c(ambient = x_c, elevated=x_t, ambient_Sd=sd_c, elevated_Sd=sd_t,ambient_Se=se_c,elevated_Se=se_t,n_plots=rep_c,
@@ -683,12 +699,15 @@ unique(lma$Unit)
 #convert SLA to LMA format 
 sla$ambient <- 1/sla$ambient; sla$elevated <- 1/sla$elevated
 
-LMA <- dplyr::bind_rows(lma[,c("ambient","elevated","exp","treatment","co2_a","co2_e","Unit")],sla[,c("ambient","elevated","exp","treatment","co2_a","co2_e","Unit")])
+LMA <- dplyr::bind_rows(lma[,c("ambient","elevated","exp","treatment","co2_a","co2_e","Unit","citation")],
+                        sla[,c("ambient","elevated","exp","treatment","co2_a","co2_e","Unit","citation")])
 LMA$response <- "LMA"
 LMA2 <- merge(LMA,unique(kevin_othervars_cf[,c("exp","exp_nam")]),by=c("exp"),all.x=TRUE)
 logr_c_LMA <- as_tibble(response_ratio_v2(subset(LMA2,treatment=="c")))
 logr_f_LMA <-  as_tibble(response_ratio_v2(subset(LMA2,treatment=="f")))
 logr_cf_LMA <-  as_tibble(response_ratio_v2(subset(LMA2,treatment=="cf")))
+
+ref_k8 <- unique(dplyr::bind_rows(logr_c_LMA[,c("exp","citation")],logr_f_LMA[,c("exp","citation")],logr_cf_LMA[,c("exp","citation")]))
 
 
 #######final aggregation 
@@ -707,9 +726,13 @@ logr_c_lai <- response_ratio_v2(subset(kevin_othervars_cf,treatment=="c" & respo
 logr_f_lai <- response_ratio_v2(subset(kevin_othervars_cf,treatment=="f"& response=="lai"))
 logr_cf_lai <- response_ratio_v2(subset(kevin_othervars_cf,treatment=="cf" & response=="lai"))
 
+ref_k9 <- unique(dplyr::bind_rows(logr_c_lai[,c("exp","citation")],logr_f_lai[,c("exp","citation")],logr_cf_lai[,c("exp","citation")]))
+
 logr_c_root_shoot_ratio <- response_ratio_v2(subset(kevin_othervars_cf,treatment=="c" & response=="root_shoot_ratio"))
 logr_f_root_shoot_ratio <- response_ratio_v2(subset(kevin_othervars_cf,treatment=="f"& response=="root_shoot_ratio"))
 logr_cf_root_shoot_ratio <- response_ratio_v2(subset(kevin_othervars_cf,treatment=="cf" & response=="root_shoot_ratio"))
+
+ref_k10 <- unique(dplyr::bind_rows(logr_c_root_shoot_ratio[,c("exp","citation")],logr_f_root_shoot_ratio[,c("exp","citation")],logr_cf_root_shoot_ratio[,c("exp","citation")]))
 
 lai_plot <- agg_meta_sen_coef(logr_c_lai,"lai")
 root_shoot_ratio_plot <- agg_meta_sen_coef(logr_c_root_shoot_ratio,"root_shoot_ratio")
@@ -732,6 +755,9 @@ anpp_new_cf <- response_ratio_v2(subset(anpp_new,treatment=="cf"))
 anpp_plot1 <- agg_meta_sen_coef(anpp_new_c,"anpp")
 anpp_plot1
 
+ref_k11 <- unique(dplyr::bind_rows(anpp_new_c[,c("exp","citation")],anpp_new_f[,c("exp","citation")],anpp_new_cf[,c("exp","citation")]))
+
+
 #second, have a look at 'other unit'
 anpp_others <- subset(kevin_othervars_cf,response=="anpp"& (Unit=="t_ha"|Unit=="g_m2"|Unit=="gc_m2"|Unit=="mg"|Unit=="g_plant"))
 unique(anpp_others[,c("exp","citation")])
@@ -748,6 +774,8 @@ soyfacesoy2_c_anpp <- log((subset(anpp_others,exp=="soyfacesoy2_c"&sampling_date
                             (subset(anpp_others,exp=="soyfacesoy2_c"&sampling_date=="15_10_2002")$ambient))/
   log(subset(anpp_others,exp=="soyfacesoy2_c"&sampling_date=="15_10_2002")$co2_e/subset(anpp_others,exp=="soyfacesoy2_c"&sampling_date=="15_10_2002")$co2_a)
 anpp_plot3 <- tibble(exp="soyfacesoy2_c",anpp=soyfacesoy2_c_anpp)
+
+ref_k12 <- unique(subset(anpp_others,exp=="soyfacesoy2_c")[,c("exp","citation")])
 
 #combine
 anpp_plot <- rbind(anpp_plot1,anpp_plot3)
@@ -854,7 +882,10 @@ narea_f <- mean(subset(kevin_othervars_cf,exp=="euroface4_pe_f"&response=="leaf_
 co2_a <- mean(subset(kevin_othervars_cf,exp=="euroface4_pe_cf"&response=="leaf_n" & Unit=="g_kg")$co2_a)
 co2_e <- mean(subset(kevin_othervars_cf,exp=="euroface4_pe_cf"&response=="leaf_n" & Unit=="g_kg")$co2_e)
 final5$LMA[final5$exp=="euroface4_pe_cf"] <- log((narea_cf/nmass_cf)/(narea_f/nmass_f))/log(co2_e/co2_a)
- 
+
+#add above ref. once, since it is the same reference.
+ref_k13 <- unique(subset(kevin_othervars_cf,exp=="euroface4_pe_cf"&response=="leaf_n" & Unit=="g_kg")[,c("exp","citation")])
+
 #check if n fertilization at eCO2 is all site-species
 unique(subset(kevin_othervars,exp=="duke2_cf")$dominant_species)
 unique(subset(kevin_othervars,exp=="euroface4_pa_cf")$dominant_species)
@@ -882,6 +913,8 @@ final5$vcmax[final5$exp=="facts_ii_face3_pt_c"] <- agg_meta_sen_coef(response_ra
 final5$jmax[final5$exp=="facts_ii_face3_pt_c"] <- agg_meta_sen_coef(response_ratio_v2(subset(kevin2_c_jmax,exp=="facts_ii_face3_pt_c" & citation!="darbah_et_al_2010b" & citation!="darbah_et_al_2010a")),"jmax")$jmax
 final5$vcmax[final5$exp=="facts_ii_face4_bp_c"] <- agg_meta_sen_coef(response_ratio_v2(subset(kevin2_c_vcmax,exp=="facts_ii_face4_bp_c" & citation!="darbah_et_al_2010b")),"vcmax")$vcmax
 
+ref_removed <- c("darbah_et_al_2010a","darbah_et_al_2010b")
+
 #add popface's soil 
 old_data <- read_csv(gcme_old_path) %>%
   mutate( ambient_Sd  = as.numeric(ambient_Sd),  ambient_Se  = as.numeric(ambient_Se), 
@@ -892,6 +925,8 @@ old_data <- read_csv(gcme_old_path) %>%
 old_data$exp <- tolower(old_data$exp_nam)
 popface <-subset(old_data, (exp_nam=="POPFACE_pa"|exp_nam=="POPFACE_pe"|exp_nam=="POPFACE_pn")&Data_type=="soil_mineral_N")
 new_popface <- as.data.frame(agg_meta_sen_coef(response_ratio_v2(popface),"soil_mineral_N")[,c("exp","soil_mineral_N")])
+
+#ref_k14 ### reference not found in this csv.
 
 final5$soil_mineral_N[final5$exp=="popface_pa_c"] <- new_popface$soil_mineral_N[new_popface$exp=="popface_pa"]
 final5$soil_mineral_N[final5$exp=="popface_pe_c"] <- new_popface$soil_mineral_N[new_popface$exp=="popface_pe"]
@@ -913,6 +948,8 @@ LAI_a <- mean(subset(kevin_othervars,exp=="euroface4_pn_c" & response=="lai_max"
 LAI_e <- mean(subset(kevin_othervars,exp=="euroface4_pn_c" & response=="lai_max"& citation=="liberloo_et_al_2006")$elevated,na.rm=TRUE)
 euroface4_pn_lai <- log((LAI_e/LAI_a))/log(550/368)
 
+ref_k14 <- unique(subset(kevin_othervars,exp=="euroface4_pn_c" & response=="lai_max"& citation=="liberloo_et_al_2006")[,c("exp","citation")])
+
 ####duke_c
 check <- subset(kevin_othervars,exp=="duke_c")%>% group_by(response,Unit)  %>% summarise(number = n())
 
@@ -929,6 +966,9 @@ unique(subset(kevin_othervars,exp=="duke_c" & response=="leaf_c" & Unit=="gc_m2"
 #LMA = Carea/Cmass
 duke_c_lma <- log((Carea_e/Cmass_e)/(Carea_a/Cmass_a))/log(563/363)
 
+ref_k15 <- unique(subset(kevin_othervars,exp=="duke_c" & response=="leaf_c" & Unit=="g_100g" & citation=="hamilton_et_al_2004")[,c("exp","citation")])
+ref_k16 <- unique(subset(kevin_othervars,exp=="duke_c" & response=="leaf_c" & Unit=="gc_m2" & citation=="hamilton_et_al_2002")[,c("exp","citation")])
+
 ########euroface4_pe_c
 #LAI
 check <- subset(kevin_othervars,exp=="euroface4_pe_c")%>% group_by(response,Unit)  %>% summarise(number = n())
@@ -936,6 +976,10 @@ subset(kevin_othervars,exp=="euroface4_pe_c" & response=="lai_max")[,c("co2_a","
 LAI_a <- mean(subset(kevin_othervars,exp=="euroface4_pe_c" & response=="lai_max"& citation=="liberloo_et_al_2006")$ambient,na.rm=TRUE)
 LAI_e <- mean(subset(kevin_othervars,exp=="euroface4_pe_c" & response=="lai_max"& citation=="liberloo_et_al_2006")$elevated,na.rm=TRUE)
 euroface4_pe_lai <- log((LAI_e/LAI_a))/log(550/368)
+
+ref_k17 <- unique(subset(kevin_othervars,exp=="euroface4_pe_c" & response=="lai_max"& citation=="liberloo_et_al_2006")[,c("exp","citation")])
+
+
 #LMA
 nmass_a <- mean(subset(kevin_othervars,exp=="euroface4_pe_c" & response=="leaf_n"&Unit=="g_kg")$ambient,na.rm=TRUE)/1000 #convert to g/g
 nmass_e <- mean(subset(kevin_othervars,exp=="euroface4_pe_c" & response=="leaf_n"&Unit=="g_kg")$elevated,na.rm=TRUE)/1000
@@ -944,6 +988,9 @@ narea_e <- mean(subset(kevin_othervars,exp=="euroface4_pe_c" & response=="leaf_n
 #LMA = Narea/Nmass
 euroface4_pe_lma <- log((narea_e/nmass_e)/(narea_a/nmass_a))/log(550/368)
 
+ref_k18 <- unique(subset(kevin_othervars,exp=="euroface4_pe_c" & response=="leaf_n"&Unit=="g_kg")[,c("exp","citation")])
+ref_k19 <- unique(subset(kevin_othervars,exp=="euroface4_pe_c" & response=="leaf_n"&Unit=="g_m2")[,c("exp","citation")])
+
 ######soyfacesoy2_c:
 check <- subset(kevin_othervars,exp=="soyfacesoy2_c")%>% group_by(response,Unit)  %>% summarise(number = n())
 #narea = lma * nmass /10 (below cm_/g is actually g/cm2)
@@ -951,6 +998,9 @@ narea_a <- mean(subset(logr_c_LMA,exp=="soyfacesoy2_c"&Unit=="cm_/g")$ambient)*m
 narea_e <- mean(subset(logr_c_LMA,exp=="soyfacesoy2_c"&Unit=="cm_/g")$elevated)*mean(subset(kevin_othervars,exp=="soyfacesoy2_c"&response=="leaf_n" & Unit=="g_kg")$elevated)/10
 unique(subset(logr_c_LMA,exp=="soyfacesoy2_c")[,c("co2_a","co2_e")])
 soyfacesoy2_narea <- log((narea_e/narea_a))/log(548/373)
+
+ref_k20 <- unique(subset(logr_c_LMA,exp=="soyfacesoy2_c"&Unit=="cm_/g")[,c("exp","citation")])
+ref_k21 <- unique(subset(kevin_othervars,exp=="soyfacesoy2_c"&response=="leaf_n" & Unit=="g_kg")[,c("exp","citation")])
 
 #######euroface4_pa_c
 check <- subset(kevin_othervars,exp=="euroface4_pa_c")%>% group_by(response,Unit)  %>% summarise(number = n())
@@ -961,9 +1011,14 @@ LAI_a <- mean(subset(kevin_othervars,exp=="euroface4_pa_c" & response=="lai_max"
 LAI_e <- mean(subset(kevin_othervars,exp=="euroface4_pa_c" & response=="lai_max"& citation=="liberloo_et_al_2006")$elevated,na.rm=TRUE)
 euroface4_pa_lai <- log((LAI_e/LAI_a))/log(550/368)
 
+ref_k22 <- unique(subset(kevin_othervars,exp=="euroface4_pa_c" & response=="lai_max"& citation=="liberloo_et_al_2006")[,c("exp","citation")])
+
+
 #narea = nmass * LMA
 unique(subset(kevin_othervars,exp=="soyfacetobacco9_c")[,c("co2_a","co2_e")])
 soyfacetobacco9_narea <- final_mean$nmass[final_mean$exp=="soyfacetobacco9_c"] + final_mean$LMA[final_mean$exp=="soyfacetobacco9_c"]
+
+ref_k23 <- unique(subset(kevin_othervars,exp=="soyfacetobacco9_c")[,c("exp","citation")])
 
 #######giface 
 #Nmass and Narea were filled by below publication
@@ -974,6 +1029,8 @@ soyfacetobacco9_narea <- final_mean$nmass[final_mean$exp=="soyfacetobacco9_c"] +
 Nmass_a <- (34+41.2+26.4+36.3+31.8+43.5)/6/1000 # averaged them, then converted from mg/g to g/g
 Nmass_e <- (32.7+40.7+24.2+33.3+31.4+42.4)/6/1000 # in mg/g 
 giface_c_nmass <- log((Nmass_e/Nmass_a))/log(480/400)
+
+ref_k24 <- tibble(exp= "giface",citation="https://pubmed.ncbi.nlm.nih.gov/32480439/")
 
 #fill biforface_c's lma
 aa <- subset(kevin_othervars,exp=="biforface_c")%>% group_by(response,Unit)  %>% summarise(number = n())
@@ -986,6 +1043,10 @@ lma_e <- narea_e/nmass_e
 lma_a <- narea_a/nmass_a
 unique(subset(kevin_othervars,exp=="biforface_c")[,c("co2_a","co2_e")])
 biforface_c_lma <- log(lma_e/lma_a)/log(558/408)
+
+ref_k25 <- unique(subset(kevin_othervars,exp=="biforface_c" & response=="leaf_n" & Unit=="mg_g")[,c("exp","citation")])
+ref_k26 <- unique(subset(kevin_othervars,exp=="biforface_c" & response=="leaf_n" & Unit=="g_m2")[,c("exp","citation")])
+
 
 #gap-fill duke2_cf
 #vcmax - duke2 and duke cannot be merged since they duke2 is used for non-fertilization vs. fertilization.
@@ -1020,6 +1081,8 @@ unique(subset(logr_c_LMA,exp=="duke2_c")[,c("co2_a","co2_e")])
 duke2_cf_lma <- log(113.3/100.6)/log(563/363)
 
 duke2_cf_narea <- log(1.34/1.44)/log(563/363)
+
+ref_k27 <- tibble(exp="duke2_cf",citation="https://academic.oup.com/treephys/article/28/4/597/1720624")
 
 #LAI
 #Quoted from Kevin's email: "I just checked and corrected the data in our database. You were right that the '38' had to be '3.8', and the line with jmax for the reference Oishi et al. 2014 should actually not be jmax, but also lai, with control again 3.8 and treatment 4.2."
@@ -1076,6 +1139,33 @@ final5$jmax_vcmax <- final5$jmax-final5$vcmax
 csvfile <- paste(output_path)
 write.csv(final5, csvfile, row.names = TRUE)
 
+#create reference name
+ref_list <- unique(dplyr::bind_rows(ref_k1,ref_k2,ref_k3,ref_k4,ref_k5,ref_k6,ref_k7,ref_k8,ref_k9,ref_k10,
+                                    ref_k11,ref_k12,ref_k13,ref_k14,ref_k15,ref_k16,ref_k17,ref_k18,ref_k19,ref_k20,
+                                    ref_k21,ref_k22,ref_k23,ref_k24,ref_k25,ref_k26,ref_k27))
+
+ref_removed <- c("darbah_et_al_2010a","darbah_et_al_2010b")
+subset(ref_list,citation=="darbah_et_al_2010a"|citation=="darbah_et_al_2010b")
+
+ref_list
+
+#remove theis three
+ref_list_final <- subset(ref_list,citation!="darbah_et_al_2010a"&citation!="darbah_et_al_2010b")
+
+#add mesi_bibliography
+#propose two version - one basing on exp and citation (strict), one basing on citation (relax)
+mesi_bibliography <- read.csv("~/data/gcme/kevin_20220222/mesi_bibliography.csv")[,c("exp","citation","full_reference")]
+final_ref_strict <- merge(ref_list_final,mesi_bibliography,by=c("exp","citation"),all.x=TRUE)
+
+mesi_bibliography <- unique(read.csv("~/data/gcme/kevin_20220222/mesi_bibliography.csv")[,c("citation","full_reference")])
+final_ref_relax <- merge(ref_list_final,mesi_bibliography,by=c("citation"),all.x=TRUE)
+
+csvfile <- paste("~/data/gcme/MS_data/reference_strict.csv")
+write.csv(final_ref_strict, csvfile, row.names = TRUE)
+
+csvfile <- paste("~/data/gcme/MS_data/reference_relax.csv")
+write.csv(final_ref_relax, csvfile, row.names = TRUE)
+
 #check japan_face
 #https://academic.oup.com/pcp/article/55/2/381/1862434#85129527
 #ko: Koshihikari
@@ -1096,4 +1186,3 @@ subset(kevin_othervars,exp=="riceface_japan_ko_2012_3558_13960_c"&response=="vcm
 subset(kevin_othervars,exp=="riceface_japan_ko_2013_3558_13960_c"&response=="vcmax")$co2_a
 subset(kevin_othervars,exp=="riceface_japan_ta_2012_3558_13960_c"&response=="vcmax")$co2_a
 subset(kevin_othervars,exp=="riceface_japan_ta_2013_3558_13960_c"&response=="vcmax")$co2_a
-
